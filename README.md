@@ -1,2 +1,2 @@
 # Application-Development-Project
-Flutter workout tracker app 
+Flutter dog walker marketplace app

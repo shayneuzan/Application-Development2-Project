@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "398169687773",
+    "project_id": "pawwalk-71784",
+    "storage_bucket": "pawwalk-71784.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398169687773:android:b71964d31e072f1e61fd34",
+        "android_client_info": {
+          "package_name": "com.example.pawwalk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpGsS9DM1jt80JwoIZexBM10b_7pRQh6A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

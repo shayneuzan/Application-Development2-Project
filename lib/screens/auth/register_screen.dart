@@ -35,6 +35,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ── Main register function ─────────────────────────────
   Future<void> _register() async {
 
+    if(_isRegistering) return; //prevents double tapping
+
     // Basic checks before doing anything
     if (_nameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
@@ -68,6 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text.trim(),
       );
 
+
       //Save user profile to Firestore
       await FirebaseFirestore.instance
           .collection('users')
@@ -80,6 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'photoUrl':  '',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
 
       //Go to Login after successful registration
       _goTo(LoginScreen());

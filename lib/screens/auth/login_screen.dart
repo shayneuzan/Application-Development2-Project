@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
-import 'two_fa_screen.dart';
+import 'email_verification_screen.dart';
+import 'package:pawwalk/screens/owner/owner_home_screen.dart';
 
 // ─────────────────────────────────────────────────────────
 // LOGIN SCREEN
@@ -66,20 +67,28 @@ class _LoginScreenState extends State<LoginScreen> {
         role = doc.data()!['role'];
       }
 
+      //send verification email
+      try {
+        await result.user!.sendEmailVerification();
+        print('VERIFICATION EMAIL SENT SUCCESSFULLY');
+      } catch (e) {
+        print('VERIFICATION EMAIL ERROR: $e');
+      }
+
       //Go to the right screen based on role
       switch (role) {
         case 'walker':
         // TODO: Replace with WalkerHomeScreen() when built
-          _goTo(TwoFAScreen(destination: LoginScreen()));
+          _goTo(EmailVerificationScreen(destination: LoginScreen()));
           break;
         case 'admin':
-        // TODO: Replace with AdminDashboardScreen() when built
-          _goTo(TwoFAScreen(destination: LoginScreen()));
+          // TODO: Replace with AdminDashboardScreen() when built
+          _goTo(EmailVerificationScreen(destination: LoginScreen()));
           break;
         default:
-        // Pet owner
-        // TODO: Replace with OwnerHomeScreen() when built
-          _goTo(TwoFAScreen(destination: LoginScreen()));
+          // Pet owner
+          // TODO: Replace with OwnerHomeScreen() when built
+          _goTo(EmailVerificationScreen(destination: OwnerHomeScreen()));
       }
 
     } catch (e) {

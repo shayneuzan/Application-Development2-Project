@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../owner/owner_home_screen.dart';
+import '../walker/walker_home_screen.dart';
 import 'login_screen.dart';
 
 // ─────────────────────────────────────────────────────────
@@ -86,7 +88,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
 
       //Go to Login after successful registration
-      _goTo(LoginScreen());
+      // _goTo(LoginScreen());
+
+      // Navigate to Home based on role once the registration is complete
+      if (_selectedRole == 'owner') {
+        _goTo(OwnerHomeScreen());
+      } else {
+        _goTo(WalkerHomeScreen());
+      }
 
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
@@ -105,7 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Connection error. Please check your internet.';
+        _errorMessage = 'Connection error or profile creation failed. Please try again.';
         _isRegistering = false;
       });
     }

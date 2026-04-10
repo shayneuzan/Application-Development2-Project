@@ -79,7 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
       //Go to the right screen based on role
       switch (role) {
         case 'walker':
-        // TODO: Replace with WalkerHomeScreen() when built
           _goTo(EmailVerificationScreen(destination: WalkerHomeScreen()));
           break;
         case 'admin':
@@ -88,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
         default:
         // Pet owner
-        // TODO: Replace with OwnerHomeScreen() when built
           _goTo(EmailVerificationScreen(destination: OwnerHomeScreen()));
       }
 

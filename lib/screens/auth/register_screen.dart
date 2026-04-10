@@ -88,10 +88,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
       //Go to Login after successful registration
       _goTo(LoginScreen());
 
-    } catch (e) {
-      //Show error if registration fails
+    } on FirebaseAuthException catch (e) {
+      String message = 'An error occurred. Please try again.';
+
+      if (e.code == 'email-already-in-use') {
+        message = 'The email address is already in use by another account.';
+      } else if (e.code == 'weak-password') {
+        message = 'The password is too weak.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      }
+
       setState(() {
-        _errorMessage  = 'Registration failed. This email may already be in use.';
+        _errorMessage = message;
+        _isRegistering = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Connection error. Please check your internet.';
         _isRegistering = false;
       });
     }

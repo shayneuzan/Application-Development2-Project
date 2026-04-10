@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pawwalk/screens/walker/earnings_screen.dart';
 import 'dart:async';
+import '../walker/walker_home_screen.dart';
 import 'login_screen.dart';
 
 // ─────────────────────────────────────────────────────────
@@ -83,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen> {
     switch (role) {
       case 'walker':
         // TODO: Replace with WalkerHomeScreen() when built
-        _goTo(const LoginScreen());
+        _goTo(const WalkerHomeScreen());
         break;
       case 'admin':
         // TODO: Replace with AdminDashboardScreen() when built

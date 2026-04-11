@@ -34,6 +34,11 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           name = (snapshot.data!.data() as Map<String, dynamic>)['name'] ?? 'Guest';
         }
         return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+                'Dashboard', style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.blueAccent,
+          ),
           drawer: WalkerDrawer(name: name!,),
           body: Padding( // TODO: NOT REAL FUNCTION JUST FOR DISPLAY. REMOVE LATER AS FOR OTHER SCREENS
             padding: const EdgeInsets.all(16.0),

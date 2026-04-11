@@ -71,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      print("Email created successfully");
 
 
       //Save user profile to Firestore
@@ -85,17 +86,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'photoUrl':  '',
         'createdAt': FieldValue.serverTimestamp(),
       });
+      print("User Profile created successfully");
 
 
       //Go to Login after successful registration
-      // _goTo(LoginScreen());
-
-      // Navigate to Home based on role once the registration is complete
-      if (_selectedRole == 'owner') {
-        _goTo(OwnerHomeScreen());
-      } else {
-        _goTo(WalkerHomeScreen());
-      }
+      _goTo(LoginScreen());
 
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';
@@ -108,11 +103,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         message = 'Please enter a valid email address.';
       }
 
+      print("FIREBASE ERROR: $e");
       setState(() {
         _errorMessage = message;
         _isRegistering = false;
       });
     } catch (e) {
+      print("OTHER ERROR: $e");
       setState(() {
         _errorMessage = 'Connection error or profile creation failed. Please try again.';
         _isRegistering = false;

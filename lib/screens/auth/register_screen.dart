@@ -109,7 +109,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _isRegistering = false;
       });
     } catch (e) {
-      print("OTHER ERROR: $e");
+      print("REGULAR ERROR: $e");
       setState(() {
         _errorMessage = 'Connection error or profile creation failed. Please try again.';
         _isRegistering = false;

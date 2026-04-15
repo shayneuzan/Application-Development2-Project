@@ -15,8 +15,8 @@ class _EarningsScreenState extends State<EarningsScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
+    return StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           String? name = uid;
           if (snapshot.hasData && snapshot.data!.exists) {
@@ -24,11 +24,11 @@ class _EarningsScreenState extends State<EarningsScreen> {
           }
           return Scaffold(
             appBar: AppBar(
-              title: const Text(
-                'Earnings', style: TextStyle(color: Colors.white),),
+              title: const Text('Earnings', style: TextStyle(color: Colors.white),),
               backgroundColor: Colors.blueAccent,
+              iconTheme: const IconThemeData(color: Colors.white),
             ),
-            drawer: WalkerDrawer(name: name!),
+            drawer: WalkerDrawer(name: name!), // TODO: Complete the Earning Screen
             body: const Center(
               child: Text('Earnings Screen (WIP)'),
             ),

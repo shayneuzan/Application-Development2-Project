@@ -16,7 +16,20 @@ class WalkerHomeScreen extends StatefulWidget {
 class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   // // Gets the current user's ID
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
-  // Will be saved for later
+  final DateTime _presentDay = DateTime.now();
+  bool _isTimedOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _isTimedOut = true;
+        });
+      }
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
@@ -35,6 +48,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
             appBar: AppBar(
               title: const Text('Dashboard', style: TextStyle(color: Colors.white)),
               backgroundColor: Colors.blueAccent,
+              iconTheme: const IconThemeData(color: Colors.white),
             ),
             drawer: WalkerDrawer(name: name!,),
             body: SingleChildScrollView(
@@ -115,106 +129,108 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 10,),
                       // Walker Card
                       StreamBuilder<QuerySnapshot>(
-                        // Only show "accepted" walks meant for THIS walker
-                        stream: FirebaseFirestore.instance.collection('requests')
-                            .where('walkerID', isEqualTo: uid) // Ensure 'uid' is defined in your widget
-                            .where('status', isEqualTo: 'accepted')
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20.0),
-                              child: Center(
-                                child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),
-                              ),
-                            );
-                          }
-                          // Get the data from the first document in the list of upcoming walk
-                          final docs = snapshot.data!.docs;
-                          return ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: docs.length,
-                            itemBuilder: (context, index) {
-                              final data = docs[index].data() as Map<String, dynamic>;
-                              return Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 16),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const CircleAvatar(
-                                          radius: 25,
-                                          backgroundColor: Color(0xFFF5EFE9),
-                                          child: Icon(Icons.pets, color: Colors.black, size: 24),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                              Text("Owner: ${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
-                                            ],
-                                          ),
-                                        ),
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            Text(data['time'] ?? "00:00", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                            ),
-                                            Text(
-                                              data['date'] ?? "No Date",
-                                              style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    const Divider(height: 24, thickness: 1),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14),),
-                                        const Spacer(),
-                                        Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16,),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                      // Only show "accepted" walks meant for THIS walker
+                      stream: FirebaseFirestore.instance.collection('requests')
+                          .where('walkerID', isEqualTo: uid) // Ensure 'uid' is defined in your widget
+                          .where('status', isEqualTo: 'accepted')
+                          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20.0),
+                            child: Center(
+                              child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),
+                            ),
                           );
                         }
-                      ),
+                        // Get the data from the first document in the list of upcoming walk
+                        final docs = snapshot.data!.docs;
+                        return ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final data = docs[index].data() as Map<String, dynamic>;
+                            return Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      const CircleAvatar(
+                                        radius: 25,
+                                        backgroundColor: Color(0xFFF5EFE9),
+                                        child: Icon(Icons.pets, color: Colors.black, size: 24),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                                            Text("Owner: ${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(data['time'] ?? "00:00", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                          Text(
+                                            data['date'] ?? "No Date",
+                                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(height: 24, thickness: 1),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                      const Spacer(),
+                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16,),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    ),
                       // End of Walk Card
                       // New Requests
-                      StreamBuilder<QuerySnapshot>(
+                      StreamBuilder<QuerySnapshot>( // Calculate the number of pending requests
                         stream: FirebaseFirestore.instance
                             .collection('requests')
                             .where('walkerID', isEqualTo: uid)
                             .where('status', isEqualTo: 'pending')
-                            .snapshots(),builder: (context, snapshot) {
-                        // Calculate the number of pending requests
+                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd'))
+                            .snapshots(),
+                        builder: (context, snapshot) {
                         int requestCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
                         return Row(
                           children: [
@@ -243,11 +259,15 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             .limit(3)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                          if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) {
+                            return Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Text("No new requests");
+                          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty && !_isTimedOut) {
+                            return const Center(
+                              child: Text('No Upcoming Requests'),
+                            );
                           }
                           // Get the data from the first document in the list
                           final doc = snapshot.data!.docs.first;

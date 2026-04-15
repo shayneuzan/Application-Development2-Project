@@ -23,7 +23,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
-        String? name = uid;
+        String name = 'Guest';
         if (snapshot.hasData && snapshot.data!.exists) {
           name = (snapshot.data!.data() as Map<String, dynamic>)['name'] ?? 'Guest';
         }
@@ -33,7 +33,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             backgroundColor: Colors.blueAccent,
             iconTheme: const IconThemeData(color: Colors.white),
           ),
-          drawer: WalkerDrawer(name: name!),
+          drawer: WalkerDrawer(name: name),
           body: SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.all(16.0),
@@ -73,107 +73,116 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
-                  // Error Message if no date is selected
                   const SizedBox(height: 20),
-                  _selectedDay == null
-                      ? const Text("Select a date to see walks", style: TextStyle(fontSize: 18))
-                      : Text("Your Upcoming Walks for ${DateFormat('MMMM d, yyyy')
-                      .format(_selectedDay!)}", style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold,
-                        color: Colors.black87
+                  _selectedDay == null ? const Text("Select a date to see walks", style: TextStyle(fontSize: 18),) :
+                  Column(
+                    children: [
+                      Text(
+                        "Your Upcoming Walks for ${DateFormat('MMMM dd, yyyy').format(_selectedDay!)}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (_selectedDay != null)
-                  // List of walks for the selected date
-                  const SizedBox(height: 10),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('requests')
-                    .where('walkerID', isEqualTo: uid)
-                    .where('status', isEqualTo: 'accepted')
-                    .where('date', isEqualTo: DateFormat('yyyy-MM-dd')
-                    .format(_selectedDay!))
-                    .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(40.0),
-                            child: Column(
-                              children: [
-                                Icon(Icons.event_busy, size: 60, color: Colors.grey.shade400),
-                                const SizedBox(height: 10),
-                                const Text("No walks scheduled for this day", style: TextStyle(color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else {
-                        // List of walks for the selected date
-                        final docs = snapshot.data!.docs;
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: snapshot.data!.docs.length,
-                          itemBuilder: (context, index) {
-                            final data = docs[index].data() as Map<String, dynamic>;
-                            return Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      const CircleAvatar( // Profile Picture
-                                        radius: 25,
-                                        backgroundColor: Color(0xFFF5EFE9),
-                                        child: Icon(Icons.pets, color: Colors.black, size: 24),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column( // Pet Name & Owner
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                                Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold,)),
-                                              ],
-                                            ),
-                                            Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(height: 24, thickness: 1),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 4),
-                                      Text("${data['time'] ?? '00:00'}    ${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
-                                    ],
-                                  ),
-                                ],
+                      const SizedBox(height: 20),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('requests')
+                            .where('walkerID', isEqualTo: uid)
+                            .where('status', isEqualTo: 'accepted')
+                            .where(
+                          'date',
+                          isEqualTo:
+                          DateFormat('yyyy-MM-dd').format(_selectedDay!),
+                        )
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(40.0),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.event_busy,
+                                        size: 60,
+                                        color: Colors.grey.shade400),
+                                    const SizedBox(height: 10),
+                                    const Text(
+                                      "No walks scheduled for this day",
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
-                        );
-                      }
-                    }
+                          final docs = snapshot.data!.docs;
+                          return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: snapshot.data!.docs.length,
+                              itemBuilder: (context, index) {
+                                final data = docs[index].data() as Map<String, dynamic>;
+                                return Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const CircleAvatar( // Profile Picture
+                                            radius: 25,
+                                            backgroundColor: Color(0xFFF5EFE9),
+                                            child: Icon(Icons.pets, color: Colors.black, size: 24),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column( // Pet Name & Owner
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                                                    Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold,)),
+                                                  ],
+                                                ),
+                                                Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Divider(height: 24, thickness: 1),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Text("${data['time'] ?? '00:00'}    ${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

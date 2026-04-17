@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../owner/owner_home_screen.dart';
+import '../walker/walker_home_screen.dart';
 import 'login_screen.dart';
 
 // ─────────────────────────────────────────────────────────
@@ -69,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      print("Email created successfully");
 
 
       //Save user profile to Firestore
@@ -94,15 +97,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'status': 'active',   // owners can use app immediately
         },
       });
+      print("User Profile created successfully");
 
 
       //Go to Login after successful registration
       _goTo(LoginScreen());
 
-    } catch (e) {
-      //Show error if registration fails
+    } on FirebaseAuthException catch (e) {
+      String message = 'An error occurred. Please try again.';
+
+      if (e.code == 'email-already-in-use') {
+        message = 'The email address is already in use by another account.';
+      } else if (e.code == 'weak-password') {
+        message = 'The password is too weak.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      }
+
+      print("FIREBASE ERROR: $e");
       setState(() {
-        _errorMessage  = 'Registration failed. This email may already be in use.';
+        _errorMessage = message;
+        _isRegistering = false;
+      });
+    } catch (e) {
+      print("REGULAR ERROR: $e");
+      setState(() {
+        _errorMessage = 'Connection error or profile creation failed. Please try again.';
         _isRegistering = false;
       });
     }

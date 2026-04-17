@@ -17,6 +17,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   // // Gets the current user's ID
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final DateTime _presentDay = DateTime.now();
+  late final DateTime today = DateTime(_presentDay.year, _presentDay.month, _presentDay.day,);
   bool _isTimedOut = false;
 
   @override
@@ -133,7 +134,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       stream: FirebaseFirestore.instance.collection('requests')
                           .where('walkerID', isEqualTo: uid) // Ensure 'uid' is defined in your widget
                           .where('status', isEqualTo: 'accepted')
-                          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                          .where('date', isGreaterThanOrEqualTo: today)
+                          .orderBy('date')
                           .snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -228,7 +230,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             .collection('requests')
                             .where('walkerID', isEqualTo: uid)
                             .where('status', isEqualTo: 'pending')
-                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd'))
+                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
                             .snapshots(),
                         builder: (context, snapshot) {
                         int requestCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
@@ -250,93 +252,115 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 10,),
                       // Request Card
                       StreamBuilder<QuerySnapshot>(
-                        // Filter: Only show "pending" requests meant for THIS walker
                         stream: FirebaseFirestore.instance
                             .collection('requests')
                             .where('walkerID', isEqualTo: uid)
                             .where('status', isEqualTo: 'pending')
-                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd'))
-                            .limit(3)
+                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                            .orderBy('date')
+                            .limit(3) // This correctly limits the query to 3 items
                             .snapshots(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) {
-                            return Center(
-                              child: CircularProgressIndicator(),
-                            );
+                            return const Center(child: CircularProgressIndicator());
                           }
-                          if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty && !_isTimedOut) {
-                            return const Center(
-                              child: Text('No Upcoming Requests'),
-                            );
+
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const Center(child: Text('No Upcoming Requests'));
                           }
-                          // Get the data from the first document in the list
-                          final doc = snapshot.data!.docs.first;
-                          final data = doc.data() as Map<String, dynamic>;
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: const Border(left: BorderSide(color: Colors.blue, width: 5)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(data['ownerName'] ?? "Unknown Owner", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                    Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                                Text("${data['petName']} - ${data['duration']} min walk", style: const TextStyle(color: Colors.grey)),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text("${data['date']} at ${data['time']}", style: const TextStyle(color: Colors.grey)),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    // Decline Button
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          // Update status to 'declined' in Firebase
-                                          doc.reference.update({'status': 'declined'});
-                                        },
-                                        icon: const Icon(Icons.close, size: 18, color: Colors.black),
-                                        label: const Text("Decline", style: TextStyle(color: Colors.black)),
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor: const Color(0xFFF5EFE9),
-                                          side: BorderSide.none,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    // Accept Button
-                                    Expanded(
-                                      child: ElevatedButton.icon(
-                                        onPressed: () {
-                                          // Update status to 'accepted' in Firebase
-                                          doc.reference.update({'status': 'accepted'});
-                                        },
-                                        icon: const Icon(Icons.check, size: 18, color: Colors.white),
-                                        label: const Text("Accept", style: TextStyle(color: Colors.white)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                      ),
+
+                          // 1. Get the list of documents
+                          final docs = snapshot.data!.docs;
+
+                          // 2. Return a ListView to show all 3 items
+                          return ListView.separated(
+                            shrinkWrap: true, // Use this if it's inside another Column/Scrollview
+                            physics: const NeverScrollableScrollPhysics(), // Optional: if parent handles scrolling
+                            itemCount: docs.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              // 3. Extract data for the specific index
+                              final doc = docs[index];
+                              final data = doc.data() as Map<String, dynamic>;
+
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: const Border(left: BorderSide(color: Colors.blue, width: 5)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(data['ownerName'] ?? "Unknown Owner",
+                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text("\$${data['payment'] ?? '0'}",
+                                            style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    Text("${data['petName']} - ${data['duration']} min walk",
+                                        style: const TextStyle(color: Colors.grey)),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text("${data['date']} at ${data['time']}",
+                                            style: const TextStyle(color: Colors.grey)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        // Decline Button
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: () {
+                                              // Update status to 'declined' in Firebase
+                                              doc.reference.update({'status': 'declined'});
+                                            },
+                                            icon: const Icon(Icons.close, size: 18, color: Colors.black),
+                                            label: const Text("Decline", style: TextStyle(color: Colors.black)),
+                                            style: OutlinedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFF5EFE9),
+                                              side: BorderSide.none,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        // Accept Button
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              // Update status to 'accepted' in Firebase
+                                              doc.reference.update({'status': 'accepted'});
+                                            },
+                                            icon: const Icon(Icons.check, size: 18, color: Colors.white),
+                                            label: const Text("Accept", style: TextStyle(color: Colors.white)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           );
                         },
                       )

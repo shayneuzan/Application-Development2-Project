@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
+import 'package:intl/intl.dart';
 
 class RequestScreen extends StatefulWidget {
   const RequestScreen({super.key});
@@ -13,9 +14,11 @@ class RequestScreen extends StatefulWidget {
 
 class _RequestScreenState extends State<RequestScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
+  final DateTime _presentDay = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
+    print(DateFormat('yyyy-MM-dd').format(DateTime.now()));
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
       builder: (context, snapshot) {
@@ -35,6 +38,8 @@ class _RequestScreenState extends State<RequestScreen> {
                 .collection('requests')
                 .where('walkerID', isEqualTo: uid)
                 .where('status', isEqualTo: 'pending')
+                .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                .orderBy('date')
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -59,14 +64,11 @@ class _RequestScreenState extends State<RequestScreen> {
                     String date = currentData['date'] ?? 'N/A';
                     String time = currentData['time'] ?? 'N/A';
                     String duration = currentData['duration'] ?? 'N/A';
-                    String initials = ownerName.trim().isNotEmpty
-                        ? ownerName.trim()
-                        .split(RegExp(r'\s+'))
-                        .where((word) => word.isNotEmpty)
-                        .map((word) => word[0].toUpperCase())
-                        .take(3)
-                        .join()
-                        : "?";
+                    String initials = ownerName.trim().isNotEmpty ? ownerName.trim()
+                      .split(RegExp(r'\s+'))
+                      .where((word) => word.isNotEmpty)
+                      .map((word) => word[0].toUpperCase())
+                      .take(3).join() : "?";
                     return Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 16),

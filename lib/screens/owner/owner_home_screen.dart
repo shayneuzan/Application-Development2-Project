@@ -16,7 +16,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Text('Hello'),
+        child: Text('OWNER', style: TextStyle(fontSize: 25),)
       )
     );
   }

@@ -6,7 +6,7 @@ import 'login_screen.dart';
 
 // ─────────────────────────────────────────────────────────
 // SPLASH SCREEN
-// Shows for 4 seconds then goes to Login
+// Shows for 3 seconds then goes to Login
 // ─────────────────────────────────────────────────────────
 
 class SplashScreen extends StatefulWidget {
@@ -32,8 +32,8 @@ class _SplashScreenState extends State<SplashScreen> {
       });
     });
 
-    // Wait 4 seconds then go to Login
-    Timer(Duration(seconds: 4), () {
+    // Wait 3 seconds then go to Login
+    Timer(Duration(seconds: 3), () {
       checkUserAndNavigate();
     });
   }

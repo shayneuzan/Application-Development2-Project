@@ -82,6 +82,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'role':      _selectedRole,
         'photoUrl':  '',
         'createdAt': FieldValue.serverTimestamp(),
+
+        //Walker specific fields
+        if (_selectedRole == 'walker') ...{
+          'isApproved': false,  //admin must approve before accepting bookings
+          'status': 'pending',  //pending until admin approves
+        },
+
+        // Owner specific fields
+        if (_selectedRole == 'owner') ...{
+          'status': 'active',   // owners can use app immediately
+        },
       });
 
 

@@ -5,6 +5,7 @@ import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_screen.dart';
 import 'package:pawwalk/screens/owner/owner_home_screen.dart';
+import 'package:pawwalk/screens/admin/admin_dashboard_screen.dart';
 
 // ─────────────────────────────────────────────────────────
 // LOGIN SCREEN
@@ -78,12 +79,25 @@ class _LoginScreenState extends State<LoginScreen> {
       //Go to the right screen based on role
       switch (role) {
         case 'walker':
+          // final status     = doc.data()!['status'] ?? 'pending';
+          // final isApproved = doc.data()!['isApproved'] ?? false; //get the isApproved value from Firestore, if it doesn’t exist assume it’s false
+          //
+          // if (status == 'suspended') {
+          //   // Sign out and show suspended message
+          //   await FirebaseAuth.instance.signOut();
+          //   setState(() {
+          //     _errorMessage = 'Your account has been suspended. Contact support.';
+          //     _isSigningIn  = false;
+          //   });
+          //   return;
+          // }
+
         // TODO: Replace with WalkerHomeScreen() when built
           _goTo(EmailVerificationScreen(destination: LoginScreen()));
           break;
         case 'admin':
           // TODO: Replace with AdminDashboardScreen() when built
-          _goTo(EmailVerificationScreen(destination: LoginScreen()));
+          _goTo(AdminDashboardScreen());
           break;
         default:
           // Pet owner

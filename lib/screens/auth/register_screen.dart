@@ -86,7 +86,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      print("Email created successfully");
+
+      // SEND VERIFICATION EMAIL
+      await result.user?.sendEmailVerification();
+      print("Email verification sent successfully");
 
 
       //Save user profile to Firestore

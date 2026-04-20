@@ -3,6 +3,7 @@ import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
+import 'walker_profile_screen.dart';
 import '../widgets/owner_drawer.dart';
 
 class BrowseWalkersListScreen extends StatelessWidget {
@@ -58,12 +59,11 @@ class BrowseWalkersListScreen extends StatelessWidget {
               width: double.infinity,
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEDD5), // Light orange/peach background like image
+                color: const Color(0xFFFFEDD5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(
                 children: [
-                  // Simple Map Dots Representation
                   Center(
                     child: Container(
                       width: 12,
@@ -80,7 +80,6 @@ class BrowseWalkersListScreen extends StatelessWidget {
                   const Positioned(top: 60, right: 80, child: _MapDot()),
                   const Positioned(top: 30, right: 40, child: _MapDot()),
                   
-                  // Nearby Badge
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -125,6 +124,7 @@ class BrowseWalkersListScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
                 _buildWalkerCard(
+                  context,
                   name: 'Sarah Johnson',
                   initials: 'SJ',
                   walksCount: 342,
@@ -132,6 +132,7 @@ class BrowseWalkersListScreen extends StatelessWidget {
                   price: 25,
                 ),
                 _buildWalkerCard(
+                  context,
                   name: 'Mike Chen',
                   initials: 'MC',
                   walksCount: 256,
@@ -139,6 +140,7 @@ class BrowseWalkersListScreen extends StatelessWidget {
                   price: 30,
                 ),
                 _buildWalkerCard(
+                  context,
                   name: 'Emily Davis',
                   initials: 'ED',
                   walksCount: 189,
@@ -146,6 +148,7 @@ class BrowseWalkersListScreen extends StatelessWidget {
                   price: 28,
                 ),
                 _buildWalkerCard(
+                  context,
                   name: 'James Wilson',
                   initials: 'JW',
                   walksCount: 128,
@@ -169,7 +172,7 @@ class BrowseWalkersListScreen extends StatelessWidget {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 1, // Walkers tab active
+          currentIndex: 1,
           type: BottomNavigationBarType.fixed,
           selectedItemColor: primaryBlue,
           unselectedItemColor: const Color(0xFF94A3B8),
@@ -195,7 +198,8 @@ class BrowseWalkersListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWalkerCard({
+  Widget _buildWalkerCard(
+    BuildContext context, {
     required String name,
     required String initials,
     required int walksCount,
@@ -206,90 +210,119 @@ class BrowseWalkersListScreen extends StatelessWidget {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 15,
-            offset: Offset(0, 5),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WalkerProfileScreen(
+              name: name,
+              initials: initials,
+              rating: rating,
+              walksCount: walksCount,
+              price: price,
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: const Color(0xFFFFEDD5),
-                child: Text(
-                  initials,
-                  style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 15,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: const Color(0xFFFFEDD5),
+                  child: Text(
+                    initials,
+                    style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, color: Colors.orange, size: 18),
-                            const SizedBox(width: 4),
-                            Text(
-                              rating.toString(),
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.orange, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                rating.toString(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '$walksCount walks completed',
+                        style: const TextStyle(color: textLight, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '\$ $price/hr',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '$walksCount walks completed',
-                      style: const TextStyle(color: textLight, fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '\$ $price/hr',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
                           ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryBlue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WalkerProfileScreen(
+                                    name: name,
+                                    initials: initials,
+                                    rating: rating,
+                                    walksCount: walksCount,
+                                    price: price,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryBlue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

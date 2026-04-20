@@ -4,6 +4,7 @@ import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
+import 'add_pet_screen.dart';
 import '../widgets/owner_drawer.dart';
 
 class PetProfileScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class PetProfileScreen extends StatefulWidget {
 
 class _PetProfileScreenState extends State<PetProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool isAddingPet = false;
+  
   final List<Map<String, String>> pets = [
     {
       'name': 'Max',
@@ -31,33 +32,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     },
   ];
 
-  final _nameController = TextEditingController();
-  final _breedController = TextEditingController();
-  final _ageController = TextEditingController();
-
-  void _addPet() {
-    if (_nameController.text.isNotEmpty) {
-      setState(() {
-        pets.insert(0, {
-          'name': _nameController.text,
-          'breed': _breedController.text,
-          'age': '${_ageController.text} years old',
-          'instructions': 'No instructions provided'
-        });
-        isAddingPet = false;
-        _nameController.clear();
-        _breedController.clear();
-        _ageController.clear();
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -111,89 +90,35 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Add New Pet Button/Form
-            if (!isAddingPet)
-              GestureDetector(
-                onTap: () => setState(() => isAddingPet = true),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add, color: textDark, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add New Pet',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.all(20),
+            // Add New Pet Button
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddPetScreen()),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: primaryBlue.withOpacity(0.5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.add, color: textDark, size: 20),
+                    SizedBox(width: 8),
+                    Text(
                       'Add New Pet',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(_nameController, 'Pet name'),
-                    const SizedBox(height: 12),
-                    _buildTextField(_breedController, 'Breed'),
-                    const SizedBox(height: 12),
-                    _buildTextField(_ageController, 'Age (years)', keyboardType: TextInputType.number),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => setState(() => isAddingPet = false),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text('Cancel', style: TextStyle(color: textLight)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _addPet,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryBlue,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text('Add Pet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
+                      style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
                     ),
                   ],
                 ),
               ),
+            ),
 
             const SizedBox(height: 24),
 
@@ -247,28 +172,6 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
             BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String hint, {TextInputType keyboardType = TextInputType.text}) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        filled: true,
-        fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF2563EB)),
         ),
       ),
     );

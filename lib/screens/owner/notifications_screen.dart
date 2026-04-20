@@ -4,64 +4,111 @@ import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  // Using a list so we can simulate "clearing" or "marking as read"
+  List<Map<String, dynamic>> _notifications = [
+    {
+      'icon': Icons.calendar_today,
+      'iconBg': const Color(0xFFFFF7ED),
+      'iconColor': Colors.orange,
+      'title': 'Booking Confirmed',
+      'description': 'Your booking with Sarah Johnson for March 25 has been confirmed.',
+      'time': '2 mins ago',
+      'isUnread': true,
+      'category': 'New',
+    },
+    {
+      'icon': Icons.location_on,
+      'iconBg': const Color(0xFFF0FDF4),
+      'iconColor': Colors.green,
+      'title': 'Walk Started',
+      'description': 'Sarah has started walking Max. Track the walk in real-time!',
+      'time': '1 hour ago',
+      'isUnread': true,
+      'category': 'New',
+    },
+    {
+      'icon': Icons.payment,
+      'iconBg': const Color(0xFFFEFCE8),
+      'iconColor': Colors.yellow.shade800,
+      'title': 'Payment Processed',
+      'description': "Your payment of \$15 for Bella's walk has been processed.",
+      'time': 'Yesterday',
+      'isUnread': false,
+      'category': 'Earlier',
+    },
+    {
+      'icon': Icons.star_border,
+      'iconBg': const Color(0xFFEFF6FF),
+      'iconColor': Colors.blue,
+      'title': 'Rate your Walker',
+      'description': 'How was your walk with Mike Chen? Leave a review now!',
+      'time': '2 days ago',
+      'isUnread': false,
+      'category': 'Earlier',
+    },
+  ];
+
+  void _markAllRead() {
+    setState(() {
+      for (var note in _notifications) {
+        note['isUnread'] = false;
+      }
+    });
+  }
+
+  void _clearAll() {
+    setState(() {
+      _notifications = [];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
+    const textDark = Color(0xFF1E293B);
 
     return Scaffold(
       backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: primaryBlue,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: textDark),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Notifications',
           style: TextStyle(
-            color: Colors.white,
+            color: textDark,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          _buildNotificationCard(
-            icon: Icons.calendar_today,
-            iconBg: Colors.orange.shade100,
-            iconColor: Colors.orange,
-            title: 'Booking Confirmed',
-            description: 'Your booking with Sarah Johnson for March 25 has been confirmed.',
-            time: '27d ago',
-            isUnread: true,
-          ),
-          _buildNotificationCard(
-            icon: Icons.location_on,
-            iconBg: Colors.green.shade100,
-            iconColor: Colors.green,
-            title: 'Walk Started',
-            description: 'Sarah has started walking Max. Track the walk in real-time!',
-            time: '30d ago',
-            isUnread: true,
-          ),
-          _buildNotificationCard(
-            icon: Icons.payment,
-            iconBg: Colors.yellow.shade100,
-            iconColor: Colors.yellow.shade800,
-            title: 'Payment Processed',
-            description: "Your payment of \$15 for Bella's walk has been processed.",
-            time: '30d ago',
-            isUnread: false,
-          ),
+        actions: [
+          if (_notifications.isNotEmpty)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'read') _markAllRead();
+                if (value == 'clear') _clearAll();
+              },
+              icon: const Icon(Icons.more_vert, color: textDark),
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'read', child: Text('Mark all as read')),
+                const PopupMenuItem(value: 'clear', child: Text('Clear all', style: TextStyle(color: Colors.red))),
+              ],
+            ),
         ],
       ),
+      body: _notifications.isEmpty ? _buildEmptyState() : _buildNotificationList(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -73,36 +120,20 @@ class NotificationsScreen extends StatelessWidget {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 0, // Set to a non-existent index to have no highlighting, but since 0-4 are used, we can set a dummy or use a specific property
+          currentIndex: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF94A3B8), // Same as unselected color
+          selectedItemColor: const Color(0xFF94A3B8),
           unselectedItemColor: const Color(0xFF94A3B8),
           backgroundColor: Colors.white,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
           onTap: (index) {
             if (index == 0) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
             } else if (index == 1) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
             } else if (index == 2) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
-              );
-            } else if (index == 3) {
-              // TODO: Navigate to Map Screen when built
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
             } else if (index == 4) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
           },
           items: const [
@@ -117,26 +148,70 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard({
-    required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
-    required String title,
-    required String description,
-    required String time,
-    required bool isUnread,
-  }) {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20),
+              ],
+            ),
+            child: const Icon(Icons.notifications_none_outlined, size: 64, color: Color(0xFFCBD5E1)),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'All caught up!',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "You don't have any new notifications\nat the moment.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationList() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        if (_notifications.any((n) => n['category'] == 'New')) ...[
+          const Text('New', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+          const SizedBox(height: 12),
+          ..._notifications.where((n) => n['category'] == 'New').map((n) => _buildCard(n)),
+          const SizedBox(height: 24),
+        ],
+        if (_notifications.any((n) => n['category'] == 'Earlier')) ...[
+          const Text('Earlier', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+          const SizedBox(height: 12),
+          ..._notifications.where((n) => n['category'] == 'Earlier').map((n) => _buildCard(n)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCard(Map<String, dynamic> n) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: n['isUnread'] ? const Color(0xFF2563EB).withOpacity(0.1) : Colors.transparent),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -144,12 +219,12 @@ class NotificationsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconBg,
+              color: n['iconBg'],
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(n['icon'], color: n['iconColor'], size: 22),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -160,41 +235,20 @@ class NotificationsScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF1E293B),
-                      ),
+                      n['title'],
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
                     ),
-                    if (isUnread)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.orange,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                    if (n['isUnread'])
+                      const CircleAvatar(radius: 4, backgroundColor: Color(0xFF2563EB)),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  description,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
+                  n['description'],
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 12,
-                  ),
-                ),
+                Text(n['time'], style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
               ],
             ),
           ),

@@ -6,10 +6,19 @@ import 'booking_history_screen.dart';
 import 'pet_profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
+import 'edit_profile_screen.dart';
 import '../widgets/owner_drawer.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _pushNotifications = true;
+  bool _darkMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -61,10 +70,40 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 45,
-                    backgroundColor: Color(0xFFF1F5F9),
-                    child: Icon(Icons.person, size: 50, color: Color(0xFF94A3B8)),
+                  Stack(
+                    children: [
+                      const CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Color(0xFFF1F5F9),
+                        child: Icon(Icons.person, size: 55, color: Color(0xFF94A3B8)),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const EditProfileScreen(
+                                  currentName: 'John Smith',
+                                  currentEmail: 'owner@example.com',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: primaryBlue,
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                            ),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -84,7 +123,17 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen(
+                            currentName: 'John Smith',
+                            currentEmail: 'owner@example.com',
+                          ),
+                        ),
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFE2E8F0)),
                       shape: RoundedRectangleBorder(
@@ -153,14 +202,23 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(
+                    Icons.credit_card,
+                    'Payment Methods',
+                    subtitle: 'Visa **** 4242',
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildToggleItem(
                     Icons.notifications_none,
-                    'Notifications',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-                      );
-                    },
+                    'Push Notifications',
+                    _pushNotifications,
+                    (val) => setState(() => _pushNotifications = val),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildToggleItem(
+                    Icons.dark_mode_outlined,
+                    'Dark Mode',
+                    _darkMode,
+                    (val) => setState(() => _darkMode = val),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(Icons.security, 'Privacy & Security'),
@@ -225,20 +283,11 @@ class ProfileScreen extends StatelessWidget {
           showUnselectedLabels: true,
           onTap: (index) {
             if (index == 0) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
             } else if (index == 1) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
             } else if (index == 2) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
             } else if (index == 3) {
               // TODO: Navigate to Map Screen when built
             }
@@ -297,7 +346,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, {VoidCallback? onTap}) {
+  Widget _buildSettingItem(IconData icon, String title, {String? subtitle, VoidCallback? onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -314,8 +363,32 @@ class ProfileScreen extends StatelessWidget {
           color: Color(0xFF1E293B),
         ),
       ),
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
       trailing: const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildToggleItem(IconData icon, String title, bool value, ValueChanged<bool> onChanged) {
+    return SwitchListTile(
+      secondary: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: const Color(0xFF64748B), size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF1E293B),
+        ),
+      ),
+      activeColor: const Color(0xFF2563EB),
+      value: value,
+      onChanged: onChanged,
     );
   }
 }

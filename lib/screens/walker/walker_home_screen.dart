@@ -17,9 +17,44 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   // // Gets the current user's ID
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final DateTime _presentDay = DateTime.now();
-  late final DateTime today = DateTime(_presentDay.year, _presentDay.month, _presentDay.day,);
+  late final DateTime _weekFromNow = _presentDay.add(const Duration(days: 7));
+  late final String _endDateStr = DateFormat('yyyy-MM-dd').format(_weekFromNow);
   bool _isTimedOut = false;
 
+  Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
+    if (uid == null) return;
+
+    DateTime now = DateTime.now();
+
+    // Get last reset dates from Firestore (or use current time if they don't exist)
+    DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
+    DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
+    DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
+
+    Map<String, dynamic> updates = {};
+
+    // RESET DAILY: If calendar day changed
+    if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
+      updates['todayEarnings'] = 0.0;
+      updates['lastResetDaily'] = FieldValue.serverTimestamp();
+    }
+
+    // RESET WEEKLY: If today is Monday and we haven't reset yet today
+    if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
+      updates['weeklyEarnings'] = 0.0;
+      updates['lastResetWeekly'] = FieldValue.serverTimestamp();
+    }
+
+    // RESET MONTHLY: If month changed
+    if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
+      updates['monthEarnings'] = 0.0;
+      updates['lastResetMonthly'] = FieldValue.serverTimestamp();
+    }
+
+    if (updates.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
+    }
+  }
   @override
   void initState() {
     super.initState();
@@ -37,13 +72,13 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           String? name = uid;
-          String? todayEarnings = '0';
-          String? weeklyEarnings = '0';
+          double? todayEarnings = 0;
+          double? weeklyEarnings = 0;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
             name = data['name'] ?? 'Guest';
-            todayEarnings = data['todayEarnings'] ?? '0';
-            weeklyEarnings = data['weeklyEarnings'] ?? '0';
+            todayEarnings = data['todayEarnings'] ?? 0;
+            weeklyEarnings = data['weeklyEarnings'] ?? 0;
           }
           return Scaffold(
             appBar: AppBar(
@@ -134,7 +169,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       stream: FirebaseFirestore.instance.collection('requests')
                           .where('walkerID', isEqualTo: uid) // Ensure 'uid' is defined in your widget
                           .where('status', isEqualTo: 'accepted')
-                          .where('date', isGreaterThanOrEqualTo: today)
+                          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                          .where('date', isLessThanOrEqualTo: _endDateStr) // Filter for the week ahead
                           .orderBy('date')
                           .snapshots(),
                       builder: (context, snapshot) {
@@ -231,23 +267,24 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             .where('walkerID', isEqualTo: uid)
                             .where('status', isEqualTo: 'pending')
                             .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
+                            .orderBy('date')
                             .snapshots(),
                         builder: (context, snapshot) {
-                        int requestCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                        return Row(
-                          children: [
-                            const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
-                            const SizedBox(width: 8),
-                            // Only show the red circle if there are 1 or more requests
-                            if (requestCount > 0)
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle,),
-                                child: Text("$requestCount", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,),),
-                            ),
-                          ],
-                        );
-                      },
+                          int requestCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                          return Row(
+                            children: [
+                              const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
+                              const SizedBox(width: 8),
+                              // Only show the red circle if there are 1 or more requests
+                              if (requestCount > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle,),
+                                  child: Text("$requestCount", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,),),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 10,),
                       // Request Card
@@ -258,24 +295,19 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             .where('status', isEqualTo: 'pending')
                             .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
                             .orderBy('date')
-                            .limit(3) // This correctly limits the query to 3 items
+                            .limit(3)
                             .snapshots(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) {
                             return const Center(child: CircularProgressIndicator());
                           }
-
                           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                             return const Center(child: Text('No Upcoming Requests'));
                           }
-
-                          // 1. Get the list of documents
                           final docs = snapshot.data!.docs;
-
-                          // 2. Return a ListView to show all 3 items
                           return ListView.separated(
                             shrinkWrap: true, // Use this if it's inside another Column/Scrollview
-                            physics: const NeverScrollableScrollPhysics(), // Optional: if parent handles scrolling
+                            physics: const NeverScrollableScrollPhysics(),
                             itemCount: docs.length,
                             separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
@@ -329,6 +361,13 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                             onPressed: () {
                                               // Update status to 'declined' in Firebase
                                               doc.reference.update({'status': 'declined'});
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Request Declined! Pet: ${data['petName']}\nOwner: ${data['ownerName']}"),
+                                                  backgroundColor: Colors.red,
+                                                  duration: Duration(seconds: 3),
+                                                ),
+                                              );
                                             },
                                             icon: const Icon(Icons.close, size: 18, color: Colors.black),
                                             label: const Text("Decline", style: TextStyle(color: Colors.black)),
@@ -344,8 +383,14 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         Expanded(
                                           child: ElevatedButton.icon(
                                             onPressed: () {
-                                              // Update status to 'accepted' in Firebase
                                               doc.reference.update({'status': 'accepted'});
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Request Accepted! Pet: ${data['petName']}\nOwner: ${data['ownerName']}"),
+                                                  backgroundColor: Colors.green,
+                                                  duration: Duration(seconds: 3),
+                                                ),
+                                              );
                                             },
                                             icon: const Icon(Icons.check, size: 18, color: Colors.white),
                                             label: const Text("Accept", style: TextStyle(color: Colors.white)),

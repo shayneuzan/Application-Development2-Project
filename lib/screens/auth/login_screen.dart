@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pawwalk/screens/walker/walker_home_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'email_verification_screen.dart';
@@ -93,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // }
 
         // TODO: Replace with WalkerHomeScreen() when built
-          _goTo(EmailVerificationScreen(destination: LoginScreen()));
+          _goTo(EmailVerificationScreen(destination: WalkerHomeScreen()));
           break;
         case 'admin':
           // TODO: Replace with AdminDashboardScreen() when built

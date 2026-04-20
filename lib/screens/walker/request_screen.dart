@@ -160,6 +160,13 @@ class _RequestScreenState extends State<RequestScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: () {
                                     doc.reference.update({'status': 'declined'});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Request Declined! Pet: $petName}\nOwner: $ownerName"),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 3),
+                                      ),
+                                    );
                                   },
                                   icon: const Icon(Icons.close, size: 18, color: Colors.black),
                                   label: const Text("Decline", style: TextStyle(color: Colors.black)),
@@ -176,6 +183,13 @@ class _RequestScreenState extends State<RequestScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: () {
                                     doc.reference.update({'status': 'accepted'});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Request Accepted! Pet: $petName}\nOwner: $ownerName"),
+                                        backgroundColor: Colors.green,
+                                        duration: Duration(seconds: 3),
+                                      ),
+                                    );
                                   },
                                   icon: const Icon(Icons.check, size: 18, color: Colors.white),
                                   label: const Text("Accept", style: TextStyle(color: Colors.white)),

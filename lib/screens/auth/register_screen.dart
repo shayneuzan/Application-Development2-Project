@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../owner/owner_home_screen.dart';
 import '../walker/walker_home_screen.dart';
-import 'login_screen.dart';
+import 'email_verification_screen.dart';
 
 // ─────────────────────────────────────────────────────────
 // REGISTER SCREEN
@@ -33,6 +33,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hideConfirm      = true;
   String _selectedRole   = 'owner'; // default role is Pet Owner
   String _errorMessage   = '';
+
+  String _getDayName(int day) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[day - 1];
+  }
+
+  // To Prevent Memory Leaks
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
 
   // ── Main register function ─────────────────────────────
   Future<void> _register() async {
@@ -99,9 +114,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
       print("User Profile created successfully");
 
-
-      //Go to Login after successful registration
-      _goTo(LoginScreen());
+      if (_selectedRole == 'walker') {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(result.user!.uid)
+            .collection('earnings')
+            .add({
+          'amount': 0.0,
+          'date': FieldValue.serverTimestamp(),
+          'dayOfWeek': _getDayName(DateTime.now().weekday),
+          'experience': 'N/A',
+          'hourlyRate': '12',
+          'todayEarnings': 0.0,
+          'weeklyEarnings': 0.0,
+          'monthEarnings': 0.0,
+        });
+      }
+      // Go directly to Verification Screen instead of forcing them to log in again
+      Widget destination = _selectedRole == 'walker' ? WalkerHomeScreen() : OwnerHomeScreen();
+      _goTo(EmailVerificationScreen(destination: destination));
 
     } on FirebaseAuthException catch (e) {
       String message = 'An error occurred. Please try again.';

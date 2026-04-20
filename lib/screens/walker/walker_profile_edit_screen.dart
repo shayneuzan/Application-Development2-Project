@@ -14,29 +14,46 @@ class ProfileEditScreen extends StatefulWidget {
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _bioController = TextEditingController();
+  final TextEditingController _hourlyRateController = TextEditingController();
+  final TextEditingController _experienceController = TextEditingController();
+
+  // Implement dispose() to clean up memory
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _bioController.dispose();
+    _hourlyRateController.dispose();
+    _experienceController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController bioController = TextEditingController();
-    final TextEditingController hourlyRateController = TextEditingController();
-    final TextEditingController experienceController = TextEditingController();
-
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           String name = 'Guest';
           String email = 'No Email';
           String bio = 'No Bio';
+          String hourlyRate = '';
+          String experience = '';
 
           if (snapshot.hasData && snapshot.data!.exists) {
             var data = snapshot.data!.data() as Map<String, dynamic>;
             name = data['name'] ?? 'Guest';
             email = data['email'] ?? 'No Email';
             bio = data['bio'] ?? 'No Bio';
+            hourlyRate = (data['hourlyRate'] ?? '').toString();
+            experience = data['experience'] ?? '';
 
-            // Set text only if the user isn't currently typing
-            if (nameController.text.isEmpty) nameController.text = name;
-            if (bioController.text.isEmpty) bioController.text = bio;
+            // 3. Set initial text only if the user hasn't started typing yet
+            if (_nameController.text.isEmpty) _nameController.text = name;
+            if (_bioController.text.isEmpty) _bioController.text = bio;
+            if (_hourlyRateController.text.isEmpty) _hourlyRateController.text = hourlyRate;
+            if (_experienceController.text.isEmpty) _experienceController.text = experience;
           }
 
           return Scaffold(
@@ -87,7 +104,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               const Text('Full Name:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
                               const SizedBox(height: 12),
                               TextField(
-                                controller: nameController,
+                                controller: _nameController,
                                 decoration: const InputDecoration(
                                   hintText: 'Enter your name',
                                   prefixIcon: Icon(Icons.edit, size: 20),
@@ -113,7 +130,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             const Text('Full Bio:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
                             const SizedBox(height: 8),
                             TextField(
-                              controller: bioController,
+                              controller: _bioController,
                               maxLines: 4,
                               decoration: const InputDecoration(
                                 hintText: 'Tell us about yourself',
@@ -139,7 +156,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             const Text('Hourly Rate:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
                             const SizedBox(height: 12),
                             TextField(
-                              controller: hourlyRateController,
+                              controller: _hourlyRateController,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
                                 //label: Text("Hourly Rate"),
@@ -169,7 +186,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             const Text('Experience:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
                             const SizedBox(height: 12),
                             TextField(
-                              controller: experienceController,
+                              controller: _experienceController,
                               decoration: InputDecoration(
                                 //label: Text("Experience"),
                                 border: OutlineInputBorder(),
@@ -190,10 +207,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (nameController.text.isEmpty || bioController.text.isEmpty || hourlyRateController.text.isEmpty || experienceController.text.isEmpty) {
+                          if (_nameController.text.isEmpty || _bioController.text.isEmpty || _hourlyRateController.text.isEmpty || _experienceController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all fields.")),);
                             throw 'ERROR: One or more fields is empty. Fill them up!';
-                          } else if (hourlyRateController.text == '0') {
+                          } else if (_hourlyRateController.text == '0') {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Hourly Rate must be greater than \$0.")),);
                             throw 'ERROR: One or more fields is empty. Fill them up!';
                           }
@@ -201,10 +218,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               .collection('users')
                               .doc(uid)
                               .update({
-                            'name': nameController.text,
-                            'bio': bioController.text,
-                            'hourlyRate': hourlyRateController.text,
-                            'experience': experienceController.text,
+                            'name': _nameController.text,
+                            'bio': _bioController.text,
+                            'hourlyRate': _hourlyRateController.text,
+                            'experience': _experienceController.text,
                             'updatedAt': FieldValue.serverTimestamp(),
                           });
                           ScaffoldMessenger.of(context).showSnackBar(

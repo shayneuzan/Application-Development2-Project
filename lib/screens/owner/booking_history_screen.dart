@@ -47,6 +47,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       'duration': '30 min',
       'price': '\$15',
       'status': 'Completed',
+      'rating': 5.0,
     },
   ];
 
@@ -127,7 +128,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           boxShadow: isUpcomingSelected
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -156,7 +157,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           boxShadow: !isUpcomingSelected
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -195,7 +196,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -273,6 +274,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         price: b['price'],
         status: b['status'],
         isUpcoming: false,
+        rating: b['rating'],
       )).toList(),
     );
   }
@@ -311,14 +313,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryBlue, primaryBlue.withOpacity(0.8)],
+          colors: [primaryBlue, primaryBlue.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(0.3),
+            color: primaryBlue.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -392,6 +394,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     required String price,
     required String status,
     required bool isUpcoming,
+    double? rating,
   }) {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
@@ -420,7 +423,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -453,6 +456,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         'with $dogs',
                         style: const TextStyle(color: textLight, fontSize: 13),
                       ),
+                      if (!isUpcoming && rating != null)
+                        Row(
+                          children: List.generate(5, (index) {
+                            return Icon(
+                              index < rating ? Icons.star : Icons.star_border,
+                              color: Colors.orange,
+                              size: 14,
+                            );
+                          }),
+                        ),
                     ],
                   ),
                 ),

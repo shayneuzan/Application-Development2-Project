@@ -6,6 +6,7 @@ import '../owner/profile_screen.dart';
 import '../owner/pet_profile_screen.dart';
 import '../owner/notifications_screen.dart';
 import '../owner/browse_walkers_list_screen.dart';
+import '../owner/settings_screen.dart';
 import '../auth/login_screen.dart';
 
 class OwnerDrawer extends StatelessWidget {
@@ -112,6 +113,19 @@ class OwnerDrawer extends StatelessWidget {
                   title: 'Profile',
                   isSelected: currentPage == 'Profile',
                   onTap: () => _navigateTo(context, const ProfileScreen()),
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Settings',
+                  isSelected: currentPage == 'Settings',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    );
+                  },
                 ),
               ],
             ),

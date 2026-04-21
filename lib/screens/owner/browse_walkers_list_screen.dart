@@ -6,14 +6,75 @@ import 'notifications_screen.dart';
 import 'walker_profile_screen.dart';
 import '../widgets/owner_drawer.dart';
 
-class BrowseWalkersListScreen extends StatelessWidget {
-  const BrowseWalkersListScreen({super.key});
+class BrowseWalkersListScreen extends StatefulWidget {
+  final bool showFavoritesOnly;
+
+  const BrowseWalkersListScreen({super.key, this.showFavoritesOnly = false});
+
+  @override
+  State<BrowseWalkersListScreen> createState() => _BrowseWalkersListScreenState();
+}
+
+class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
+  late bool _isShowingFavorites;
+  
+  // Placeholder list of walkers with favorite status
+  final List<Map<String, dynamic>> _allWalkers = [
+    {
+      'name': 'Sarah Johnson',
+      'initials': 'SJ',
+      'walksCount': 342,
+      'rating': 4.9,
+      'price': 25,
+      'isFavorite': true,
+    },
+    {
+      'name': 'Mike Chen',
+      'initials': 'MC',
+      'walksCount': 256,
+      'rating': 4.8,
+      'price': 30,
+      'isFavorite': true,
+    },
+    {
+      'name': 'Emily Davis',
+      'initials': 'ED',
+      'walksCount': 189,
+      'rating': 5.0,
+      'price': 28,
+      'isFavorite': false,
+    },
+    {
+      'name': 'James Wilson',
+      'initials': 'JW',
+      'walksCount': 128,
+      'rating': 4.7,
+      'price': 22,
+      'isFavorite': false,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _isShowingFavorites = widget.showFavoritesOnly;
+  }
+
+  void _toggleFavorite(int index) {
+    setState(() {
+      _allWalkers[index]['isFavorite'] = !(_allWalkers[index]['isFavorite'] as bool);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
+
+    final List<Map<String, dynamic>> displayedWalkers = _isShowingFavorites
+        ? _allWalkers.where((w) => w['isFavorite'] == true).toList()
+        : _allWalkers;
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -27,9 +88,9 @@ class BrowseWalkersListScreen extends StatelessWidget {
           icon: const Icon(Icons.menu, color: Colors.white),
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          'Find Walkers',
-          style: TextStyle(
+        title: Text(
+          _isShowingFavorites ? 'Favorite Walkers' : 'Find Walkers',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -53,52 +114,88 @@ class BrowseWalkersListScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Map Visualization Placeholder
-            Container(
-              height: 180,
-              width: double.infinity,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEDD5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
+            if (!_isShowingFavorites)
+              Container(
+                height: 180,
+                width: double.infinity,
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFEDD5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
+                        ),
                       ),
                     ),
+                    const Positioned(top: 40, left: 100, child: _MapDot()),
+                    const Positioned(top: 100, left: 60, child: _MapDot()),
+                    const Positioned(top: 60, right: 80, child: _MapDot()),
+                    const Positioned(top: 30, right: 40, child: _MapDot()),
+                    
+                    Positioned(
+                      bottom: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.location_on, color: Colors.orange, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              '4 walkers nearby',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
+                    ),
                   ),
-                  const Positioned(top: 40, left: 100, child: _MapDot()),
-                  const Positioned(top: 100, left: 60, child: _MapDot()),
-                  const Positioned(top: 60, right: 80, child: _MapDot()),
-                  const Positioned(top: 30, right: 40, child: _MapDot()),
-                  
-                  Positioned(
-                    bottom: 12,
-                    left: 12,
+                  GestureDetector(
+                    onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        color: _isShowingFavorites ? primaryBlue : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: primaryBlue),
                       ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.location_on, color: Colors.orange, size: 14),
-                          SizedBox(width: 4),
-                          Text(
-                            '4 walkers nearby',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
-                          ),
-                        ],
+                      child: Text(
+                        _isShowingFavorites ? 'Show All' : 'Show Favorites',
+                        style: TextStyle(
+                          color: _isShowingFavorites ? Colors.white : primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -106,57 +203,45 @@ class BrowseWalkersListScreen extends StatelessWidget {
               ),
             ),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Text(
-                'Available Walkers',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
+            if (displayedWalkers.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: Column(
+                    children: [
+                      Icon(Icons.favorite_border, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No favorites yet!',
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: displayedWalkers.length,
+                itemBuilder: (context, index) {
+                  final walker = displayedWalkers[index];
+                  // Find real index in _allWalkers to support toggling correctly
+                  int realIndex = _allWalkers.indexWhere((w) => w['name'] == walker['name']);
+                  
+                  return _buildWalkerCard(
+                    context,
+                    index: realIndex,
+                    name: walker['name'],
+                    initials: walker['initials'],
+                    walksCount: walker['walksCount'],
+                    rating: walker['rating'],
+                    price: walker['price'],
+                    isFavorite: walker['isFavorite'],
+                  );
+                },
               ),
-            ),
-
-            ListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildWalkerCard(
-                  context,
-                  name: 'Sarah Johnson',
-                  initials: 'SJ',
-                  walksCount: 342,
-                  rating: 4.9,
-                  price: 25,
-                ),
-                _buildWalkerCard(
-                  context,
-                  name: 'Mike Chen',
-                  initials: 'MC',
-                  walksCount: 256,
-                  rating: 4.8,
-                  price: 30,
-                ),
-                _buildWalkerCard(
-                  context,
-                  name: 'Emily Davis',
-                  initials: 'ED',
-                  walksCount: 189,
-                  rating: 5.0,
-                  price: 28,
-                ),
-                _buildWalkerCard(
-                  context,
-                  name: 'James Wilson',
-                  initials: 'JW',
-                  walksCount: 128,
-                  rating: 4.7,
-                  price: 22,
-                ),
-              ],
-            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -200,11 +285,13 @@ class BrowseWalkersListScreen extends StatelessWidget {
 
   Widget _buildWalkerCard(
     BuildContext context, {
+    required int index,
     required String name,
     required String initials,
     required int walksCount,
     required double rating,
     required int price,
+    required bool isFavorite,
   }) {
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
@@ -239,87 +326,104 @@ class BrowseWalkersListScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
+        child: Stack(
           children: [
-            Row(
+            Column(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: const Color(0xFFFFEDD5),
-                  child: Text(
-                    initials,
-                    style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: const Color(0xFFFFEDD5),
+                      child: Text(
+                        initials,
+                        style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            name,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
-                          ),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Icon(Icons.star, color: Colors.orange, size: 18),
-                              const SizedBox(width: 4),
                               Text(
-                                rating.toString(),
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                                name,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                              ),
+                              Row(
+                                children: [
+                                  const Icon(Icons.star, color: Colors.orange, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    rating.toString(),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '$walksCount walks completed',
+                            style: const TextStyle(color: textLight, fontSize: 14),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '\$ $price/hr',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => WalkerProfileScreen(
+                                        name: name,
+                                        initials: initials,
+                                        rating: rating,
+                                        walksCount: walksCount,
+                                        price: price,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryBlue,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      Text(
-                        '$walksCount walks completed',
-                        style: const TextStyle(color: textLight, fontSize: 14),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '\$ $price/hr',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange,
-                            ),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => WalkerProfileScreen(
-                                    name: name,
-                                    initials: initials,
-                                    rating: rating,
-                                    walksCount: walksCount,
-                                    price: price,
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryBlue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              elevation: 0,
-                            ),
-                            child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
+            ),
+            // Favorite Heart Icon - Now Clickable
+            Positioned(
+              top: 0,
+              left: 0,
+              child: GestureDetector(
+                onTap: () => _toggleFavorite(index),
+                child: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.red,
+                  size: 24,
+                ),
+              ),
             ),
           ],
         ),

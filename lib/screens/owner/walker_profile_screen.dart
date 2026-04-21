@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'booking_screen.dart';
+import 'all_reviews_screen.dart';
 
-class WalkerProfileScreen extends StatelessWidget {
+class WalkerProfileScreen extends StatefulWidget {
   final String name;
   final String initials;
   final double rating;
@@ -18,6 +19,13 @@ class WalkerProfileScreen extends StatelessWidget {
   });
 
   @override
+  State<WalkerProfileScreen> createState() => _WalkerProfileScreenState();
+}
+
+class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
+  bool _showReviews = false;
+
+  @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
@@ -30,7 +38,7 @@ class WalkerProfileScreen extends StatelessWidget {
         slivers: [
           // Custom App Bar with Profile Image/Initials
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 260,
             pinned: true,
             backgroundColor: primaryBlue,
             leading: IconButton(
@@ -42,12 +50,12 @@ class WalkerProfileScreen extends StatelessWidget {
                 color: primaryBlue,
                 child: Center(
                   child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                    radius: 50,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
                     child: Text(
-                      initials,
+                      widget.initials,
                       style: const TextStyle(
-                        fontSize: 48,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -60,7 +68,7 @@ class WalkerProfileScreen extends StatelessWidget {
 
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -79,7 +87,7 @@ class WalkerProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            name,
+                            widget.name,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -94,7 +102,7 @@ class WalkerProfileScreen extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        '\$$price/hr',
+                        '\$${widget.price}/hr',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -110,76 +118,78 @@ class WalkerProfileScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatColumn('Rating', rating.toString(), Icons.star, Colors.orange),
-                      _buildStatColumn('Walks', walksCount.toString(), Icons.pets, primaryBlue),
+                      _buildStatColumn('Rating', widget.rating.toString(), Icons.star, Colors.orange),
+                      _buildStatColumn('Walks', widget.walksCount.toString(), Icons.pets, primaryBlue),
                       _buildStatColumn('Experience', '3 years', Icons.timer, Colors.green),
                     ],
                   ),
 
                   const SizedBox(height: 32),
 
-                  // About Section
-                  const Text(
-                    'About',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
+                  // Toggle Section (About vs Reviews)
+                  Container(
+                    height: 50,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'I am a passionate dog lover with over 3 years of experience walking dogs of all sizes and temperaments. I ensure your furry friend gets the exercise and attention they need while you are away.',
-                    style: TextStyle(color: textLight, fontSize: 15, height: 1.5),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Services Section
-                  const Text(
-                    'Services Included',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildServiceChip('GPS Tracking'),
-                      _buildServiceChip('Photo Updates'),
-                      _buildServiceChip('Feeding'),
-                      _buildServiceChip('Fresh Water'),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Reviews Preview
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Reviews',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _showReviews = false),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: !_showReviews ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: !_showReviews 
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : [],
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'About',
+                                style: TextStyle(
+                                  color: !_showReviews ? primaryBlue : textLight,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('See All', style: TextStyle(color: primaryBlue)),
-                      ),
-                    ],
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _showReviews = true),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: _showReviews ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: _showReviews 
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : [],
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Reviews',
+                                style: TextStyle(
+                                  color: _showReviews ? primaryBlue : textLight,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  _buildReviewItem(
-                    'John Doe',
-                    'Sarah is amazing! My dog Max loves her and always comes back happy.',
-                    5.0,
+
+                  const SizedBox(height: 24),
+
+                  // Dynamic Content Area
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: _showReviews ? _buildReviewsList() : _buildAboutSection(),
                   ),
                   
                   const SizedBox(height: 100), // Space for bottom button
@@ -195,7 +205,7 @@ class WalkerProfileScreen extends StatelessWidget {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -210,8 +220,8 @@ class WalkerProfileScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => BookingScreen(
-                    walkerName: name,
-                    hourlyRate: price,
+                    walkerName: widget.name,
+                    hourlyRate: widget.price,
                   ),
                 ),
               );
@@ -231,6 +241,81 @@ class WalkerProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    const textDark = Color(0xFF1E293B);
+    const textLight = Color(0xFF64748B);
+
+    return Column(
+      key: const ValueKey('about'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'About',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'I am a passionate dog lover with over 3 years of experience walking dogs of all sizes and temperaments. I ensure your furry friend gets the exercise and attention they need while you are away.',
+          style: TextStyle(color: textLight, fontSize: 15, height: 1.5),
+        ),
+        const SizedBox(height: 32),
+        const Text(
+          'Services Included',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildServiceChip('GPS Tracking'),
+            _buildServiceChip('Photo Updates'),
+            _buildServiceChip('Feeding'),
+            _buildServiceChip('Fresh Water'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewsList() {
+    const primaryBlue = Color(0xFF2563EB);
+    
+    return Column(
+      key: const ValueKey('reviews'),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Reviews',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AllReviewsScreen(walkerName: widget.name)),
+                );
+              },
+              child: const Text('See All', style: TextStyle(color: primaryBlue)),
+            ),
+          ],
+        ),
+        _buildReviewItem(
+          'John Doe',
+          'Sarah is amazing! My dog Max loves her and always comes back happy.',
+          5.0,
+        ),
+        _buildReviewItem(
+          'Emily Wilson',
+          'Very professional and punctual. Max seemed to have a great time.',
+          4.5,
+        ),
+      ],
     );
   }
 

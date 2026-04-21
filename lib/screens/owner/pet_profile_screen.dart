@@ -5,6 +5,7 @@ import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'add_pet_screen.dart';
+import 'edit_pet_screen.dart';
 import '../widgets/owner_drawer.dart';
 
 class PetProfileScreen extends StatefulWidget {
@@ -31,6 +32,34 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
       'instructions': 'Needs water breaks every 15 minutes'
     },
   ];
+
+  void _showDeleteDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pet'),
+        content: Text('Are you sure you want to delete ${pets[index]['name']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                pets.removeAt(index);
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pet deleted successfully')),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +157,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: pets.length,
               itemBuilder: (context, index) {
-                return _buildPetCard(pets[index]);
+                return _buildPetCard(index);
               },
             ),
           ],
@@ -177,7 +206,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     );
   }
 
-  Widget _buildPetCard(Map<String, String> pet) {
+  Widget _buildPetCard(int index) {
+    final pet = pets[index];
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
@@ -233,11 +263,18 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: textLight, size: 20),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditPetScreen(pet: pet),
+                          ),
+                        );
+                      },
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                      onPressed: () {},
+                      onPressed: () => _showDeleteDialog(index),
                     ),
                   ],
                 ),

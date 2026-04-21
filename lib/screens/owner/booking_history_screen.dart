@@ -3,6 +3,9 @@ import 'owner_home_screen.dart';
 import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'notifications_screen.dart';
+import 'schedule_screen.dart';
+import 'review_screen.dart';
+import 'booking_screen.dart';
 import '../widgets/owner_drawer.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
@@ -50,6 +53,34 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       'rating': 5.0,
     },
   ];
+
+  void _showCancelDialog(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Booking'),
+        content: const Text('Are you sure you want to cancel this booking? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No, Keep It'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _upcomingBookings.removeAt(index);
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Booking cancelled successfully')),
+              );
+            },
+            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,19 +271,23 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       key: const ValueKey('upcoming'),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       children: [
-        // Active Walk Polish
+        // Active Walk Card
         _buildActiveWalkCard(),
         const SizedBox(height: 8),
-        ..._upcomingBookings.map((b) => _buildBookingCard(
-          walkerName: b['walkerName'],
-          dogs: b['dogs'],
-          date: b['date'],
-          time: b['time'],
-          duration: b['duration'],
-          price: b['price'],
-          status: b['status'],
-          isUpcoming: true,
-        )),
+        ...List.generate(_upcomingBookings.length, (index) {
+          final b = _upcomingBookings[index];
+          return _buildBookingCard(
+            index: index,
+            walkerName: b['walkerName'],
+            dogs: b['dogs'],
+            date: b['date'],
+            time: b['time'],
+            duration: b['duration'],
+            price: b['price'],
+            status: b['status'],
+            isUpcoming: true,
+          );
+        }),
       ],
     );
   }
@@ -265,17 +300,21 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     return ListView(
       key: const ValueKey('past'),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: _pastBookings.map((b) => _buildBookingCard(
-        walkerName: b['walkerName'],
-        dogs: b['dogs'],
-        date: b['date'],
-        time: b['time'],
-        duration: b['duration'],
-        price: b['price'],
-        status: b['status'],
-        isUpcoming: false,
-        rating: b['rating'],
-      )).toList(),
+      children: List.generate(_pastBookings.length, (index) {
+        final b = _pastBookings[index];
+        return _buildBookingCard(
+          index: index,
+          walkerName: b['walkerName'],
+          dogs: b['dogs'],
+          date: b['date'],
+          time: b['time'],
+          duration: b['duration'],
+          price: b['price'],
+          status: b['status'],
+          isUpcoming: false,
+          rating: b['rating'],
+        );
+      }),
     );
   }
 
@@ -386,6 +425,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   Widget _buildBookingCard({
+    required int index,
     required String walkerName,
     required String dogs,
     required String date,
@@ -509,18 +549,52 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textDark),
                 ),
                 if (isUpcoming)
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Cancel Booking',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                    ),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          // Navigate to Schedule Screen to edit
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ScheduleScreen(
+                                walkerName: walkerName,
+                                hourlyRate: 25, // Placeholder
+                                selectedPet: dogs,
+                                selectedDuration: int.parse(duration.split(' ')[0]),
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Edit',
+                          style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _showCancelDialog(index),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   )
                 else
                   Row(
                     children: [
                       OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewScreen(
+                                walkerName: walkerName,
+                                dogName: dogs,
+                              ),
+                            ),
+                          );
+                        },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -530,7 +604,15 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          // TODO: Navigate to Booking Screen with this walker
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookingScreen(
+                                walkerName: walkerName,
+                                hourlyRate: 30, // Placeholder using Mike Chen's rate from mockup
+                              ),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),

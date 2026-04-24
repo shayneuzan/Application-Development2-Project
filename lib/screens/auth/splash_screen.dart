@@ -99,8 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //Dark navy background
-      backgroundColor: Color(0xFF1E3A5F),
+      backgroundColor: Color(0xFF7C2D12),
 
       body: Center(
         //AnimatedOpacity fades the content IN when the screen opens
@@ -117,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Color(0xFF2563EB),
+                  color: Color(0xFFF97316),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Icon(Icons.pets, size: 65, color: Colors.white),
@@ -148,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
               //Loading spinner
               CircularProgressIndicator(
-                color: Color(0xFF2563EB),
+                color: Color(0xFFF97316),
                 strokeWidth: 2.5,
               ),
             ],

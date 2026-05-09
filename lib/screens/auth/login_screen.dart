@@ -69,41 +69,54 @@ class _LoginScreenState extends State<LoginScreen> {
         role = doc.data()!['role'];
       }
 
-      //send verification email
-      try {
-        await result.user!.sendEmailVerification();
-        print('VERIFICATION EMAIL SENT SUCCESSFULLY');
-      } catch (e) {
-        print('VERIFICATION EMAIL ERROR: $e');
-      }
-
       //Go to the right screen based on role
       switch (role) {
         case 'walker':
-          // final status     = doc.data()!['status'] ?? 'pending';
-          // final isApproved = doc.data()!['isApproved'] ?? false; //get the isApproved value from Firestore, if it doesn’t exist assume it’s false
+          // final status     = doc.data()![‘status’] ?? ‘pending’;
+          // final isApproved = doc.data()![‘isApproved’] ?? false; //get the isApproved value from Firestore, if it doesn’t exist assume it’s false
           //
-          // if (status == 'suspended') {
+          // if (status == ‘suspended’) {
           //   // Sign out and show suspended message
           //   await FirebaseAuth.instance.signOut();
           //   setState(() {
-          //     _errorMessage = 'Your account has been suspended. Contact support.';
+          //     _errorMessage = ‘Your account has been suspended. Contact support.’;
           //     _isSigningIn  = false;
           //   });
           //   return;
           // }
 
-        // TODO: Replace with WalkerHomeScreen() when built
-          _goTo(EmailVerificationScreen(destination: WalkerHomeScreen()));
+          // Already verified so skip the verification screen and go straight to the portal
+          if (result.user!.emailVerified) {
+            _goTo(WalkerHomeScreen());
+          } else {
+            // Not verified yet so send them the link and take them to the verification screen
+            try {
+              await result.user!.sendEmailVerification();
+              print('VERIFICATION EMAIL SENT SUCCESSFULLY');
+            } catch (e) {
+              print('VERIFICATION EMAIL ERROR: $e');
+            }
+            _goTo(EmailVerificationScreen(destination: WalkerHomeScreen()));
+          }
           break;
         case 'admin':
-          // TODO: Replace with AdminDashboardScreen() when built
           _goTo(AdminDashboardScreen());
           break;
         default:
           // Pet owner
-          // TODO: Replace with OwnerHomeScreen() when built
-          _goTo(EmailVerificationScreen(destination: OwnerHomeScreen()));
+          // Already verified so skip the verification screen and go straight to the portal
+          if (result.user!.emailVerified) {
+            _goTo(OwnerHomeScreen());
+          } else {
+            // Not verified yet so send them the link and take them to the verification screen
+            try {
+              await result.user!.sendEmailVerification();
+              print('VERIFICATION EMAIL SENT SUCCESSFULLY');
+            } catch (e) {
+              print('VERIFICATION EMAIL ERROR: $e');
+            }
+            _goTo(EmailVerificationScreen(destination: OwnerHomeScreen()));
+          }
       }
 
     } catch (e) {
@@ -116,20 +129,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-  //Navigate with a fade animation to the next screen
   void _goTo(Widget screen) {
     Navigator.pushReplacement(
       context,
-      PageRouteBuilder(//lets you customize the animation instead of direct screen switch
-        transitionDuration: Duration(milliseconds: 800), //fades in the to next screen over 800 ms
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-              opacity: animation,
-              child: child
-          );
-        },
-      ),
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 

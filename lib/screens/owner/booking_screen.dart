@@ -1,0 +1,337 @@
+import 'package:flutter/material.dart';
+import 'schedule_screen.dart';
+import 'add_pet_screen.dart';
+
+class BookingScreen extends StatefulWidget {
+  final String walkerName;
+  final int hourlyRate;
+
+  const BookingScreen({
+    super.key,
+    required this.walkerName,
+    required this.hourlyRate,
+  });
+
+  @override
+  State<BookingScreen> createState() => _BookingScreenState();
+}
+
+class _BookingScreenState extends State<BookingScreen> {
+  int _selectedDuration = 60; // Default 60 minutes
+  String? _selectedPet;
+  
+  // Placeholder pets
+  final List<Map<String, String>> _myPets = [
+    {'name': 'Max', 'breed': 'Golden Retriever'},
+    {'name': 'Bella', 'breed': 'French Bulldog'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    const primaryBlue = Color(0xFF2563EB);
+    const textDark = Color(0xFF1E293B);
+    const textLight = Color(0xFF64748B);
+    const backgroundGray = Color(0xFFF8FAFC);
+
+    double totalPrice = (widget.hourlyRate / 60) * _selectedDuration;
+
+    return Scaffold(
+      backgroundColor: backgroundGray,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: textDark),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Book a Walk',
+          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Walker Summary
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: Color(0xFFEFF6FF),
+                    child: Icon(Icons.person, color: primaryBlue),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.walkerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: textDark,
+                        ),
+                      ),
+                      Text(
+                        '\$${widget.hourlyRate}/hr',
+                        style: const TextStyle(color: textLight, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Select Pet Section
+            const Text(
+              'Select Pet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _myPets.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _myPets.length) {
+                    // Add Pet Button
+                    return _buildAddPetCard(context);
+                  }
+                  final pet = _myPets[index];
+                  bool isSelected = _selectedPet == pet['name'];
+                  return _buildPetCard(pet, isSelected);
+                },
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Duration Section
+            const Text(
+              'Walk Duration',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildDurationOption(30),
+                const SizedBox(width: 12),
+                _buildDurationOption(60),
+                const SizedBox(width: 12),
+                _buildDurationOption(90),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+
+            // Price Summary Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: primaryBlue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: primaryBlue.withOpacity(0.1)),
+              ),
+              child: Column(
+                children: [
+                  _buildSummaryRow('Base Rate', '\$${widget.hourlyRate}/hr'),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow('Duration', '$_selectedDuration min'),
+                  const Divider(height: 24),
+                  _buildSummaryRow(
+                    'Total Price',
+                    '\$${totalPrice.toStringAsFixed(2)}',
+                    isTotal: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: _selectedPet == null
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ScheduleScreen(
+                          walkerName: widget.walkerName,
+                          hourlyRate: widget.hourlyRate,
+                          selectedPet: _selectedPet!,
+                          selectedDuration: _selectedDuration,
+                        ),
+                      ),
+                    );
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryBlue,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: const Color(0xFFE2E8F0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Select Date & Time',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPetCard(Map<String, String> pet, bool isSelected) {
+    const primaryBlue = Color(0xFF2563EB);
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPet = pet['name']),
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryBlue : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.pets,
+              color: isSelected ? Colors.white : primaryBlue,
+              size: 30,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              pet['name']!,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+            Text(
+              pet['breed']!,
+              style: TextStyle(
+                fontSize: 10,
+                color: isSelected ? Colors.white70 : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddPetCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddPetScreen()),
+        );
+      },
+      child: Container(
+        width: 100,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_circle_outline, color: Color(0xFF64748B)),
+            SizedBox(height: 4),
+            Text(
+              'Add Pet',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDurationOption(int minutes) {
+    bool isSelected = _selectedDuration == minutes;
+    const primaryBlue = Color(0xFF2563EB);
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedDuration = minutes),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? primaryBlue : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              '$minutes min',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: FontWeight.bold,
+            color: isTotal ? const Color(0xFF2563EB) : const Color(0xFF1E293B),
+          ),
+        ),
+      ],
+    );
+  }
+}

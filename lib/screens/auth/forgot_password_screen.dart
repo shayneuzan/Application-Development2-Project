@@ -63,20 +63,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  //Navigate with a fade animation to the next screen
   void _goTo(Widget screen) {
     Navigator.pushReplacement(
       context,
-      PageRouteBuilder(//lets you customize the animation instead of direct screen switch
-        transitionDuration: Duration(milliseconds: 800), //fades in the to next screen over 800 ms
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-              opacity: animation,
-              child: child
-          );
-        },
-      ),
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 

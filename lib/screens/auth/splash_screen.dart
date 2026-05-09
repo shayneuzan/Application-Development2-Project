@@ -41,20 +41,10 @@ class _SplashScreenState extends State<SplashScreen> {
     });
   }
 
-  //Navigate with a fade animation to the next screen
   void _goTo(Widget screen) {
     Navigator.pushReplacement(
       context,
-      PageRouteBuilder(//lets you customize the animation instead of direct screen switch
-        transitionDuration: Duration(milliseconds: 800), //fades in the to next screen over 800 ms
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-              opacity: animation,
-              child: child
-          );
-        },
-      ),
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
@@ -85,21 +75,31 @@ class _SplashScreenState extends State<SplashScreen> {
 
     switch (role) {
       case 'walker':
-        _goTo(const WalkerHomeScreen());
+        // If email is not verified send them back to login so they can verify first
+        if (!user.emailVerified) {
+          _goTo(LoginScreen());
+        } else {
+          _goTo(const WalkerHomeScreen());
+        }
         break;
       case 'admin':
         _goTo(const AdminDashboardScreen());
         break;
       default:
         // Pet owner
-        _goTo(const OwnerHomeScreen());
+        // If email is not verified send them back to login so they can verify first
+        if (!user.emailVerified) {
+          _goTo(LoginScreen());
+        } else {
+          _goTo(const OwnerHomeScreen());
+        }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF7C2D12),
+      backgroundColor: Color(0xFF1E3A5F),
 
       body: Center(
         //AnimatedOpacity fades the content IN when the screen opens
@@ -116,8 +116,14 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Color(0xFFF97316),
+                  color: Color(0xFF2563EB),
                   borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF2563EB).withOpacity(0.3),
+                      blurRadius: 20,
+                    ),
+                  ],
                 ),
                 child: Icon(Icons.pets, size: 65, color: Colors.white),
               ),
@@ -147,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
               //Loading spinner
               CircularProgressIndicator(
-                color: Color(0xFFF97316),
+                color: Color(0xFF2563EB),
                 strokeWidth: 2.5,
               ),
             ],

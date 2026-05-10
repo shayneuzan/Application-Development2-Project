@@ -234,14 +234,14 @@ class _RequestScreenState extends State<RequestScreen> {
                                       await _sendNotification(
                                         receiverID: ownerID,
                                         title: 'Walk Request Accepted!',
-                                        message: '$walkerName is ready to walk $petName on $date at $time.',
+                                        message: '$walkerName is ready to walk $petName! Go to "Messages" in your drawer to coordinate details.',
                                         type: 'request_accepted',
                                       );
 
                                       await _sendNotification(
                                         receiverID: uid!,
                                         title: 'Walk Request Accepted!',
-                                        message: 'You have accepted the walk request to walk $petName on $date at $time for $ownerName.',
+                                        message: 'You have accepted the walk request for $petName. Open "View Chat" to discuss location with $ownerName.',
                                         type: 'request_accepted',
                                       );
                                     }

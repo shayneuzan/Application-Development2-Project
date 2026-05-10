@@ -13,7 +13,6 @@ class ChatListScreen extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   void _goHome(BuildContext context) async {
-    // Show a loading indicator if needed, but usually this is fast
     final String? uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
@@ -33,48 +32,76 @@ class ChatListScreen extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // Fallback to pop if fetch fails
+        Navigator.of(context).pop(); 
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Chats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.blueAccent,
-        iconTheme: const IconThemeData(color: Colors.white),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.of(context).pop();
-            } else {
-              _goHome(context);
-            }
-          },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Chats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.blueAccent,
+          iconTheme: const IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.of(context).pop();
+              } else {
+                _goHome(context);
+              }
+            },
+          ),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: 'Active'),
+              Tab(text: 'Past'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildChatList(status: 'active'),
+            _buildChatList(status: 'closed'),
+          ],
         ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _chatService.getChatRoomsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text("Error loading chats"));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    );
+  }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No active chats yet."));
-          }
+  Widget _buildChatList({String? status}) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _chatService.getChatRoomsStream(status: status),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text("Error loading chats"));
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          return ListView(
-            children: snapshot.data!.docs.map<Widget>((doc) => _buildChatListItem(context, doc)).toList(),
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Text(
+              status == 'active' 
+                  ? "No active chats yet." 
+                  : "No past chats yet.",
+              style: const TextStyle(color: Colors.grey),
+            ),
           );
-        },
-      ),
+        }
+
+        return ListView(
+          children: snapshot.data!.docs.map<Widget>((doc) => _buildChatListItem(context, doc)).toList(),
+        );
+      },
     );
   }
 
@@ -82,26 +109,50 @@ class ChatListScreen extends StatelessWidget {
     Map<String, dynamic> data = document.data() as Map<String, dynamic>;
     final String currentUserID = _auth.currentUser!.uid;
 
-    List<dynamic> participants = data['participants'];
-    String otherUserID = participants.firstWhere((id) => id != currentUserID);
+    List<dynamic> participants = data['participants'] ?? [];
+    if (participants.isEmpty) return const SizedBox.shrink();
+    
+    String otherUserID = participants.firstWhere((id) => id != currentUserID, orElse: () => "");
 
     Map<String, dynamic> users = data['users'] ?? {};
     String otherUserName = users[otherUserID]?['name'] ?? "Unknown User";
     String petName = data['petName'] ?? "";
     String lastMessage = data['lastMessage'] ?? "";
+    String status = data['status'] ?? 'active';
 
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Colors.blue.shade100,
-        child: Text(otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : "?"),
+        backgroundColor: status == 'active' ? Colors.blue.shade100 : Colors.grey.shade200,
+        child: Text(
+          otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : "?",
+          style: TextStyle(color: status == 'active' ? Colors.blue : Colors.grey),
+        ),
       ),
-      title: Text(otherUserName, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        otherUserName, 
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: status == 'active' ? Colors.black : Colors.grey,
+        )
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (petName.isNotEmpty)
-            Text("Pet: $petName", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent)),
-          Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              "Pet: $petName", 
+              style: TextStyle(
+                fontSize: 12, 
+                fontWeight: FontWeight.w600, 
+                color: status == 'active' ? Colors.blueAccent : Colors.grey
+              )
+            ),
+          Text(
+            lastMessage, 
+            maxLines: 1, 
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: status == 'active' ? Colors.black87 : Colors.grey),
+          ),
         ],
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),

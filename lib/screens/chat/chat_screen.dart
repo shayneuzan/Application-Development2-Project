@@ -20,14 +20,118 @@ class _ChatScreenState extends State<ChatScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
 
+  // Helper method to send notifications to Firestore
+  Future<void> _sendNotification({
+    required String receiverID,
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverID': receiverID,
+      'title': title,
+      'message': message,
+      'type': type,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
+  }
+
   void sendMessage() async {
-    if (_messageController.text.trim().isNotEmpty) {
-      await _chatService.sendMessage(widget.receiverID, _messageController.text.trim());
+    String messageText = _messageController.text.trim();
+    if (messageText.isEmpty) return;
+
+    final String lowerMessage = messageText.toLowerCase();
+
+    // "the deed is done" -> Completion
+    bool isCompletion = lowerMessage.contains("the deed is done") ||
+        lowerMessage.contains("completed");
+
+    // "deal is off", "unable to do the walk", etc -> Cancellation
+    bool isCancellation = lowerMessage.contains("deal is off") ||
+        lowerMessage.contains("unable to do the walk") ||
+        lowerMessage.contains("cancel this chat") ||
+        lowerMessage.contains("emergency");
+
+    if (isCompletion || isCancellation) {
+      _showEndSessionConfirmation(messageText, isCompletion);
+    } else {
+      await _chatService.sendMessage(widget.receiverID, messageText);
       _messageController.clear();
       _scrollToBottom();
     }
   }
 
+  void _showEndSessionConfirmation(String message,
+      bool isCompletion,
+      ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isCompletion ? "Complete Walk Session?" : "Emergency / Cancel Walk?"),
+        content: Text(isCompletion
+            ? "Are you sure you want to finish this session? This will finalize the walk and close the chat room."
+            : "Are you reporting an emergency or cancelling the walk? This will end coordination immediately and close the chat."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Go Back", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              // Close the Dialog
+              navigator.pop();
+              try {
+                // Send the final trigger message (e.g., "The deed is done")
+                await _chatService.sendMessage(widget.receiverID, message);
+                _messageController.clear();
+
+                final uid = _auth.currentUser!.uid;
+                final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+                final role = userDoc.data()?['role'] ?? 'user';
+                final name = userDoc.data()?['name'] ?? 'User';
+
+                String closingReason = isCompletion ? "Finished: Walk marked complete by $role ($name)" : "Ended: $role ($name) requested to cancel/stop coordination";
+
+                // Notify the other user
+                await _sendNotification(
+                  receiverID: widget.receiverID,
+                  title: isCompletion ? "Walk Completed!" : "Walk Ended Early",
+                  message: closingReason,
+                  type: isCompletion ? 'walk_completed' : 'walk_cancelled',
+                );
+
+                // Update status to 'closed' in Firestore
+                await _chatService.closeChatRoom(widget.receiverID, closingReason);
+
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(isCompletion ? "Session Completed" : "Session Cancelled"),
+                    backgroundColor: isCompletion ? Colors.green : Colors.red,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isCompletion ? Colors.green : Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("Confirm & End"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to scroll to the bottom of the message list
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -42,6 +146,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
 
+    List<String> ids = [_auth.currentUser!.uid, widget.receiverID];
+    ids.sort();
+    String chatRoomID = ids.join('_');
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -52,14 +160,41 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               backgroundColor: Colors.white24,
-              child: Text(widget.receiverName[0], style: const TextStyle(color: Colors.white)),
+              child: Text(
+                widget.receiverName.isNotEmpty ? widget.receiverName[0] : "?",
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.receiverName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                const Text("Active Coordination", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text(
+                  widget.receiverName,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+                StreamBuilder<DocumentSnapshot>(
+                // Now chatRoomID is defined and accessible
+                  stream: FirebaseFirestore.instance
+                      .collection('chat_rooms')
+                      .doc(chatRoomID)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    bool isClosed = snapshot.hasData &&
+                        snapshot.data?.exists == true &&
+                        snapshot.data?.get('status') == 'closed';
+
+                    return Text(
+                      isClosed ? "Session Closed" : "Active Coordination",
+                      style: TextStyle(
+                          color: isClosed ? Colors.redAccent[100] : Colors.white70,
+                          fontSize: 12,
+                          fontWeight: isClosed ? FontWeight.bold : FontWeight.normal),
+                    );
+                  }),
               ],
             ),
           ],
@@ -68,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
-          _buildMessageInput(),
+          _buildMessageInput(), // This also uses logic to check the same ID
         ],
       ),
     );
@@ -82,7 +217,6 @@ class _ChatScreenState extends State<ChatScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.all(16),
@@ -138,38 +272,72 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: "Type a message...",
-                  fillColor: const Color(0xFFF1F5F9),
-                  filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    // We need to listen to the chat room document to check its status
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('chat_rooms')
+          .doc(_chatService.getChatRoomID(_auth.currentUser!.uid, widget.receiverID))
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Default to "not closed" while loading
+        bool isClosed = false;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          var data = snapshot.data!.data() as Map<String, dynamic>;
+          isClosed = data['status'] == 'closed';
+        }
+
+        // If closed, show a "Chat Ended" banner instead of the text field
+        if (isClosed) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              border: Border(top: BorderSide(color: Colors.grey[300]!)),
+            ),
+            child: const Text(
+              "This chat has ended. You can no longer send messages.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold),
+            ),
+          );
+        }
+
+        // OTHERWISE: Show the normal input (Your existing code)
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          ),
+          child: SafeArea(
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: "Type a message...",
+                      fillColor: const Color(0xFFF1F5F9),
+                      filled: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: sendMessage,
+                  child: const CircleAvatar(
+                    backgroundColor: Color(0xFF2563EB),
+                    child: Icon(Icons.send, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: sendMessage,
-              child: const CircleAvatar(
-                backgroundColor: Color(0xFF2563EB),
-                child: Icon(Icons.send, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -318,9 +318,14 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                                   type: 'request_declined',
                                                 );
                                               }
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Declined"), backgroundColor: Colors.red,));
-                                              }
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Request Declined! Pet: $petName\nOwner: ${data['petOwner']}"),
+                                                  backgroundColor: Colors.red,
+                                                  duration: const Duration(seconds: 3),
+                                                ),
+                                              );
                                             },
                                             style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                                             child: const Text("Decline", style: TextStyle(color: Colors.black)),
@@ -338,25 +343,30 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                               if (ownerID.isNotEmpty) {
                                                 // Create Chat Room
                                                 await _chatService.createChatRoom(ownerID, ownerName, petName);
-                                                
+
                                                 // Notify Owner
                                                 await _sendNotification(
                                                   receiverID: ownerID,
                                                   title: 'Walk Request Accepted!',
-                                                  message: '$name is ready to walk $petName!',
+                                                  message: '$name is ready to walk $petName! Go to "Messages" in your drawer to coordinate details.',
                                                   type: 'request_accepted',
                                                 );
                                                 // Notify Walker
                                                 await _sendNotification(
                                                   receiverID: uid!,
                                                   title: 'Walk Request Accepted!',
-                                                  message: 'You have accepted the walk request to walk $petName for $ownerName.',
+                                                  message: 'You have accepted the walk request for $petName. Open "View Chat" to discuss location with $ownerName.',
                                                   type: 'request_accepted',
                                                 );
                                               }
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Accepted!"), backgroundColor: Colors.green,));
-                                              }
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
+                                                  backgroundColor: Colors.green,
+                                                  duration: const Duration(seconds: 3),
+                                                ),
+                                              );
                                             },
                                             style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                                             child: const Text("Accept", style: TextStyle(color: Colors.white)),

@@ -18,7 +18,6 @@ class WalkerHomeScreen extends StatefulWidget {
 }
 
 class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
-  // // Gets the current user's ID
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final DateTime _presentDay = DateTime.now();
   late final DateTime _weekFromNow = _presentDay.add(const Duration(days: 7));
@@ -28,34 +27,24 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
 
   Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
     if (uid == null) return;
-
     DateTime now = DateTime.now();
-
-    // Get last reset dates from Firestore (or use current time if they don't exist)
     DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
     DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
     DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
 
     Map<String, dynamic> updates = {};
-
-    // RESET DAILY: If calendar day changed
     if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
       updates['todayEarnings'] = 0.0;
       updates['lastResetDaily'] = FieldValue.serverTimestamp();
     }
-
-    // RESET WEEKLY: If today is Monday and we haven't reset yet today
     if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
       updates['weeklyEarnings'] = 0.0;
       updates['lastResetWeekly'] = FieldValue.serverTimestamp();
     }
-
-    // RESET MONTHLY: If month changed
     if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
       updates['monthEarnings'] = 0.0;
       updates['lastResetMonthly'] = FieldValue.serverTimestamp();
     }
-
     if (updates.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
     }
@@ -77,17 +66,15 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
       'isRead': false,
     });
   }
+
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        setState(() {
-          _isTimedOut = true;
-        });
-      }
+      if (mounted) setState(() => _isTimedOut = true);
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
@@ -112,7 +99,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                 const SizedBox(width: 8,)
               ],
             ),
-            drawer: WalkerDrawer(name: name!,),
+            drawer: WalkerDrawer(name: name!),
             body: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -123,12 +110,12 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 10,),
                       const Text('Here\'s your activity overview'),
                       const SizedBox(height: 10,),
-                      // Today's Earnings
+                      // Earnings Card
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: Colors.blueAccent,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4),),
@@ -150,8 +137,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        const Text('This Week',
-                                          style: TextStyle(color: Colors.white),),
+                                        const Text('This Week', style: TextStyle(color: Colors.white),),
                                         const SizedBox(height: 4,),
                                         Text('\$${weeklyEarnings.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
                                       ],
@@ -166,16 +152,11 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                   onPressed: () {
                                     Navigator.pushReplacement(
                                       context,
-                                      PageRouteBuilder(
-                                        pageBuilder: (context, animation1, animation2) => const EarningsScreen(),
-                                        transitionDuration: Duration.zero, 
-                                        reverseTransitionDuration: Duration.zero,
-                                      ),
+                                      MaterialPageRoute(builder: (context) => const EarningsScreen()),
                                     );
                                   },
-                                  icon: const Icon(Icons.attach_money, color: Colors.black, size: 18),
-                                  label: const Text("View All Earnings", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                  ),
+                                  icon: const Icon(Icons.attach_money, color: Colors.blueAccent, size: 18),
+                                  label: const Text("View All Earnings", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),),
@@ -186,28 +167,21 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 20,),
-                      // Upcoming Walks
                       const Text('Upcoming Walks', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
-                      // Walker Card
                       StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance.collection('requests')
                           .where('walkerID', isEqualTo: uid)
                           .where('status', isEqualTo: 'accepted')
                           .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                          .where('date', isLessThanOrEqualTo: _endDateStr)
                           .orderBy('date')
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
+                        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.0),
-                            child: Center(
-                              child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),
-                            ),
+                            child: Center(child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),),
                           );
                         }
                         final docs = snapshot.data!.docs;
@@ -219,48 +193,33 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                           itemBuilder: (context, index) {
                             final data = docs[index].data() as Map<String, dynamic>;
                             return Container(
-                              width: double.infinity,
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
                               ),
                               child: Column(
                                 children: [
                                   Row(
                                     children: [
-                                      const CircleAvatar(
-                                        radius: 25,
-                                        backgroundColor: Color(0xFFF5EFE9),
-                                        child: Icon(Icons.pets, color: Colors.black, size: 24),
-                                      ),
+                                      const CircleAvatar(radius: 25, backgroundColor: Color(0xFFF5EFE9), child: Icon(Icons.pets, color: Colors.black, size: 24)),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                            Text("Owner: ${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                            Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                            Text("Owner: ${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                           ],
                                         ),
                                       ),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
-                                          Text(data['time'] ?? "00:00", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                          ),
-                                          Text(
-                                            data['date'] ?? "No Date",
-                                            style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                          ),
+                                          Text(data['time'] ?? "00:00", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Text(data['date'] ?? "No Date", style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                         ],
                                       ),
                                     ],
@@ -270,10 +229,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     children: [
                                       const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                       const SizedBox(width: 4),
-                                      Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                      Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                       const Spacer(),
-                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16,),
-                                      ),
+                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 16)),
                                     ],
                                   ),
                                 ],
@@ -283,33 +241,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                         );
                       }
                     ),
-                      // New Requests
-                      StreamBuilder<QuerySnapshot>( 
-                        stream: FirebaseFirestore.instance
-                            .collection('requests')
-                            .where('walkerID', isEqualTo: uid)
-                            .where('status', isEqualTo: 'pending')
-                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                            .orderBy('date')
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          int requestCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                          return Row(
-                            children: [
-                              const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
-                              const SizedBox(width: 8),
-                              if (requestCount > 0)
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle,),
-                                  child: Text("$requestCount", style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold,),),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                      const SizedBox(height: 20,),
+                      const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
-                      // Request Card
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('requests')
@@ -320,12 +254,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             .limit(3)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                            return const Center(child: Text('No Upcoming Requests'));
-                          }
+                          if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) return const Center(child: CircularProgressIndicator());
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text('No Upcoming Requests'));
                           final docs = snapshot.data!.docs;
                           return ListView.separated(
                             shrinkWrap: true, 
@@ -335,20 +265,13 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             itemBuilder: (context, index) {
                               final doc = docs[index];
                               final data = doc.data() as Map<String, dynamic>;
-
                               return Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: const Border(left: BorderSide(color: Colors.blue, width: 5)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  border: const Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,121 +279,87 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(data['ownerName'] ?? data['petOwner'] ?? "Unknown Owner",
-                                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                        Text("\$${data['payment'] ?? '0'}",
-                                            style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text(data['petOwner'] ?? "Unknown Owner", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blueAccent, fontSize: 18, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
-                                    Text("${data['petName']} - ${data['duration']} min walk",
-                                        style: const TextStyle(color: Colors.grey)),
+                                    Text("${data['petName']} - ${data['duration']} min walk", style: const TextStyle(color: Colors.grey)),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
                                         const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text("${data['date']} at ${data['time']}",
-                                            style: const TextStyle(color: Colors.grey)),
+                                        Text("${data['date']} at ${data['time']}", style: const TextStyle(color: Colors.grey)),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        // Decline Button
                                         Expanded(
-                                          child: OutlinedButton.icon(
+                                          child: OutlinedButton(
                                             onPressed: () async {
                                               String ownerID = data['ownerID'] ?? "";
                                               String petName = data['petName'] ?? "N/A";
-                                              String ownerName = data['ownerName'] ?? data['petOwner'] ?? "N/A";
 
                                               await doc.reference.update({'status': 'declined'});
-                                              
                                               if (ownerID.isNotEmpty) {
+                                                // Notify Owner
                                                 await _sendNotification(
                                                   receiverID: ownerID,
                                                   title: 'Request Declined',
                                                   message: '$name declined your walk request for $petName.',
                                                   type: 'request_declined',
                                                 );
-
+                                                // Notify Walker
                                                 await _sendNotification(
                                                   receiverID: uid!,
                                                   title: 'Request Declined',
-                                                  message: 'You have declined the walk request for $petName from $ownerName.',
+                                                  message: 'You have declined the walk request for $petName.',
                                                   type: 'request_declined',
                                                 );
                                               }
-
-                                              if (!context.mounted) return;
-
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    "Request Declined! Pet: $petName\nOwner: $ownerName",
-                                                  ),
-                                                  backgroundColor: Colors.red,
-                                                  duration: const Duration(seconds: 3),
-                                                ),
-                                              );
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Declined"), backgroundColor: Colors.red,));
+                                              }
                                             },
-                                            icon: const Icon(Icons.close, size: 18, color: Colors.black),
-                                            label: const Text("Decline", style: TextStyle(color: Colors.black)),
-                                            style: OutlinedButton.styleFrom(
-                                              backgroundColor: const Color(0xFFF5EFE9),
-                                              side: BorderSide.none,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            ),
+                                            style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                            child: const Text("Decline", style: TextStyle(color: Colors.black)),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
-                                        // Accept Button
                                         Expanded(
-                                          child: ElevatedButton.icon(
+                                          child: ElevatedButton(
                                             onPressed: () async {
                                               String ownerID = data['ownerID'] ?? "";
-                                              String petName = data['petName'] ?? "N/A";
-                                              String ownerName = data['ownerName'] ?? data['petOwner'] ?? "N/A";
-                                              String date = data['date'] ?? "N/A";
-                                              String time = data['time'] ?? "N/A";
-
+                                              String ownerName = data['petOwner'] ?? "Owner";
+                                              String petName = data['petName'] ?? "Pet";
+                                              
                                               await doc.reference.update({'status': 'accepted'});
-
                                               if (ownerID.isNotEmpty) {
-                                                // Create a chat room between the walker and the owner
+                                                // Create Chat Room
                                                 await _chatService.createChatRoom(ownerID, ownerName, petName);
-
+                                                
+                                                // Notify Owner
                                                 await _sendNotification(
                                                   receiverID: ownerID,
                                                   title: 'Walk Request Accepted!',
-                                                  message: '$name is ready to walk $petName on $date at $time.',
+                                                  message: '$name is ready to walk $petName!',
                                                   type: 'request_accepted',
                                                 );
-
+                                                // Notify Walker
                                                 await _sendNotification(
                                                   receiverID: uid!,
                                                   title: 'Walk Request Accepted!',
-                                                  message: 'You have accepted the walk request to walk $petName on $date at $time for $ownerName.',
+                                                  message: 'You have accepted the walk request to walk $petName for $ownerName.',
                                                   type: 'request_accepted',
                                                 );
                                               }
-
-                                              if (!context.mounted) return;
-
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
-                                                  backgroundColor: Colors.green,
-                                                  duration: const Duration(seconds: 3),
-                                                ),
-                                              );
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Request Accepted!"), backgroundColor: Colors.green,));
+                                              }
                                             },
-                                            icon: const Icon(Icons.check, size: 18, color: Colors.white),
-                                            label: const Text("Accept", style: TextStyle(color: Colors.white)),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                            ),
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                            child: const Text("Accept", style: TextStyle(color: Colors.white)),
                                           ),
                                         ),
                                       ],

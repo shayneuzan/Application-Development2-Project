@@ -10,12 +10,6 @@ import '../chat/chat_list_screen.dart';
 
 import '../auth/login_screen.dart';
 
-// ─────────────────────────────────────────────────────────
-// WALKER SIDE DRAWER
-// Displays user info and provides deep-link access to all 
-// major features of the walker application. Easy to maintain.
-// ─────────────────────────────────────────────────────────
-
 class WalkerDrawer extends StatelessWidget {
   final String name;
   const WalkerDrawer({super.key, required this.name});
@@ -23,34 +17,37 @@ class WalkerDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          UserAccountsDrawerHeader(
-            accountName: Text(name),
-            accountEmail: const Text('Walker'),
-            currentAccountPicture: Image.network('https://static.vecteezy.com/system/resources/thumbnails/035/857/779/small/people-face-avatar-icon-cartoon-character-png.png'),
-            decoration: const BoxDecoration(color: Colors.blue),
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                UserAccountsDrawerHeader(
+                  accountName: Text(name),
+                  accountEmail: const Text('Walker'),
+                  currentAccountPicture: Image.network('https://static.vecteezy.com/system/resources/thumbnails/035/857/779/small/people-face-avatar-icon-cartoon-character-png.png'),
+                  decoration: const BoxDecoration(color: Colors.blue),
+                ),
+                _buildMenuItem(context, Icons.house, 'Dashboard', WalkerHomeScreen()),
+                _buildMenuItem(context, Icons.date_range, 'Booking Requests', RequestScreen()),
+                _buildMenuItem(context, Icons.contacts, 'My Schedule', ScheduleScreen()),
+                _buildMenuItem(context, Icons.attach_money, 'Earnings', EarningsScreen()),
+                _buildMenuItem(context, Icons.person, 'Edit Profile', ProfileEditScreen()),
+                _buildMenuItem(context, Icons.notifications_none, 'View Notifications', NotificationScreen()),
+                _buildMenuItem(context, Icons.chat_bubble_outline, 'View Chat', ChatListScreen()),
+              ],
+            ),
           ),
-          _buildMenuItem(context, Icons.house, 'Dashboard', WalkerHomeScreen()),
-          _buildMenuItem(context, Icons.date_range, 'Booking Requests', RequestScreen()),
-          _buildMenuItem(context, Icons.contacts, 'My Schedule', ScheduleScreen()),
-          _buildMenuItem(context, Icons.attach_money, 'Earnings', EarningsScreen()),
-          _buildMenuItem(context, Icons.person, 'Edit Profile', ProfileEditScreen()),
-          _buildMenuItem(context, Icons.notifications_none, 'View Notifications', NotificationScreen()),
-          _buildMenuItem(context, Icons.chat_bubble_outline, 'View Chat', ChatListScreen()),
+
+          // This part stays at the bottom
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
             onTap: () async {
-              // 1. Log out
               await FirebaseAuth.instance.signOut();
-
-              // 2. CHECK THE ASYNC GAP: Make sure the screen is still active
               if (!context.mounted) return;
-
-              // 3. Now it is safe to navigate
               Navigator.pop(context); // Close drawer
               Navigator.pushReplacement(
                 context,
@@ -62,6 +59,7 @@ class WalkerDrawer extends StatelessWidget {
               );
             },
           ),
+          const SizedBox(height: 20), // Bottom padding for accessibility
         ],
       ),
     );

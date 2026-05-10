@@ -5,21 +5,21 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Stream of chat rooms the current user is part of
+  // Stream of chat rooms the current user is part of AND are active
   Stream<QuerySnapshot> getChatRoomsStream() {
     final String currentUserID = _auth.currentUser!.uid;
     return _firestore
         .collection('chat_rooms')
         .where('participants', arrayContains: currentUserID)
+        .where('status', isEqualTo: 'active') // Only show active chats
         .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
-  // Create or initialize a chat room
+  // Create or re-open a chat room
   Future<void> createChatRoom(String receiverID, String receiverName, String petName) async {
     final String currentUserID = _auth.currentUser!.uid;
     
-    // Fetch current user's name for the metadata
     DocumentSnapshot currentUserDoc = await _firestore.collection('users').doc(currentUserID).get();
     String currentUserName = (currentUserDoc.data() as Map<String, dynamic>?)?['name'] ?? 'User';
 
@@ -28,30 +28,53 @@ class ChatService {
     String chatRoomID = ids.join('_');
 
     DocumentReference chatRoomRef = _firestore.collection("chat_rooms").doc(chatRoomID);
-    DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
+    
+    // Always set status to active when a request is accepted (re-opening if closed)
+    await chatRoomRef.set({
+      'participants': ids,
+      'lastMessage': 'Chat started for $petName',
+      'timestamp': FieldValue.serverTimestamp(),
+      'status': 'active', // Chat is now active
+      'users': {
+        currentUserID: {'name': currentUserName}, 
+        receiverID: {'name': receiverName},
+      },
+      'petName': petName,
+    }, SetOptions(merge: true));
 
-    // If chat room doesn't exist, create it and send initial preset message
-    if (!chatRoomSnapshot.exists) {
-      await chatRoomRef.set({
-        'participants': ids,
-        'lastMessage': 'Chat started for $petName',
-        'timestamp': FieldValue.serverTimestamp(),
-        'users': {
-          currentUserID: {'name': currentUserName}, 
-          receiverID: {'name': receiverName},
-        },
-        'petName': petName,
-      });
-
-      // Send the initial preset message automatically
-      await sendMessage(receiverID, "👋 This chat group has been formed for $petName's walk request. You can now coordinate details here!");
-    }
+    // Send the initial preset message automatically
+    await sendMessage(receiverID, "👋 This chat group has been formed for $petName's walk request. You can now coordinate details here!");
   }
 
-  // Send a message
+  // Method to close a chat room when walk is finished or cancelled
+  Future<void> closeChatRoom(String otherUserID) async {
+    final String currentUserID = _auth.currentUser!.uid;
+    List<String> ids = [currentUserID, otherUserID];
+    ids.sort();
+    String chatRoomID = ids.join('_');
+
+    await _firestore.collection("chat_rooms").doc(chatRoomID).update({
+      'status': 'closed',
+      'lastMessage': 'Walk ended. Chat closed.',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Send a message (checks if chat is active)
   Future<void> sendMessage(String receiverID, String message) async {
     final String currentUserID = _auth.currentUser!.uid;
     final Timestamp timestamp = Timestamp.now();
+
+    List<String> ids = [currentUserID, receiverID];
+    ids.sort();
+    String chatRoomID = ids.join('_');
+
+    // Check if chat is still active before sending
+    DocumentSnapshot chatDoc = await _firestore.collection("chat_rooms").doc(chatRoomID).get();
+    if (chatDoc.exists && (chatDoc.data() as Map<String, dynamic>?)?['status'] == 'closed') {
+      // Chat is closed, prevent sending
+      return; 
+    }
 
     Message newMessage = Message(
       senderID: currentUserID,
@@ -60,18 +83,12 @@ class ChatService {
       timestamp: timestamp,
     );
 
-    List<String> ids = [currentUserID, receiverID];
-    ids.sort();
-    String chatRoomID = ids.join('_');
-
-    // Add message to sub-collection
     await _firestore
         .collection("chat_rooms")
         .doc(chatRoomID)
         .collection("messages")
         .add(newMessage.toMap());
 
-    // Update main chat room document with last message info
     await _firestore.collection("chat_rooms").doc(chatRoomID).update({
       'lastMessage': message,
       'timestamp': timestamp,

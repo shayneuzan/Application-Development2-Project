@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../walker/walker_home_screen.dart';
+import '../owner/owner_home_screen.dart';
 import 'chat_service.dart';
 import 'chat_screen.dart';
 
@@ -10,12 +12,49 @@ class ChatListScreen extends StatelessWidget {
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  void _goHome(BuildContext context) async {
+    // Show a loading indicator if needed, but usually this is fast
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && context.mounted) {
+        String role = doc.data()?['role'] ?? 'owner';
+        
+        Widget homeScreen = (role == 'walker') 
+            ? const WalkerHomeScreen() 
+            : const OwnerHomeScreen();
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => homeScreen),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Fallback to pop if fetch fails
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Chats'),
+        title: const Text('My Chats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blueAccent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.of(context).pop();
+            } else {
+              _goHome(context);
+            }
+          },
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _chatService.getChatRoomsStream(),
@@ -43,11 +82,9 @@ class ChatListScreen extends StatelessWidget {
     Map<String, dynamic> data = document.data() as Map<String, dynamic>;
     final String currentUserID = _auth.currentUser!.uid;
 
-    // Get the other participant's ID
     List<dynamic> participants = data['participants'];
     String otherUserID = participants.firstWhere((id) => id != currentUserID);
 
-    // Get metadata stored during createChatRoom
     Map<String, dynamic> users = data['users'] ?? {};
     String otherUserName = users[otherUserID]?['name'] ?? "Unknown User";
     String petName = data['petName'] ?? "";
@@ -58,16 +95,16 @@ class ChatListScreen extends StatelessWidget {
         backgroundColor: Colors.blue.shade100,
         child: Text(otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : "?"),
       ),
-      title: Text(otherUserName),
+      title: Text(otherUserName, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (petName.isNotEmpty)
-            Text("Pet: $petName", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text("Pet: $petName", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent)),
           Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       onTap: () {
         Navigator.push(
           context,

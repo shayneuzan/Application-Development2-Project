@@ -84,12 +84,17 @@ class OwnerDrawer extends StatelessWidget {
                   isSelected: currentPage == 'Home',
                   onTap: () => _navigateTo(context, const OwnerHomeScreen()),
                 ),
+
+                // This is for the Chat Group List
                 _buildDrawerItem(
                   context,
                   icon: Icons.chat_bubble_outline,
                   title: 'Messages',
                   isSelected: currentPage == 'Messages',
-                  onTap: () => _navigateTo(context, ChatListScreen()),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ChatListScreen()));
+                  },
                 ),
                 _buildDrawerItem(
                   context,

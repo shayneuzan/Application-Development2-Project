@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
+import '../chat/chat_service.dart';
+
+import '../widgets/walker_notification_icon.dart';
 
 class RequestScreen extends StatefulWidget {
   const RequestScreen({super.key});
@@ -15,24 +18,45 @@ class RequestScreen extends StatefulWidget {
 class _RequestScreenState extends State<RequestScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final DateTime _presentDay = DateTime.now();
+  final ChatService _chatService = ChatService();
+
+  // Helper method to send notifications to Firestore
+  Future<void> _sendNotification({
+    required String receiverID,
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverID': receiverID,
+      'title': title,
+      'message': message,
+      'type': type,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    print(DateFormat('yyyy-MM-dd').format(DateTime.now()));
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
       builder: (context, snapshot) {
-        String? name = uid;
+        String? walkerName = "Walker";
         if (snapshot.hasData && snapshot.data!.exists) {
-          name = (snapshot.data!.data() as Map<String, dynamic>)['name'] ?? 'Guest';
+          walkerName = (snapshot.data!.data() as Map<String, dynamic>)['name'] ?? 'Walker';
         }
         return Scaffold(
           appBar: AppBar(
             title: const Text('Booking Requests', style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.blueAccent,
             iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              const WalkerNotificationIcon(),
+              const SizedBox(width: 8),
+            ],
           ),
-          drawer: WalkerDrawer(name: name!),
+          drawer: WalkerDrawer(name: walkerName!),
           body: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('requests')
@@ -58,17 +82,20 @@ class _RequestScreenState extends State<RequestScreen> {
                 child: Column(
                   children: docs.map((doc) {
                     final currentData = doc.data() as Map<String, dynamic>;
+                    String ownerID = currentData['ownerID'] ?? "";
                     String ownerName = currentData['petOwner'] ?? "N/A";
                     String petName = currentData['petName'] ?? "N/A";
                     String payment = currentData['payment'] ?? '0';
                     String date = currentData['date'] ?? 'N/A';
                     String time = currentData['time'] ?? 'N/A';
                     String duration = currentData['duration'] ?? 'N/A';
+
                     String initials = ownerName.trim().isNotEmpty ? ownerName.trim()
                       .split(RegExp(r'\s+'))
                       .where((word) => word.isNotEmpty)
                       .map((word) => word[0].toUpperCase())
                       .take(3).join() : "?";
+
                     return Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 16),
@@ -152,19 +179,36 @@ class _RequestScreenState extends State<RequestScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16), // Spacing between info and buttons
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               // Decline Button
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    doc.reference.update({'status': 'declined'});
+                                  onPressed: () async {
+                                    await doc.reference.update({'status': 'declined'});
+                                    if (ownerID.isNotEmpty) {
+                                      await _sendNotification(
+                                        receiverID: ownerID,
+                                        title: 'Request Declined',
+                                        message: '$walkerName declined your walk request for $petName.',
+                                        type: 'request_declined',
+                                      );
+                                      
+                                      await _sendNotification(
+                                        receiverID: uid!,
+                                        title: 'Request Declined',
+                                        message: 'You have declined the walk request for $petName from $ownerName.',
+                                        type: 'request_declined',
+                                      );
+                                    }
+
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Declined! Pet: $petName}\nOwner: $ownerName"),
+                                        content: Text("Request Declined! Pet: $petName\nOwner: $ownerName"),
                                         backgroundColor: Colors.red,
-                                        duration: Duration(seconds: 3),
+                                        duration: const Duration(seconds: 3),
                                       ),
                                     );
                                   },
@@ -181,13 +225,32 @@ class _RequestScreenState extends State<RequestScreen> {
                               // Accept Button
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    doc.reference.update({'status': 'accepted'});
+                                  onPressed: () async {
+                                    await doc.reference.update({'status': 'accepted'});
+                                    if (ownerID.isNotEmpty) {
+                                      // Create a chat room between the walker and the owner
+                                      await _chatService.createChatRoom(ownerID, ownerName, petName);
+
+                                      await _sendNotification(
+                                        receiverID: ownerID,
+                                        title: 'Walk Request Accepted!',
+                                        message: '$walkerName is ready to walk $petName on $date at $time.',
+                                        type: 'request_accepted',
+                                      );
+
+                                      await _sendNotification(
+                                        receiverID: uid!,
+                                        title: 'Walk Request Accepted!',
+                                        message: 'You have accepted the walk request to walk $petName on $date at $time for $ownerName.',
+                                        type: 'request_accepted',
+                                      );
+                                    }
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Accepted! Pet: $petName}\nOwner: $ownerName"),
+                                        content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
                                         backgroundColor: Colors.green,
-                                        duration: Duration(seconds: 3),
+                                        duration: const Duration(seconds: 3),
                                       ),
                                     );
                                   },

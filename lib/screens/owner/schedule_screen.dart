@@ -179,8 +179,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     _buildSummaryItem(Icons.timer, 'Duration', '${widget.selectedDuration} minutes'),
                     const SizedBox(height: 8),
                     _buildSummaryItem(
-                      Icons.calendar_today, 
-                      'Date', 
+                      Icons.calendar_today,
+                      'Date',
                       _selectedDay != null ? DateFormat('MMM dd, yyyy').format(_selectedDay!) : 'Not selected'
                     ),
                   ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../auth/login_screen.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
+import '../widgets/walker_notification_icon.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -61,6 +62,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
               backgroundColor: Colors.blueAccent,
               iconTheme: const IconThemeData(color: Colors.white),
+              actions: [
+                WalkerNotificationIcon(),
+                const SizedBox(width: 8,),
+              ],
             ),
             drawer: WalkerDrawer(name: name),
             body: SingleChildScrollView(

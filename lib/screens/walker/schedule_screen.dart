@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
+import '../widgets/walker_notification_icon.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -32,6 +33,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             title: const Text('Your Schedule', style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.blueAccent,
             iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              WalkerNotificationIcon(),
+              const SizedBox(width: 8,),
+            ],
           ),
           drawer: WalkerDrawer(name: name),
           body: SingleChildScrollView(
@@ -106,8 +111,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                 child: Column(
                                   children: [
                                     Icon(Icons.event_busy,
-                                        size: 60,
-                                        color: Colors.grey.shade400),
+                                      size: 60,
+                                      color: Colors.grey.shade400),
                                     const SizedBox(height: 10),
                                     const Text(
                                       "No walks scheduled for this day",
@@ -120,65 +125,65 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           }
                           final docs = snapshot.data!.docs;
                           return ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: snapshot.data!.docs.length,
-                              itemBuilder: (context, index) {
-                                final data = docs[index].data() as Map<String, dynamic>;
-                                return Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const CircleAvatar( // Profile Picture
-                                            radius: 25,
-                                            backgroundColor: Color(0xFFF5EFE9),
-                                            child: Icon(Icons.pets, color: Colors.black, size: 24),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: snapshot.data!.docs.length,
+                            itemBuilder: (context, index) {
+                              final data = docs[index].data() as Map<String, dynamic>;
+                              return Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const CircleAvatar( // Profile Picture
+                                          radius: 25,
+                                          backgroundColor: Color(0xFFF5EFE9),
+                                          child: Icon(Icons.pets, color: Colors.black, size: 24),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column( // Pet Name & Owner
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                                                  Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold,)),
+                                                ],
+                                              ),
+                                              Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                            ],
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column( // Pet Name & Owner
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                                    Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold,)),
-                                                  ],
-                                                ),
-                                                Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const Divider(height: 24, thickness: 1),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Text("${data['time'] ?? '00:00'}    ${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
+                                        ),
+                                      ],
+                                    ),
+                                    const Divider(height: 24, thickness: 1),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text("${data['time'] ?? '00:00'}    ${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           );
                         },
                       ),

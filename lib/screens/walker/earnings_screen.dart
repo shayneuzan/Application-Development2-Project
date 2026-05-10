@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart'; // For Charts Feature
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
+import '../widgets/walker_notification_icon.dart';
+import 'notification_screen.dart';
 
 class EarningsScreen extends StatefulWidget {
   const EarningsScreen({super.key});
@@ -70,6 +72,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
               title: const Text('Earnings', style: TextStyle(color: Colors.white),),
               backgroundColor: Colors.blueAccent,
               iconTheme: const IconThemeData(color: Colors.white),
+              actions: [
+                WalkerNotificationIcon(),
+                const SizedBox(width: 8),
+              ],
             ),
             drawer: WalkerDrawer(name: name),
             body: Padding(
@@ -306,7 +312,8 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
 class _ChartData {
   _ChartData(this.day, this.receivedAmount);
-
   final String day;
   final double receivedAmount;
 }
+
+

@@ -2,9 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
+import 'package:pawwalk/screens/walker/notification_screen.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
+import '../chat/chat_service.dart';
+
+import '../widgets/walker_notification_icon.dart';
 
 class WalkerHomeScreen extends StatefulWidget {
   const WalkerHomeScreen({super.key});
@@ -20,6 +24,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   late final DateTime _weekFromNow = _presentDay.add(const Duration(days: 7));
   late final String _endDateStr = DateFormat('yyyy-MM-dd').format(_weekFromNow);
   bool _isTimedOut = false;
+  final ChatService _chatService = ChatService();
 
   Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
     if (uid == null) return;
@@ -55,6 +60,23 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
     }
   }
+
+  // Helper method to send notifications to Firestore
+  Future<void> _sendNotification({
+    required String receiverID,
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverID': receiverID,
+      'title': title,
+      'message': message,
+      'type': type,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
+  }
   @override
   void initState() {
     super.initState();
@@ -71,20 +93,24 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
-          String? name = uid;
-          double? todayEarnings = 0;
-          double? weeklyEarnings = 0;
+          String? name = "Walker";
+          double todayEarnings = 0;
+          double weeklyEarnings = 0;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
             name = data['name'] ?? 'Guest';
-            todayEarnings = data['todayEarnings'] ?? 0;
-            weeklyEarnings = data['weeklyEarnings'] ?? 0;
+            todayEarnings = (data['todayEarnings'] ?? 0).toDouble();
+            weeklyEarnings = (data['weeklyEarnings'] ?? 0).toDouble();
           }
           return Scaffold(
             appBar: AppBar(
               title: const Text('Dashboard', style: TextStyle(color: Colors.white)),
               backgroundColor: Colors.blueAccent,
               iconTheme: const IconThemeData(color: Colors.white),
+              actions: [
+                const WalkerNotificationIcon(),
+                const SizedBox(width: 8,)
+              ],
             ),
             drawer: WalkerDrawer(name: name!,),
             body: SingleChildScrollView(
@@ -118,7 +144,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       children: [
                                         const Text('Today\'s Earnings', style: TextStyle(color: Colors.white),),
                                         const SizedBox(height: 4,),
-                                        Text('\$$todayEarnings', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
+                                        Text('\$${todayEarnings.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
                                       ],
                                     ),
                                     Column(
@@ -127,7 +153,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         const Text('This Week',
                                           style: TextStyle(color: Colors.white),),
                                         const SizedBox(height: 4,),
-                                        Text('\$$weeklyEarnings', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
+                                        Text('\$${weeklyEarnings.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
                                       ],
                                     ),
                                   ]
@@ -141,8 +167,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     Navigator.pushReplacement(
                                       context,
                                       PageRouteBuilder(
-                                        pageBuilder: (context, animation1, animation2) => EarningsScreen(),
-                                        transitionDuration: Duration.zero, // Instant transition for smooth nav feel
+                                        pageBuilder: (context, animation1, animation2) => const EarningsScreen(),
+                                        transitionDuration: Duration.zero, 
                                         reverseTransitionDuration: Duration.zero,
                                       ),
                                     );
@@ -165,12 +191,11 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 10,),
                       // Walker Card
                       StreamBuilder<QuerySnapshot>(
-                      // Only show "accepted" walks meant for THIS walker
                       stream: FirebaseFirestore.instance.collection('requests')
-                          .where('walkerID', isEqualTo: uid) // Ensure 'uid' is defined in your widget
+                          .where('walkerID', isEqualTo: uid)
                           .where('status', isEqualTo: 'accepted')
                           .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                          .where('date', isLessThanOrEqualTo: _endDateStr) // Filter for the week ahead
+                          .where('date', isLessThanOrEqualTo: _endDateStr)
                           .orderBy('date')
                           .snapshots(),
                       builder: (context, snapshot) {
@@ -185,7 +210,6 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             ),
                           );
                         }
-                        // Get the data from the first document in the list of upcoming walk
                         final docs = snapshot.data!.docs;
                         return ListView.builder(
                           padding: EdgeInsets.zero,
@@ -259,9 +283,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                         );
                       }
                     ),
-                      // End of Walk Card
                       // New Requests
-                      StreamBuilder<QuerySnapshot>( // Calculate the number of pending requests
+                      StreamBuilder<QuerySnapshot>( 
                         stream: FirebaseFirestore.instance
                             .collection('requests')
                             .where('walkerID', isEqualTo: uid)
@@ -275,7 +298,6 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                             children: [
                               const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                               const SizedBox(width: 8),
-                              // Only show the red circle if there are 1 or more requests
                               if (requestCount > 0)
                                 Container(
                                   padding: const EdgeInsets.all(6),
@@ -306,12 +328,11 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                           }
                           final docs = snapshot.data!.docs;
                           return ListView.separated(
-                            shrinkWrap: true, // Use this if it's inside another Column/Scrollview
+                            shrinkWrap: true, 
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: docs.length,
                             separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
-                              // 3. Extract data for the specific index
                               final doc = docs[index];
                               final data = doc.data() as Map<String, dynamic>;
 
@@ -335,7 +356,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(data['ownerName'] ?? "Unknown Owner",
+                                        Text(data['ownerName'] ?? data['petOwner'] ?? "Unknown Owner",
                                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                                         Text("\$${data['payment'] ?? '0'}",
                                             style: const TextStyle(color: Colors.blue, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -358,14 +379,38 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         // Decline Button
                                         Expanded(
                                           child: OutlinedButton.icon(
-                                            onPressed: () {
-                                              // Update status to 'declined' in Firebase
-                                              doc.reference.update({'status': 'declined'});
+                                            onPressed: () async {
+                                              String ownerID = data['ownerID'] ?? "";
+                                              String petName = data['petName'] ?? "N/A";
+                                              String ownerName = data['ownerName'] ?? data['petOwner'] ?? "N/A";
+
+                                              await doc.reference.update({'status': 'declined'});
+                                              
+                                              if (ownerID.isNotEmpty) {
+                                                await _sendNotification(
+                                                  receiverID: ownerID,
+                                                  title: 'Request Declined',
+                                                  message: '$name declined your walk request for $petName.',
+                                                  type: 'request_declined',
+                                                );
+
+                                                await _sendNotification(
+                                                  receiverID: uid!,
+                                                  title: 'Request Declined',
+                                                  message: 'You have declined the walk request for $petName from $ownerName.',
+                                                  type: 'request_declined',
+                                                );
+                                              }
+
+                                              if (!context.mounted) return;
+
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
-                                                  content: Text("Request Declined! Pet: ${data['petName']}\nOwner: ${data['ownerName']}"),
+                                                  content: Text(
+                                                    "Request Declined! Pet: $petName\nOwner: $ownerName",
+                                                  ),
                                                   backgroundColor: Colors.red,
-                                                  duration: Duration(seconds: 3),
+                                                  duration: const Duration(seconds: 3),
                                                 ),
                                               );
                                             },
@@ -382,13 +427,41 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         // Accept Button
                                         Expanded(
                                           child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              doc.reference.update({'status': 'accepted'});
+                                            onPressed: () async {
+                                              String ownerID = data['ownerID'] ?? "";
+                                              String petName = data['petName'] ?? "N/A";
+                                              String ownerName = data['ownerName'] ?? data['petOwner'] ?? "N/A";
+                                              String date = data['date'] ?? "N/A";
+                                              String time = data['time'] ?? "N/A";
+
+                                              await doc.reference.update({'status': 'accepted'});
+
+                                              if (ownerID.isNotEmpty) {
+                                                // Create a chat room between the walker and the owner
+                                                await _chatService.createChatRoom(ownerID, ownerName, petName);
+
+                                                await _sendNotification(
+                                                  receiverID: ownerID,
+                                                  title: 'Walk Request Accepted!',
+                                                  message: '$name is ready to walk $petName on $date at $time.',
+                                                  type: 'request_accepted',
+                                                );
+
+                                                await _sendNotification(
+                                                  receiverID: uid!,
+                                                  title: 'Walk Request Accepted!',
+                                                  message: 'You have accepted the walk request to walk $petName on $date at $time for $ownerName.',
+                                                  type: 'request_accepted',
+                                                );
+                                              }
+
+                                              if (!context.mounted) return;
+
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
-                                                  content: Text("Request Accepted! Pet: ${data['petName']}\nOwner: ${data['ownerName']}"),
+                                                  content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
                                                   backgroundColor: Colors.green,
-                                                  duration: Duration(seconds: 3),
+                                                  duration: const Duration(seconds: 3),
                                                 ),
                                               );
                                             },
@@ -409,7 +482,6 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                           );
                         },
                       )
-                      // End of Request Card
                     ]
                 ),
               ),

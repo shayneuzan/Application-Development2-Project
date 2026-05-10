@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
+import 'package:pawwalk/screens/walker/notification_screen.dart';
 import 'package:pawwalk/screens/walker/request_screen.dart';
 import 'package:pawwalk/screens/walker/schedule_screen.dart';
 import 'package:pawwalk/screens/walker/walker_home_screen.dart';
 import 'package:pawwalk/screens/walker/walker_profile_edit_screen.dart';
+import '../chat/chat_list_screen.dart';
 
 import '../auth/login_screen.dart';
 
@@ -35,6 +37,8 @@ class WalkerDrawer extends StatelessWidget {
           _buildMenuItem(context, Icons.contacts, 'My Schedule', ScheduleScreen()),
           _buildMenuItem(context, Icons.attach_money, 'Earnings', EarningsScreen()),
           _buildMenuItem(context, Icons.person, 'Edit Profile', ProfileEditScreen()),
+          _buildMenuItem(context, Icons.notifications_none, 'View Notifications', NotificationScreen()),
+          _buildMenuItem(context, Icons.chat_bubble_outline, 'View Chat', ChatListScreen()),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../owner/owner_home_screen.dart';
 import '../owner/booking_history_screen.dart';
 import '../owner/profile_screen.dart';
@@ -8,6 +9,7 @@ import '../owner/notifications_screen.dart';
 import '../owner/browse_walkers_list_screen.dart';
 import '../owner/settings_screen.dart';
 import '../auth/login_screen.dart';
+import '../chat/chat_list_screen.dart';
 
 class OwnerDrawer extends StatelessWidget {
   final String currentPage;
@@ -16,48 +18,58 @@ class OwnerDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Drawer(
       child: Column(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-            color: const Color(0xFF1E3A5F),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, color: Colors.white, size: 35),
-                ),
-                const SizedBox(width: 15),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Header with Real User Data
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+            builder: (context, snapshot) {
+              String name = "Owner";
+              if (snapshot.hasData && snapshot.data!.exists) {
+                name = (snapshot.data!.data() as Map<String, dynamic>)['name'] ?? "Owner";
+              }
+              return Container(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+                color: const Color(0xFF1E3A5F),
+                child: Row(
                   children: [
-                    Text(
-                      'John Smith',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    const CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white, size: 35),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Text(
+                            'Pet Owner',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      'Owner',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+              );
+            }
           ),
           
           // Menu Items
@@ -74,6 +86,13 @@ class OwnerDrawer extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.chat_bubble_outline,
+                  title: 'Messages',
+                  isSelected: currentPage == 'Messages',
+                  onTap: () => _navigateTo(context, ChatListScreen()),
+                ),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.search,
                   title: 'Browse Walkers',
                   isSelected: currentPage == 'Walkers',
@@ -85,13 +104,6 @@ class OwnerDrawer extends StatelessWidget {
                   title: 'My Bookings',
                   isSelected: currentPage == 'Bookings',
                   onTap: () => _navigateTo(context, const BookingHistoryScreen()),
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.location_on_outlined,
-                  title: 'Track Walk',
-                  isSelected: currentPage == 'Track',
-                  onTap: () {}, // TODO: Map screen
                 ),
                 _buildDrawerItem(
                   context,
@@ -121,10 +133,7 @@ class OwnerDrawer extends StatelessWidget {
                   isSelected: currentPage == 'Settings',
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
                   },
                 ),
               ],
@@ -135,10 +144,7 @@ class OwnerDrawer extends StatelessWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+            title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             onTap: () async {
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
@@ -163,7 +169,6 @@ class OwnerDrawer extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     const primaryBlue = Color(0xFF2563EB);
-    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -171,10 +176,7 @@ class OwnerDrawer extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected ? primaryBlue : const Color(0xFF64748B),
-        ),
+        leading: Icon(icon, color: isSelected ? primaryBlue : const Color(0xFF64748B)),
         title: Text(
           title,
           style: TextStyle(
@@ -189,9 +191,6 @@ class OwnerDrawer extends StatelessWidget {
 
   void _navigateTo(BuildContext context, Widget screen) {
     Navigator.pop(context);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => screen));
   }
 }

@@ -7,8 +7,9 @@ import 'chat_service.dart';
 class ChatScreen extends StatefulWidget {
   final String receiverID;
   final String receiverName;
+  final String chatRoomID;
 
-  const ChatScreen({super.key, required this.receiverID, required this.receiverName});
+  const ChatScreen({super.key, required this.chatRoomID, required this.receiverID, required this.receiverName,});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -37,34 +38,46 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  // void sendMessage() async {
+  //   String messageText = _messageController.text.trim();
+  //   if (messageText.isEmpty) return;
+  //
+  //   final String lowerMessage = messageText.toLowerCase();
+  //
+  //   // "the deed is done" -> Completion
+  //   bool isCompletion = lowerMessage.contains("the deed is done") || lowerMessage.contains("completed");
+  //
+  //   // "deal is off", "unable to do the walk", etc -> Cancellation
+  //   bool isCancellation = lowerMessage.contains("deal is off") ||
+  //       lowerMessage.contains("unable to do the walk") ||
+  //       lowerMessage.contains("cancel") ||
+  //       lowerMessage.contains("emergency");
+  //
+  //   if (isCompletion || isCancellation) {
+  //     _showEndSessionConfirmation(messageText, isCompletion);
+  //   } else {
+  //     await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, messageText);
+  //     _messageController.clear();
+  //     _scrollToBottom();
+  //   }
+  // }
+
   void sendMessage() async {
     String messageText = _messageController.text.trim();
+
     if (messageText.isEmpty) return;
 
-    final String lowerMessage = messageText.toLowerCase();
+    await _chatService.sendMessage(
+      widget.chatRoomID,
+      widget.receiverID,
+      messageText,
+    );
 
-    // "the deed is done" -> Completion
-    bool isCompletion = lowerMessage.contains("the deed is done") ||
-        lowerMessage.contains("completed");
-
-    // "deal is off", "unable to do the walk", etc -> Cancellation
-    bool isCancellation = lowerMessage.contains("deal is off") ||
-        lowerMessage.contains("unable to do the walk") ||
-        lowerMessage.contains("cancel this chat") ||
-        lowerMessage.contains("emergency");
-
-    if (isCompletion || isCancellation) {
-      _showEndSessionConfirmation(messageText, isCompletion);
-    } else {
-      await _chatService.sendMessage(widget.receiverID, messageText);
-      _messageController.clear();
-      _scrollToBottom();
-    }
+    _messageController.clear();
+    _scrollToBottom();
   }
 
-  void _showEndSessionConfirmation(String message,
-      bool isCompletion,
-      ) {
+  void _showEndSessionConfirmation(String message, bool isCompletion) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -85,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
               navigator.pop();
               try {
                 // Send the final trigger message (e.g., "The deed is done")
-                await _chatService.sendMessage(widget.receiverID, message);
+                await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, message,);
                 _messageController.clear();
 
                 final uid = _auth.currentUser!.uid;
@@ -104,7 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
 
                 // Update status to 'closed' in Firestore
-                await _chatService.closeChatRoom(widget.receiverID, closingReason);
+                await _chatService.closeChatRoom(widget.chatRoomID, closingReason,);
 
                 if (!mounted) return;
                 messenger.showSnackBar(
@@ -146,10 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
 
-    List<String> ids = [_auth.currentUser!.uid, widget.receiverID];
-    ids.sort();
-    String chatRoomID = ids.join('_');
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -160,27 +169,18 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               backgroundColor: Colors.white24,
-              child: Text(
-                widget.receiverName.isNotEmpty ? widget.receiverName[0] : "?",
-                style: const TextStyle(color: Colors.white),
-              ),
+              child: Text(widget.receiverName.isNotEmpty ? widget.receiverName[0] : "?", style: const TextStyle(color: Colors.white),),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.receiverName,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                ),
+                Text(widget.receiverName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),),
                 StreamBuilder<DocumentSnapshot>(
                 // Now chatRoomID is defined and accessible
                   stream: FirebaseFirestore.instance
                       .collection('chat_rooms')
-                      .doc(chatRoomID)
+                      .doc(widget.chatRoomID)
                       .snapshots(),
                   builder: (context, snapshot) {
                     bool isClosed = snapshot.hasData &&
@@ -211,7 +211,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildMessageList() {
     return StreamBuilder(
-      stream: _chatService.getMessages(_auth.currentUser!.uid, widget.receiverID),
+      stream: _chatService.getMessages(widget.chatRoomID),
       builder: (context, snapshot) {
         if (snapshot.hasError) return const Center(child: Text("Error loading messages"));
         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -276,14 +276,20 @@ class _ChatScreenState extends State<ChatScreen> {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('chat_rooms')
-          .doc(_chatService.getChatRoomID(_auth.currentUser!.uid, widget.receiverID))
+          .doc(widget.chatRoomID)
           .snapshots(),
       builder: (context, snapshot) {
         // Default to "not closed" while loading
         bool isClosed = false;
+        bool isWalker = false;
+
         if (snapshot.hasData && snapshot.data!.exists) {
           var data = snapshot.data!.data() as Map<String, dynamic>;
           isClosed = data['status'] == 'closed';
+          final currentUID = _auth.currentUser!.uid;
+          Map<String, dynamic> users = data['users'] ?? {};
+          String currentRole = users[currentUID]?['role'] ?? 'owner';
+          isWalker = currentRole == 'walker';
         }
 
         // If closed, show a "Chat Ended" banner instead of the text field
@@ -303,7 +309,7 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
 
-        // OTHERWISE: Show the normal input (Your existing code)
+        // OTHERWISE: Show the normal input field
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -311,27 +317,80 @@ class _ChatScreenState extends State<ChatScreen> {
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
           ),
           child: SafeArea(
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: "Type a message...",
-                      fillColor: const Color(0xFFF1F5F9),
-                      filled: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                // The buttons to end the session
+                Row(
+                  children: [
+                    // WALKER ONLY
+                    if (isWalker)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            _showEndSessionConfirmation(
+                              "Walk completed successfully.",
+                              true,
+                            );
+                          },
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text("Complete Walk"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+
+                    if (isWalker) const SizedBox(width: 10),
+                    // EVERYONE CAN END EARLY
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _showEndSessionConfirmation(
+                            "Walk ended early.",
+                            false,
+                          );
+                        },
+                        icon: const Icon(Icons.warning_amber),
+                        label: Text(
+                          isWalker ? "End Early" : "Cancel Walk",
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: sendMessage,
-                  child: const CircleAvatar(
-                    backgroundColor: Color(0xFF2563EB),
-                    child: Icon(Icons.send, color: Colors.white),
-                  ),
+
+                const SizedBox(height: 12),
+
+                // The message input field
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: "Type a message...",
+                          fillColor: const Color(0xFFF1F5F9),
+                          filled: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: sendMessage,
+                      child: const CircleAvatar(
+                        backgroundColor: Color(0xFF2563EB),
+                        child: Icon(Icons.send, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

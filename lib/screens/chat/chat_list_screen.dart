@@ -76,6 +76,7 @@ class ChatListScreen extends StatelessWidget {
     );
   }
 
+  // Helper method to build a chat list
   Widget _buildChatList({String? status}) {
     return StreamBuilder<QuerySnapshot>(
       stream: _chatService.getChatRoomsStream(status: status),
@@ -90,9 +91,7 @@ class ChatListScreen extends StatelessWidget {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Text(
-              status == 'active' 
-                  ? "No active chats yet." 
-                  : "No past chats yet.",
+              status == 'active' ? "No active chats yet." : "No past chats yet.",
               style: const TextStyle(color: Colors.grey),
             ),
           );
@@ -105,9 +104,11 @@ class ChatListScreen extends StatelessWidget {
     );
   }
 
+  // Helper method to build a chat list item
   Widget _buildChatListItem(BuildContext context, DocumentSnapshot document) {
     Map<String, dynamic> data = document.data() as Map<String, dynamic>;
     final String currentUserID = _auth.currentUser!.uid;
+    String chatRoomID = document.id;
 
     List<dynamic> participants = data['participants'] ?? [];
     if (participants.isEmpty) return const SizedBox.shrink();
@@ -123,36 +124,15 @@ class ChatListScreen extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: status == 'active' ? Colors.blue.shade100 : Colors.grey.shade200,
-        child: Text(
-          otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : "?",
-          style: TextStyle(color: status == 'active' ? Colors.blue : Colors.grey),
-        ),
+        child: Text(otherUserName.isNotEmpty ? otherUserName[0].toUpperCase() : "?", style: TextStyle(color: status == 'active' ? Colors.blue : Colors.grey),),
       ),
-      title: Text(
-        otherUserName, 
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: status == 'active' ? Colors.black : Colors.grey,
-        )
-      ),
+      title: Text(otherUserName, style: TextStyle(fontWeight: FontWeight.bold, color: status == 'active' ? Colors.black : Colors.grey,)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (petName.isNotEmpty)
-            Text(
-              "Pet: $petName", 
-              style: TextStyle(
-                fontSize: 12, 
-                fontWeight: FontWeight.w600, 
-                color: status == 'active' ? Colors.blueAccent : Colors.grey
-              )
-            ),
-          Text(
-            lastMessage, 
-            maxLines: 1, 
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: status == 'active' ? Colors.black87 : Colors.grey),
-          ),
+          if (petName.isNotEmpty) Text("Pet: $petName", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: status == 'active' ? Colors.blueAccent : Colors.grey)),
+
+          Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: status == 'active' ? Colors.black87 : Colors.grey),),
         ],
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
@@ -161,6 +141,7 @@ class ChatListScreen extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
+              chatRoomID: chatRoomID,
               receiverID: otherUserID,
               receiverName: otherUserName,
             ),

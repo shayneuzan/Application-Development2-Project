@@ -8,14 +8,15 @@ class ChatService {
   // Stream of chat rooms the current user is part of
   Stream<QuerySnapshot> getChatRoomsStream({String? status}) {
     final String currentUserID = _auth.currentUser!.uid;
-    Query query = _firestore
-        .collection('chat_rooms')
-        .where('participants', arrayContains: currentUserID);
+    // Get all chat rooms where the current user is a participant
+    Query query = _firestore.collection('chat_rooms').where('participants', arrayContains: currentUserID);
 
+    // Filter by status if provided
     if (status != null) {
       query = query.where('status', isEqualTo: status);
     }
 
+    // Order by timestamp
     return query.orderBy('timestamp', descending: true).snapshots();
   }
 
@@ -31,13 +32,11 @@ class ChatService {
 
     List<String> ids = [currentUserID, receiverID];
     ids.sort();
-    String chatRoomID = ids.join('_');
+
+    String sessionID = DateTime.now().millisecondsSinceEpoch.toString();
+    String chatRoomID = "${ids.join('_')}_$sessionID";
 
     DocumentReference chatRoomRef = _firestore.collection("chat_rooms").doc(chatRoomID);
-    DocumentSnapshot chatRoomSnapshot = await chatRoomRef.get();
-
-    // Determine if we should send the automated welcome (new chat or previously closed)
-    bool isNewOrReopened = !chatRoomSnapshot.exists || (chatRoomSnapshot.data() as Map<String, dynamic>?)?['status'] == 'closed';
 
     // Set or Update chat room status to active
     await chatRoomRef.set({
@@ -52,23 +51,16 @@ class ChatService {
       'petName': petName,
     }, SetOptions(merge: true));
 
-    // Send the initial preset message only if it's a fresh/reopened session
-    if (isNewOrReopened) {
-      String welcomeMsg = role == 'walker'
-        ? "👋 $currentUserName has accepted the walk request for $petName. You can now coordinate details here!\n\nIf the walk is finished, type 'the deed is done' or 'completed'. If the walk is cancelled, type 'unable to do the walk' or 'cancel'."
-        : "👋 $currentUserName has started a chat regarding $petName's walk.\n\nIf the walk is finished, type 'the deed is done' or 'completed'. If the walk is cancelled, type 'unable to do the walk' or 'cancel'.";
+    // Send the initial preset message
+    String welcomeMsg = role == 'walker'
+      ? "👋 $currentUserName has accepted the walk request for $petName. You can now coordinate details here!"
+      : "👋 $currentUserName has started a chat regarding $petName's walk.";
 
-      await sendMessage(receiverID, welcomeMsg);
-    }
+    await sendMessage(chatRoomID, receiverID, welcomeMsg);
   }
 
   // Method to close a chat room with a specific reason (completion vs cancellation)
-  Future<void> closeChatRoom(String otherUserID, String closingMessage) async {
-    final String currentUserID = _auth.currentUser!.uid;
-    List<String> ids = [currentUserID, otherUserID];
-    ids.sort();
-    String chatRoomID = ids.join('_');
-
+  Future<void> closeChatRoom(String chatRoomID, String closingMessage) async {
     await _firestore.collection("chat_rooms").doc(chatRoomID).update({
       'status': 'closed',
       'lastMessage': closingMessage,
@@ -77,20 +69,21 @@ class ChatService {
   }
 
   // Send a message (checks if chat is active)
-  Future<void> sendMessage(String receiverID, String message) async {
+  Future<void> sendMessage(String chatRoomID, String receiverID, String message) async {
     final String currentUserID = _auth.currentUser!.uid;
     final Timestamp timestamp = Timestamp.now();
 
-    List<String> ids = [currentUserID, receiverID];
-    ids.sort();
-    String chatRoomID = ids.join('_');
+    DocumentSnapshot chatDoc = await _firestore
+        .collection("chat_rooms")
+        .doc(chatRoomID)
+        .get();
 
-    // Check if chat is still active before sending
-    DocumentSnapshot chatDoc = await _firestore.collection("chat_rooms").doc(chatRoomID).get();
-    if (chatDoc.exists && (chatDoc.data() as Map<String, dynamic>?)?['status'] == 'closed') {
+    if (chatDoc.exists &&
+        (chatDoc.data() as Map<String, dynamic>?)?['status'] == 'closed') {
       return;
     }
 
+    // Create a new message
     Message newMessage = Message(
       senderID: currentUserID,
       receiverID: receiverID,
@@ -98,23 +91,25 @@ class ChatService {
       timestamp: timestamp,
     );
 
+    // Add the message to the chat room
     await _firestore
         .collection("chat_rooms")
         .doc(chatRoomID)
         .collection("messages")
         .add(newMessage.toMap());
 
-    await _firestore.collection("chat_rooms").doc(chatRoomID).update({
+    // Update the last message in the chat room
+    await _firestore
+        .collection("chat_rooms")
+        .doc(chatRoomID)
+        .update({
       'lastMessage': message,
       'timestamp': timestamp,
     });
   }
 
   // Get messages for a specific chat
-  Stream<QuerySnapshot> getMessages(String userID, String otherUserID) {
-    List<String> ids = [userID, otherUserID];
-    ids.sort();
-    String chatRoomID = ids.join('_');
+  Stream<QuerySnapshot> getMessages(String chatRoomID) {
     return _firestore
         .collection('chat_rooms')
         .doc(chatRoomID)
@@ -122,13 +117,9 @@ class ChatService {
         .orderBy("timestamp", descending: false)
         .snapshots();
   }
-
-  String getChatRoomID(String user1, String user2) {  List<String> ids = [user1, user2];
-    ids.sort();
-    return ids.join('_');
-  }
 }
 
+// Message Model
 class Message {
   final String senderID;
   final String receiverID;

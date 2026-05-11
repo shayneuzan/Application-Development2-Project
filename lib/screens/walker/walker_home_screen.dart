@@ -33,18 +33,22 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
     DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
 
     Map<String, dynamic> updates = {};
+    // Daily reset
     if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
       updates['todayEarnings'] = 0.0;
       updates['lastResetDaily'] = FieldValue.serverTimestamp();
     }
-    if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
+    // Weekly reset (7 days passed)
+    if (now.difference(lastWeekly).inDays >= 7) {
       updates['weeklyEarnings'] = 0.0;
       updates['lastResetWeekly'] = FieldValue.serverTimestamp();
     }
+    // Monthly reset
     if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
       updates['monthEarnings'] = 0.0;
       updates['lastResetMonthly'] = FieldValue.serverTimestamp();
     }
+    // Apply updates
     if (updates.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
     }
@@ -85,6 +89,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           double weeklyEarnings = 0;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
+            // Check and reset earnings
+            checkAndResetEarnings(data);
+
             name = data['name'] ?? 'Guest';
             todayEarnings = (data['todayEarnings'] ?? 0).toDouble();
             weeklyEarnings = (data['weeklyEarnings'] ?? 0).toDouble();

@@ -38,30 +38,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // void sendMessage() async {
-  //   String messageText = _messageController.text.trim();
-  //   if (messageText.isEmpty) return;
-  //
-  //   final String lowerMessage = messageText.toLowerCase();
-  //
-  //   // "the deed is done" -> Completion
-  //   bool isCompletion = lowerMessage.contains("the deed is done") || lowerMessage.contains("completed");
-  //
-  //   // "deal is off", "unable to do the walk", etc -> Cancellation
-  //   bool isCancellation = lowerMessage.contains("deal is off") ||
-  //       lowerMessage.contains("unable to do the walk") ||
-  //       lowerMessage.contains("cancel") ||
-  //       lowerMessage.contains("emergency");
-  //
-  //   if (isCompletion || isCancellation) {
-  //     _showEndSessionConfirmation(messageText, isCompletion);
-  //   } else {
-  //     await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, messageText);
-  //     _messageController.clear();
-  //     _scrollToBottom();
-  //   }
-  // }
-
   void sendMessage() async {
     String messageText = _messageController.text.trim();
 
@@ -71,6 +47,19 @@ class _ChatScreenState extends State<ChatScreen> {
       widget.chatRoomID,
       widget.receiverID,
       messageText,
+    );
+
+    // Get current user name to show in notification
+    final uid = _auth.currentUser!.uid;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final name = userDoc.data()?['name'] ?? 'User';
+
+    // Notify the receiver
+    await _sendNotification(
+      receiverID: widget.receiverID,
+      title: "New Message from $name",
+      message: messageText,
+      type: 'chat',
     );
 
     _messageController.clear();
@@ -183,16 +172,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       .doc(widget.chatRoomID)
                       .snapshots(),
                   builder: (context, snapshot) {
-                    bool isClosed = snapshot.hasData &&
-                        snapshot.data?.exists == true &&
-                        snapshot.data?.get('status') == 'closed';
-
+                    bool isClosed = snapshot.hasData && snapshot.data?.exists == true && snapshot.data?.get('status') == 'closed';
                     return Text(
                       isClosed ? "Session Closed" : "Active Coordination",
-                      style: TextStyle(
-                          color: isClosed ? Colors.redAccent[100] : Colors.white70,
-                          fontSize: 12,
-                          fontWeight: isClosed ? FontWeight.bold : FontWeight.normal),
+                      style: TextStyle(color: isClosed ? Colors.redAccent[100] : Colors.white70, fontSize: 12, fontWeight: isClosed ? FontWeight.bold : FontWeight.normal),
                     );
                   }),
               ],
@@ -347,15 +330,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          _showEndSessionConfirmation(
-                            "Walk ended early.",
-                            false,
-                          );
+                          _showEndSessionConfirmation("Walk ended early.", false,);
                         },
                         icon: const Icon(Icons.warning_amber),
-                        label: Text(
-                          isWalker ? "End Early" : "Cancel Walk",
-                        ),
+                        label: Text(isWalker ? "End Early" : "Cancel Walk"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
@@ -364,9 +342,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
-
                 // The message input field
                 Row(
                   children: [

@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'booking_screen.dart';
 import 'all_reviews_screen.dart';
+import '../../models/walker_model.dart';
+import '../../services/firestore_service.dart';
 
 class WalkerProfileScreen extends StatefulWidget {
+  final String id;
   final String name;
   final String initials;
   final double rating;
   final int walksCount;
   final int price;
+  final WalkerModel? walker; // Optional full model
 
   const WalkerProfileScreen({
     super.key,
+    required this.id,
     required this.name,
     required this.initials,
     required this.rating,
     required this.walksCount,
     required this.price,
+    this.walker,
   });
 
   @override
@@ -24,6 +30,7 @@ class WalkerProfileScreen extends StatefulWidget {
 
 class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
   bool _showReviews = false;
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +58,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                 child: Center(
                   child: CircleAvatar(
                     radius: 50,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    backgroundColor: Colors.white.withOpacity(0.2),
                     child: Text(
                       widget.initials,
                       style: const TextStyle(
@@ -120,7 +127,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                     children: [
                       _buildStatColumn('Rating', widget.rating.toString(), Icons.star, Colors.orange),
                       _buildStatColumn('Walks', widget.walksCount.toString(), Icons.pets, primaryBlue),
-                      _buildStatColumn('Experience', '3 years', Icons.timer, Colors.green),
+                      _buildStatColumn('Experience', '${widget.walker?.experienceYears ?? 3} years', Icons.timer, Colors.green),
                     ],
                   ),
 
@@ -144,7 +151,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                                 color: !_showReviews ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: !_showReviews 
-                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                   : [],
                               ),
                               alignment: Alignment.center,
@@ -166,7 +173,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                                 color: _showReviews ? Colors.white : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: _showReviews 
-                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                  ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                   : [],
                               ),
                               alignment: Alignment.center,
@@ -205,7 +212,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -220,6 +227,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => BookingScreen(
+                    walkerId: widget.id,
                     walkerName: widget.name,
                     hourlyRate: widget.price,
                   ),
@@ -248,6 +256,9 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
+    final String bio = widget.walker?.bio ?? 'I am a passionate dog lover with years of experience walking dogs of all sizes and temperaments. I ensure your furry friend gets the exercise and attention they need while you are away.';
+    final List<String> services = widget.walker?.services ?? ['GPS Tracking', 'Photo Updates', 'Feeding', 'Fresh Water'];
+
     return Column(
       key: const ValueKey('about'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,9 +268,9 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'I am a passionate dog lover with over 3 years of experience walking dogs of all sizes and temperaments. I ensure your furry friend gets the exercise and attention they need while you are away.',
-          style: TextStyle(color: textLight, fontSize: 15, height: 1.5),
+        Text(
+          bio,
+          style: const TextStyle(color: textLight, fontSize: 15, height: 1.5),
         ),
         const SizedBox(height: 32),
         const Text(
@@ -270,12 +281,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: [
-            _buildServiceChip('GPS Tracking'),
-            _buildServiceChip('Photo Updates'),
-            _buildServiceChip('Feeding'),
-            _buildServiceChip('Fresh Water'),
-          ],
+          children: services.map((s) => _buildServiceChip(s)).toList(),
         ),
       ],
     );
@@ -284,38 +290,55 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
   Widget _buildReviewsList() {
     const primaryBlue = Color(0xFF2563EB);
     
-    return Column(
-      key: const ValueKey('reviews'),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _firestoreService.getReviewsByWalker(widget.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final reviews = snapshot.data ?? [];
+
+        return Column(
+          key: const ValueKey('reviews'),
           children: [
-            const Text(
-              'Recent Reviews',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Recent Reviews',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AllReviewsScreen(
+                          walkerId: widget.id, 
+                          walkerName: widget.name
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('See All', style: TextStyle(color: primaryBlue)),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AllReviewsScreen(walkerName: widget.name)),
-                );
-              },
-              child: const Text('See All', style: TextStyle(color: primaryBlue)),
-            ),
+            if (reviews.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Text('No reviews yet.'),
+              )
+            else
+              ...reviews.take(3).map((r) => _buildReviewItem(
+                r['userName'] ?? 'User',
+                r['comment'] ?? '',
+                (r['rating'] ?? 0.0).toDouble(),
+              )),
           ],
-        ),
-        _buildReviewItem(
-          'John Doe',
-          'Sarah is amazing! My dog Max loves her and always comes back happy.',
-          5.0,
-        ),
-        _buildReviewItem(
-          'Emily Wilson',
-          'Very professional and punctual. Max seemed to have a great time.',
-          4.5,
-        ),
-      ],
+        );
+      }
     );
   }
 

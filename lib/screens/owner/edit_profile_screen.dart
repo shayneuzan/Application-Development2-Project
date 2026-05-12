@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String currentName;
   final String currentEmail;
+  final String? currentPhone;
+  final String? currentAddress;
 
   const EditProfileScreen({
     super.key,
     required this.currentName,
     required this.currentEmail,
+    this.currentPhone,
+    this.currentAddress,
   });
 
   @override
@@ -17,13 +23,20 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  final TextEditingController _phoneController = TextEditingController(text: '+1 234 567 890');
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
+  
+  final FirestoreService _firestoreService = FirestoreService();
+  final User? _user = FirebaseAuth.instance.currentUser;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.currentName);
     _emailController = TextEditingController(text: widget.currentEmail);
+    _phoneController = TextEditingController(text: widget.currentPhone ?? '');
+    _addressController = TextEditingController(text: widget.currentAddress ?? '');
   }
 
   @override
@@ -31,7 +44,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _updateProfile() async {
+    if (_user == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _firestoreService.updateUser(_user!.uid, {
+        'name': _nameController.text.trim(),
+        'phoneNumber': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -54,94 +97,100 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Picture Edit
-            Center(
-              child: Stack(
-                children: [
-                  const CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Color(0xFFF1F5F9),
-                    child: Icon(Icons.person, size: 60, color: Color(0xFF94A3B8)),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: primaryBlue,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Profile Picture Edit
+                Center(
+                  child: Stack(
+                    children: [
+                      const CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Color(0xFFF1F5F9),
+                        child: Icon(Icons.person, size: 60, color: Color(0xFF94A3B8)),
                       ),
-                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: primaryBlue,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                          ),
+                          child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Form Fields
+                _buildLabel('Full Name'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: _inputStyle('Enter your full name'),
+                ),
+                const SizedBox(height: 20),
+
+                _buildLabel('Email Address'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailController,
+                  enabled: false,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: _inputStyle('Enter your email'),
+                ),
+                const SizedBox(height: 20),
+
+                _buildLabel('Phone Number'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: _inputStyle('Enter your phone number'),
+                ),
+                const SizedBox(height: 20),
+
+                _buildLabel('Address'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _addressController,
+                  maxLines: 2,
+                  decoration: _inputStyle('Enter your home address'),
+                ),
+                const SizedBox(height: 40),
+
+                // Save Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _updateProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Save Changes',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Form Fields
-            _buildLabel('Full Name'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _nameController,
-              decoration: _inputStyle('Enter your full name'),
-            ),
-            const SizedBox(height: 20),
-
-            _buildLabel('Email Address'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: _inputStyle('Enter your email'),
-            ),
-            const SizedBox(height: 20),
-
-            _buildLabel('Phone Number'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: _inputStyle('Enter your phone number'),
-            ),
-            const SizedBox(height: 40),
-
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Placeholder for update logic
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile updated successfully!')),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
                 ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 

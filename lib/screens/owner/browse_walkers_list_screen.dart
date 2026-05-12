@@ -4,6 +4,8 @@ import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'walker_profile_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../models/walker_model.dart';
 import '../widgets/owner_drawer.dart';
 
 class BrowseWalkersListScreen extends StatefulWidget {
@@ -17,42 +19,10 @@ class BrowseWalkersListScreen extends StatefulWidget {
 
 class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   late bool _isShowingFavorites;
+  final FirestoreService _firestoreService = FirestoreService();
   
-  // Placeholder list of walkers with favorite status
-  final List<Map<String, dynamic>> _allWalkers = [
-    {
-      'name': 'Sarah Johnson',
-      'initials': 'SJ',
-      'walksCount': 342,
-      'rating': 4.9,
-      'price': 25,
-      'isFavorite': true,
-    },
-    {
-      'name': 'Mike Chen',
-      'initials': 'MC',
-      'walksCount': 256,
-      'rating': 4.8,
-      'price': 30,
-      'isFavorite': true,
-    },
-    {
-      'name': 'Emily Davis',
-      'initials': 'ED',
-      'walksCount': 189,
-      'rating': 5.0,
-      'price': 28,
-      'isFavorite': false,
-    },
-    {
-      'name': 'James Wilson',
-      'initials': 'JW',
-      'walksCount': 128,
-      'rating': 4.7,
-      'price': 22,
-      'isFavorite': false,
-    },
-  ];
+  // Keep local favorites state for now or move to user profile in firestore later
+  final Set<String> _favoriteIds = {};
 
   @override
   void initState() {
@@ -60,9 +30,13 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     _isShowingFavorites = widget.showFavoritesOnly;
   }
 
-  void _toggleFavorite(int index) {
+  void _toggleFavorite(String walkerId) {
     setState(() {
-      _allWalkers[index]['isFavorite'] = !(_allWalkers[index]['isFavorite'] as bool);
+      if (_favoriteIds.contains(walkerId)) {
+        _favoriteIds.remove(walkerId);
+      } else {
+        _favoriteIds.add(walkerId);
+      }
     });
   }
 
@@ -71,10 +45,6 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
-
-    final List<Map<String, dynamic>> displayedWalkers = _isShowingFavorites
-        ? _allWalkers.where((w) => w['isFavorite'] == true).toList()
-        : _allWalkers;
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -110,141 +80,156 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Walkers'),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!_isShowingFavorites)
-              Container(
-                height: 180,
-                width: double.infinity,
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEDD5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
-                        ),
-                      ),
+      body: StreamBuilder<List<WalkerModel>>(
+        stream: _firestoreService.getWalkers(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          List<WalkerModel> walkers = snapshot.data ?? [];
+          
+          if (_isShowingFavorites) {
+            walkers = walkers.where((w) => _favoriteIds.contains(w.id)).toList();
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!_isShowingFavorites)
+                  Container(
+                    height: 180,
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEDD5),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    const Positioned(top: 40, left: 100, child: _MapDot()),
-                    const Positioned(top: 100, left: 60, child: _MapDot()),
-                    const Positioned(top: 60, right: 80, child: _MapDot()),
-                    const Positioned(top: 30, right: 40, child: _MapDot()),
-                    
-                    Positioned(
-                      bottom: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.location_on, color: Colors.orange, size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              '4 walkers nearby',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
+                        const Positioned(top: 40, left: 100, child: _MapDot()),
+                        const Positioned(top: 100, left: 60, child: _MapDot()),
+                        const Positioned(top: 60, right: 80, child: _MapDot()),
+                        const Positioned(top: 30, right: 40, child: _MapDot()),
+                        
+                        Positioned(
+                          bottom: 12,
+                          left: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.location_on, color: Colors.orange, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${walkers.length} walkers nearby',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _isShowingFavorites ? primaryBlue : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: primaryBlue),
-                      ),
-                      child: Text(
-                        _isShowingFavorites ? 'Show All' : 'Show Favorites',
-                        style: TextStyle(
-                          color: _isShowingFavorites ? Colors.white : primaryBlue,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            if (displayedWalkers.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 60),
-                  child: Column(
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.favorite_border, size: 64, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No favorites yet!',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      Text(
+                        _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _isShowingFavorites ? primaryBlue : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: primaryBlue),
+                          ),
+                          child: Text(
+                            _isShowingFavorites ? 'Show All' : 'Show Favorites',
+                            style: TextStyle(
+                              color: _isShowingFavorites ? Colors.white : primaryBlue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: displayedWalkers.length,
-                itemBuilder: (context, index) {
-                  final walker = displayedWalkers[index];
-                  // Find real index in _allWalkers to support toggling correctly
-                  int realIndex = _allWalkers.indexWhere((w) => w['name'] == walker['name']);
-                  
-                  return _buildWalkerCard(
-                    context,
-                    index: realIndex,
-                    name: walker['name'],
-                    initials: walker['initials'],
-                    walksCount: walker['walksCount'],
-                    rating: walker['rating'],
-                    price: walker['price'],
-                    isFavorite: walker['isFavorite'],
-                  );
-                },
-              ),
-            const SizedBox(height: 20),
-          ],
-        ),
+
+                if (walkers.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Column(
+                        children: [
+                          Icon(
+                            _isShowingFavorites ? Icons.favorite_border : Icons.search_off,
+                            size: 64, 
+                            color: Colors.grey.shade300
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _isShowingFavorites ? 'No favorites yet!' : 'No walkers available.',
+                            style: const TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: walkers.length,
+                    itemBuilder: (context, index) {
+                      final walker = walkers[index];
+                      return _buildWalkerCard(
+                        context,
+                        walker: walker,
+                        isFavorite: _favoriteIds.contains(walker.id),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        }
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -285,12 +270,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
 
   Widget _buildWalkerCard(
     BuildContext context, {
-    required int index,
-    required String name,
-    required String initials,
-    required int walksCount,
-    required double rating,
-    required int price,
+    required WalkerModel walker,
     required bool isFavorite,
   }) {
     const primaryBlue = Color(0xFF2563EB);
@@ -303,11 +283,13 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => WalkerProfileScreen(
-              name: name,
-              initials: initials,
-              rating: rating,
-              walksCount: walksCount,
-              price: price,
+              id: walker.id, // Pass ID
+              name: walker.name,
+              initials: walker.initials,
+              rating: walker.rating,
+              walksCount: walker.walksCount,
+              price: walker.price,
+              walker: walker,
             ),
           ),
         );
@@ -336,7 +318,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                       radius: 30,
                       backgroundColor: const Color(0xFFFFEDD5),
                       child: Text(
-                        initials,
+                        walker.initials,
                         style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     ),
@@ -349,7 +331,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                name,
+                                walker.name,
                                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
                               ),
                               Row(
@@ -357,7 +339,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                   const Icon(Icons.star, color: Colors.orange, size: 18),
                                   const SizedBox(width: 4),
                                   Text(
-                                    rating.toString(),
+                                    walker.rating.toString(),
                                     style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
                                   ),
                                 ],
@@ -365,7 +347,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                             ],
                           ),
                           Text(
-                            '$walksCount walks completed',
+                            '${walker.walksCount} walks completed',
                             style: const TextStyle(color: textLight, fontSize: 14),
                           ),
                           const SizedBox(height: 8),
@@ -373,7 +355,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '\$ $price/hr',
+                                '\$ ${walker.price}/hr',
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -386,11 +368,13 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => WalkerProfileScreen(
-                                        name: name,
-                                        initials: initials,
-                                        rating: rating,
-                                        walksCount: walksCount,
-                                        price: price,
+                                        id: walker.id, // Pass ID
+                                        name: walker.name,
+                                        initials: walker.initials,
+                                        rating: walker.rating,
+                                        walksCount: walker.walksCount,
+                                        price: walker.price,
+                                        walker: walker,
                                       ),
                                     ),
                                   );
@@ -412,12 +396,11 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                 ),
               ],
             ),
-            // Favorite Heart Icon - Now Clickable
             Positioned(
               top: 0,
               left: 0,
               child: GestureDetector(
-                onTap: () => _toggleFavorite(index),
+                onTap: () => _toggleFavorite(walker.id),
                 child: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
                   color: Colors.red,

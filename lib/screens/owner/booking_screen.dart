@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'schedule_screen.dart';
 import 'add_pet_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../models/pet_model.dart';
 
 class BookingScreen extends StatefulWidget {
+  final String walkerId;
   final String walkerName;
   final int hourlyRate;
 
   const BookingScreen({
     super.key,
+    required this.walkerId,
     required this.walkerName,
     required this.hourlyRate,
   });
@@ -18,13 +23,11 @@ class BookingScreen extends StatefulWidget {
 
 class _BookingScreenState extends State<BookingScreen> {
   int _selectedDuration = 60; // Default 60 minutes
-  String? _selectedPet;
+  String? _selectedPetId;
+  String? _selectedPetName;
   
-  // Placeholder pets
-  final List<Map<String, String>> _myPets = [
-    {'name': 'Max', 'breed': 'Golden Retriever'},
-    {'name': 'Bella', 'breed': 'French Bulldog'},
-  ];
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
   @override
   Widget build(BuildContext context) {
@@ -102,22 +105,37 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _myPets.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == _myPets.length) {
-                    // Add Pet Button
-                    return _buildAddPetCard(context);
-                  }
-                  final pet = _myPets[index];
-                  bool isSelected = _selectedPet == pet['name'];
-                  return _buildPetCard(pet, isSelected);
-                },
-              ),
-            ),
+            _userId == null 
+              ? const Text('Please login to select a pet')
+              : StreamBuilder<List<PetModel>>(
+                  stream: _firestoreService.getPetsByOwner(_userId!),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    
+                    final pets = snapshot.data ?? [];
+                    
+                    return SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: pets.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == pets.length) {
+                            return _buildAddPetCard(context);
+                          }
+                          final pet = pets[index];
+                          bool isSelected = _selectedPetId == pet.id;
+                          return _buildPetCard(pet, isSelected);
+                        },
+                      ),
+                    );
+                  },
+                ),
 
             const SizedBox(height: 32),
 
@@ -174,16 +192,17 @@ class _BookingScreenState extends State<BookingScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: _selectedPet == null
+            onPressed: _selectedPetId == null
                 ? null
                 : () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ScheduleScreen(
+                          walkerId: widget.walkerId,
                           walkerName: widget.walkerName,
                           hourlyRate: widget.hourlyRate,
-                          selectedPet: _selectedPet!,
+                          selectedPet: _selectedPetName!,
                           selectedDuration: _selectedDuration,
                         ),
                       ),
@@ -208,10 +227,13 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildPetCard(Map<String, String> pet, bool isSelected) {
+  Widget _buildPetCard(PetModel pet, bool isSelected) {
     const primaryBlue = Color(0xFF2563EB);
     return GestureDetector(
-      onTap: () => setState(() => _selectedPet = pet['name']),
+      onTap: () => setState(() {
+        _selectedPetId = pet.id;
+        _selectedPetName = pet.name;
+      }),
       child: Container(
         width: 120,
         margin: const EdgeInsets.only(right: 12),
@@ -225,21 +247,23 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.pets,
-              color: isSelected ? Colors.white : primaryBlue,
-              size: 30,
-            ),
+            pet.imageUrl.isNotEmpty 
+              ? CircleAvatar(radius: 15, backgroundImage: NetworkImage(pet.imageUrl))
+              : Icon(
+                  Icons.pets,
+                  color: isSelected ? Colors.white : primaryBlue,
+                  size: 30,
+                ),
             const SizedBox(height: 8),
             Text(
-              pet['name']!,
+              pet.name,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : const Color(0xFF1E293B),
               ),
             ),
             Text(
-              pet['breed']!,
+              pet.breed,
               style: TextStyle(
                 fontSize: 10,
                 color: isSelected ? Colors.white70 : const Color(0xFF64748B),

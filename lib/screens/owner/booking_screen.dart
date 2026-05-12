@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'schedule_screen.dart';
@@ -25,9 +26,28 @@ class _BookingScreenState extends State<BookingScreen> {
   int _selectedDuration = 60; // Default 60 minutes
   String? _selectedPetId;
   String? _selectedPetName;
+  String? _ownerName;
   
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _getOwnerName();
+  }
+
+  // Fetch the owner's name from Firestore
+  Future<void> _getOwnerName() async {
+    if (_userId == null) return;
+    final ownerData = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
+
+    if (ownerData.exists) {
+      setState(() {
+        _ownerName = ownerData['name'];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +67,7 @@ class _BookingScreenState extends State<BookingScreen> {
           icon: const Icon(Icons.arrow_back, color: textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Book a Walk',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Book a Walk', style: TextStyle(color: textDark, fontWeight: FontWeight.bold),),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -202,6 +219,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           walkerId: widget.walkerId,
                           walkerName: widget.walkerName,
                           hourlyRate: widget.hourlyRate,
+                          ownerName: _ownerName,
                           selectedPet: _selectedPetName!,
                           selectedDuration: _selectedDuration,
                         ),

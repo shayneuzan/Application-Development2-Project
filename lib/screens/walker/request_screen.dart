@@ -43,7 +43,7 @@ class _RequestScreenState extends State<RequestScreen> {
           ),
           drawer: WalkerDrawer(name: walkerName!),
           body: StreamBuilder<List<BookingModel>>(
-            stream: _firestoreService.getBookingsByWalkerID(uid!),
+            stream: _firestoreService.getAllBookingsByWalkerID(uid!),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

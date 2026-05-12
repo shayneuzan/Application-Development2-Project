@@ -24,7 +24,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   final ChatService _chatService = ChatService();
   final FirestoreService _firestoreService = FirestoreService();
 
-  final DateTime _presentDay = DateTime.now();
+  final DateTime _presentDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   bool _isTimedOut = false;
   StreamSubscription? _statusSub;
 
@@ -216,8 +216,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 20,),
                       const Text('Upcoming Walks', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
+                      // Upcoming Walks
                       StreamBuilder<List<BookingModel>>(
-                      stream: _firestoreService.getThreePendingRequestsByWalkerID(uid!, _presentDay),
+                      stream: _firestoreService.getUpcomingWalksByWalkerID(uid!, _presentDay),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
@@ -286,6 +287,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 20,),
                       const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
+                      // New Requests
                       StreamBuilder<List<BookingModel>>(
                         stream: _firestoreService.getThreePendingRequestsByWalkerID(uid!, _presentDay),
                         builder: (context, snapshot) {
@@ -323,7 +325,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       children: [
                                         const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text("${data.date} at ${data.time}", style: const TextStyle(color: Colors.grey)),
+                                        Text("${DateFormat('yyyy-MM-dd').format(data.date)} at ${data.time}", style: const TextStyle(color: Colors.grey)),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
@@ -373,7 +375,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                               String petName = data.petName;
                                               String ownerName = data.ownerName;
 
-                                              await _firestoreService.updateBookingStatus(data.id, 'accept');
+                                              await _firestoreService.updateBookingStatus(data.id, 'accepted');
                                               if (ownerID.isNotEmpty) {
                                                 // Create Chat Room
                                                 await _chatService.createChatRoom(ownerID, ownerName, petName);

@@ -10,6 +10,7 @@ class ScheduleScreen extends StatefulWidget {
   final int hourlyRate;
   final String selectedPet;
   final int selectedDuration;
+  final String? ownerName;
 
   const ScheduleScreen({
     super.key,
@@ -18,6 +19,7 @@ class ScheduleScreen extends StatefulWidget {
     required this.hourlyRate,
     required this.selectedPet,
     required this.selectedDuration,
+    required this.ownerName,
   });
 
   @override
@@ -63,6 +65,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         'ownerId': _userId,
         'walkerId': widget.walkerId,
         'walkerName': widget.walkerName,
+        'ownerName': widget.ownerName,
         'petName': widget.selectedPet,
         'duration': widget.selectedDuration,
         'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),

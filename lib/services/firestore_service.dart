@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../models/walker_model.dart';
 import '../models/pet_model.dart';
 import '../models/user_model.dart';
@@ -31,25 +32,50 @@ class FirestoreService {
   }
 
   // --- Booking Operations ---
-  Stream<List<BookingModel>> getBookingsByWalkerID(String walkerID) {
-    return _db.collection('bookings').where('walkerId', isEqualTo: walkerID).snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => BookingModel.fromFirestore(doc)).toList()
-    );
+  Stream<List<BookingModel>> getAllBookingsByWalkerID(String walkerID) {
+    return _db.collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'pending')
+        .snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc)).toList());
   }
 
+  // Home screen - 3 pending from today
   Stream<List<BookingModel>> getThreePendingRequestsByWalkerID(String walkerID, DateTime presentDay) {
-    return getBookingsByWalkerID(walkerID).map((bookings) => bookings
-        .where((request) => request.status == 'pending' && !request.date.isBefore(presentDay))
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc))
+        .where((b) => !b.date.isBefore(presentDay))
         .take(3)
-        .toList()
-    );
+        .toList());
   }
 
-  Stream<List<BookingModel>> getUpcomingRequestsByWalkerID(String walkerID, DateTime presentDay) {
-    return getBookingsByWalkerID(walkerID).map((bookings) => bookings
-        .where((request) => request.status == 'accepted' && !request.date.isBefore(presentDay))
-        .toList()
-    );
+  // Home screen - accepted from today
+  Stream<List<BookingModel>> getUpcomingWalksByWalkerID(String walkerID, DateTime presentDay) {
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'accepted')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc))
+        .where((b) => !b.date.isBefore(presentDay))
+        .toList());
+  }
+
+  Stream<List<BookingModel>> getUpcomingWalksByDay(String walkerID, DateTime selectedDay) {
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'accepted')
+        .where('date', isEqualTo: DateFormat('yyyy-MM-dd').format(selectedDay))
+        .snapshots()
+        .map((snapshot) => snapshot.docs)
+        .map((docs) => docs.map((doc) => BookingModel.fromFirestore(doc)).toList());
   }
 
   // --- Pet Operations ---

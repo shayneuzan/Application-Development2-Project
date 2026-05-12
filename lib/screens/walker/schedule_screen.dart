@@ -31,7 +31,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Your Schedule', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.blueAccent,
+            backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
               WalkerNotificationIcon(),
@@ -64,11 +64,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     },
                     calendarStyle: const CalendarStyle(
                       selectedDecoration: BoxDecoration(
-                        color: Colors.blueAccent,
+                        color: const Color(0xFF2563EB),
                         shape: BoxShape.circle,
                       ),
                       todayDecoration: BoxDecoration(
-                        color: Colors.lightBlueAccent,
+                        color: const Color(0xFFEFF6FF),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -151,7 +151,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       children: [
                                         const CircleAvatar( // Profile Picture
                                           radius: 25,
-                                          backgroundColor: Color(0xFFF5EFE9),
+                                          backgroundColor: Color(0xFFF1F5F9),
                                           child: Icon(Icons.pets, color: Colors.black, size: 24),
                                         ),
                                         const SizedBox(width: 12),
@@ -163,7 +163,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
                                                   Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                                  Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Colors.blue, fontWeight: FontWeight.bold,)),
+                                                  Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Color(0xFF2563EB), fontWeight: FontWeight.bold,)),
                                                 ],
                                               ),
                                               Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),

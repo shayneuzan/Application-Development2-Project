@@ -121,7 +121,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Dashboard', style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 const WalkerNotificationIcon(),
@@ -170,7 +170,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent,
+                          color: const Color(0xFF2563EB),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4),),
@@ -210,8 +210,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       MaterialPageRoute(builder: (context) => const EarningsScreen()),
                                     );
                                   },
-                                  icon: const Icon(Icons.attach_money, color: Colors.blueAccent, size: 18),
-                                  label: const Text("View All Earnings", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),),
+                                  icon: const Icon(Icons.attach_money, color: const Color(0xFF2563EB), size: 18),
+                                  label: const Text("View All Earnings", style: TextStyle(color: const Color(0xFF2563EB), fontWeight: FontWeight.bold),),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),),
@@ -259,7 +259,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      const CircleAvatar(radius: 25, backgroundColor: Color(0xFFF5EFE9), child: Icon(Icons.pets, color: Colors.black, size: 24)),
+                                      const CircleAvatar(radius: 25, backgroundColor: Color(0xFFF1F5F9), child: Icon(Icons.pets, color: Colors.black, size: 24)),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -286,7 +286,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       const SizedBox(width: 4),
                                       Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                       const Spacer(),
-                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: const Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 16)),
                                     ],
                                   ),
                                 ],
@@ -325,7 +325,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: const Border(left: BorderSide(color: Colors.blueAccent, width: 5)),
+                                  border: const Border(left: BorderSide(color: const Color(0xFF2563EB), width: 5)),
                                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                                 ),
                                 child: Column(
@@ -335,7 +335,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(data['petOwner'] ?? "Unknown Owner", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                        Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: Colors.blueAccent, fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: const Color(0xFF2563EB), fontSize: 18, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                     Text("${data['petName']} - ${data['duration']} min walk", style: const TextStyle(color: Colors.grey)),
@@ -423,7 +423,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                                 ),
                                               );
                                             },
-                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                                             child: const Text("Accept", style: TextStyle(color: Colors.white)),
                                           ),
                                         ),

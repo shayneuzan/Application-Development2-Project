@@ -31,7 +31,7 @@ class AdminHomeTab extends StatelessWidget {
     {'message': 'New walker registered: John Pasiolan',  'time': '2 min ago',   'icon': Icons.person_add,   'color': Color(0xFF10B981)},
     {'message': 'Booking completed: Sarah & Mike',       'time': '15 min ago',  'icon': Icons.check_circle, 'color': Color(0xFF3B82F6)},
     {'message': 'Dispute reported by Daniel',            'time': '1 hour ago',  'icon': Icons.report,       'color': Color(0xFFEF4444)},
-    {'message': 'Walker approved: Jodel Santos',         'time': '2 hours ago', 'icon': Icons.verified,     'color': Color(0xFFF97316)},
+    {'message': 'Walker approved: Jodel Santos',         'time': '2 hours ago', 'icon': Icons.verified,     'color': Color(0xFF2563EB)},
     {'message': 'New owner registered: Emily Chen',      'time': '3 hours ago', 'icon': Icons.person_add,   'color': Color(0xFF10B981)},
   ];
 
@@ -53,13 +53,13 @@ class AdminHomeTab extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Admin Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
-                    Text('Platform overview', style: TextStyle(fontSize: 13, color: Color(0xFF78716C))),
+                    Text('Admin Dashboard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                    Text('Platform overview', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                   ],
                 ),
                 Container(
                   width: 44, height: 44,
-                  decoration: BoxDecoration(color: Color(0xFFF97316), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: Color(0xFF2563EB), borderRadius: BorderRadius.circular(12)),
                   child: Icon(Icons.pets, color: Colors.white, size: 24),
                 ),
               ],
@@ -68,7 +68,7 @@ class AdminHomeTab extends StatelessWidget {
             SizedBox(height: 28),
 
             //Stat cards
-            Text('Platform Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF7C2D12))),
+            Text('Platform Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
             SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
@@ -83,12 +83,12 @@ class AdminHomeTab extends StatelessWidget {
                 _buildCard(
                   label: 'Total Users',
                   icon: Icons.people,
-                  color: Color(0xFFF97316),
+                  color: Color(0xFF2563EB),
                   valueWidget: FutureBuilder<int>(
                     future: _getTotalUsers(),
                     builder: (context, snapshot) => Text(
                       snapshot.hasData ? '${snapshot.data}' : '...',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1C1917)),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
                     ),
                   ),
                 ),
@@ -98,7 +98,7 @@ class AdminHomeTab extends StatelessWidget {
                   label: 'Active Walks',
                   icon: Icons.directions_walk,
                   color: Color(0xFF10B981),
-                  valueWidget: Text('8', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1C1917))),
+                  valueWidget: Text('8', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 ),
 
                 // Total Bookings — dummy until bookings collection is built
@@ -106,7 +106,7 @@ class AdminHomeTab extends StatelessWidget {
                   label: 'Total Bookings',
                   icon: Icons.book,
                   color: Color(0xFF3B82F6),
-                  valueWidget: Text('340', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1C1917))),
+                  valueWidget: Text('340', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
                 ),
 
                 // Pending Approvals — real Firestore count
@@ -118,7 +118,7 @@ class AdminHomeTab extends StatelessWidget {
                     future: _getPendingApprovals(),
                     builder: (context, snapshot) => Text(
                       snapshot.hasData ? '${snapshot.data}' : '...',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1C1917)),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
                     ),
                   ),
                 ),
@@ -129,7 +129,7 @@ class AdminHomeTab extends StatelessWidget {
             SizedBox(height: 28),
 
             //Recent activity
-            Text('Recent Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF7C2D12))),
+            Text('Recent Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
             SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -161,9 +161,9 @@ class AdminHomeTab extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item['message'] as String, style: TextStyle(fontSize: 13, color: Color(0xFF1C1917), fontWeight: FontWeight.w500)),
+                              Text(item['message'] as String, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B), fontWeight: FontWeight.w500)),
                               SizedBox(height: 2),
-                              Text(item['time'] as String, style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
+                              Text(item['time'] as String, style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                             ],
                           ),
                         ),
@@ -206,7 +206,7 @@ class AdminHomeTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               valueWidget,
-              Text(label, style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
+              Text(label, style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
             ],
           ),
         ],

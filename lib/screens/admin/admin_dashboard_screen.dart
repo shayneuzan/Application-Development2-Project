@@ -53,7 +53,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFF7ED),
+      backgroundColor: Color(0xFFF8FAFC),
 
       //Switch between tabs based on selected index
       body: _buildCurrentTab(),
@@ -63,7 +63,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF7C2D12),
+        backgroundColor: Color(0xFF2563EB),
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white54,
         selectedFontSize: 11,

@@ -39,7 +39,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Notifications', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.blueAccent,
+            backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
           ),
           drawer: WalkerDrawer(name: name),

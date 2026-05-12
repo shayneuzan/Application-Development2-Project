@@ -180,9 +180,9 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
         child: BottomNavigationBar(
           currentIndex: 4,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
@@ -235,10 +235,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                   : Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF7ED),
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.pets, color: Colors.orange, size: 28),
+                      child: const Icon(Icons.pets, color: Color(0xFF2563EB), size: 28),
                     ),
                 const SizedBox(width: 16),
                 Expanded(

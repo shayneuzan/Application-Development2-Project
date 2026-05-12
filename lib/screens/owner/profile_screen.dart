@@ -342,9 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: BottomNavigationBar(
           currentIndex: 4, // Profile tab active
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           showSelectedLabels: true,
           showUnselectedLabels: true,
           onTap: (index) {

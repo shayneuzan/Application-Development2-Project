@@ -31,8 +31,8 @@ class AdminDisputesTab extends StatelessWidget {
             SizedBox(height: 24),
 
             // Header
-            Text('Dispute Resolution', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
-            Text('${open.length} open disputes', style: TextStyle(fontSize: 13, color: Color(0xFF78716C))),
+            Text('Dispute Resolution', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+            Text('${open.length} open disputes', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
 
             SizedBox(height: 20),
 
@@ -93,16 +93,16 @@ class _DisputeCard extends StatelessWidget {
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 13, color: Color(0xFF1C1917)),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
                     children: [
                       TextSpan(text: dispute['reportedBy'], style: TextStyle(fontWeight: FontWeight.w700)),
                       TextSpan(text: ' reported '),
-                      TextSpan(text: dispute['against'], style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFEA580C))),
+                      TextSpan(text: dispute['against'], style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                     ],
                   ),
                 ),
               ),
-              Text(dispute['date'], style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
+              Text(dispute['date'], style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
             ],
           ),
 
@@ -112,10 +112,10 @@ class _DisputeCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
             child: Text(
               dispute['reason'],
-              style: TextStyle(fontSize: 12, color: Color(0xFF78716C), fontStyle: FontStyle.italic),
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
             ),
           ),
 
@@ -147,11 +147,11 @@ class _DisputeCard extends StatelessWidget {
                       // TODO: FirebaseFirestore.instance.collection('disputes')
                       //   .doc(dispute['id']).update({'status': 'dismissed'})
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Dispute dismissed.'), backgroundColor: Color(0xFF78716C)),
+                        SnackBar(content: Text('Dispute dismissed.'), backgroundColor: Color(0xFF64748B)),
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Color(0xFF78716C), side: BorderSide(color: Color(0xFFE7E5E4)),
+                      foregroundColor: Color(0xFF64748B), side: BorderSide(color: Color(0xFFE7E5E4)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text('Dismiss', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),

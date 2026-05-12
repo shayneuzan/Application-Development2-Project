@@ -136,7 +136,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.orange,
+                              color: Color(0xFF2563EB),
                             ),
                           ),
                         ],

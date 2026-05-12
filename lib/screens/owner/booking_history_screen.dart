@@ -190,9 +190,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         child: BottomNavigationBar(
           currentIndex: 2,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));

@@ -55,7 +55,7 @@ class WalkerBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      backgroundColor: Colors.blue,
+      backgroundColor: const Color(0xFF2563EB),
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Colors.white,
       unselectedItemColor: Colors.white70,

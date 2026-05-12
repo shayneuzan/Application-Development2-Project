@@ -110,7 +110,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                             width: double.infinity,
                             margin: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFEDD5),
+                              color: const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Stack(
@@ -143,7 +143,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.location_on, color: Colors.orange, size: 14),
+                                        const Icon(Icons.location_on, color: Color(0xFF2563EB), size: 14),
                                         const SizedBox(width: 4),
                                         Text(
                                           '${walkers.length} walkers nearby',
@@ -250,9 +250,9 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
         child: BottomNavigationBar(
           currentIndex: 1,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
@@ -323,7 +323,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: const Color(0xFFFFEDD5),
+                      backgroundColor: const Color(0xFFF1F5F9),
                       child: Text(
                         walker.initials,
                         style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
@@ -366,7 +366,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                               ElevatedButton(

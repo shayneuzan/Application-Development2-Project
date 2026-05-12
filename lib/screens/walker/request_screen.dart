@@ -49,7 +49,7 @@ class _RequestScreenState extends State<RequestScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Booking Requests', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.blueAccent,
+            backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
               const WalkerNotificationIcon(),
@@ -118,7 +118,7 @@ class _RequestScreenState extends State<RequestScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 22,
-                                backgroundColor: const Color(0xFFF5EFE9),
+                                backgroundColor: const Color(0xFFF1F5F9),
                                 child: Text(initials, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -146,14 +146,14 @@ class _RequestScreenState extends State<RequestScreen> {
                                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                             width: double.infinity,
                                             decoration: BoxDecoration(
-                                              color: Colors.lightBlue.shade50,
+                                              color: const Color(0xFFEFF6FF),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Column(
                                               children: [
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.calendar_month_outlined, size: 20, color: Colors.blueAccent),
+                                                    const Icon(Icons.calendar_month_outlined, size: 20, color: const Color(0xFF2563EB)),
                                                     const SizedBox(width: 10),
                                                     Text(date, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,))
                                                   ]
@@ -161,7 +161,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                                 const SizedBox(height: 12),
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.timer_outlined, size: 20, color: Colors.blueAccent),
+                                                    const Icon(Icons.timer_outlined, size: 20, color: const Color(0xFF2563EB)),
                                                     const SizedBox(width: 10),
                                                     Text("$time ($duration minutes)", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,)),
                                                   ]
@@ -215,7 +215,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                   icon: const Icon(Icons.close, size: 18, color: Colors.black),
                                   label: const Text("Decline", style: TextStyle(color: Colors.black)),
                                   style: OutlinedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFF5EFE9),
+                                    backgroundColor: const Color(0xFFF1F5F9),
                                     side: BorderSide.none,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
@@ -257,7 +257,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                   icon: const Icon(Icons.check, size: 18, color: Colors.white),
                                   label: const Text("Accept", style: TextStyle(color: Colors.white)),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blueAccent,
+                                    backgroundColor: const Color(0xFF2563EB),
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),

@@ -70,7 +70,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Earnings', style: TextStyle(color: Colors.white),),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 WalkerNotificationIcon(),
@@ -114,7 +114,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
+                                  color: const Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -146,7 +146,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
+                                  color: const Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -177,7 +177,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent,
+                                  color: const Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -282,7 +282,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                               elevation: 2,
                               margin: const EdgeInsets.symmetric(vertical: 5),
                               child: ListTile(
-                                leading: const Icon(Icons.pets, color: Colors.blueAccent),
+                                leading: const Icon(Icons.pets, color: const Color(0xFF2563EB)),
                                 title: Text('$date, (${doc['dayOfWeek']})'),
                                 subtitle: Text('${doc['walkTitle']}'),
                                 trailing: Text(

@@ -44,11 +44,11 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
               // Header
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-                child: Text('User Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
+                child: Text('User Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: Color(0xFF78716C))),
+                child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
               ),
 
               // Search bar
@@ -59,12 +59,12 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                   decoration: InputDecoration(
                     hintText: 'Search by name or email...',
                     hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF78716C), size: 20),
+                    prefixIcon: Icon(Icons.search, color: Color(0xFF64748B), size: 20),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFE7E5E4))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFF97316), width: 1.5)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                   ),
                 ),
               ),
@@ -73,11 +73,11 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
               // Show spinner while waiting for Firestore to respond
               if (snapshot.connectionState == ConnectionState.waiting)
-                Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFFF97316))))
+                Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))))
 
               // Show message if no users match the search
               else if (filtered.isEmpty)
-                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: Color(0xFF78716C)))))
+                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: Color(0xFF64748B)))))
 
               // User list
               else
@@ -114,7 +114,7 @@ class _UserCard extends StatelessWidget {
       case 'active':    statusColor = Color(0xFF10B981); break;
       case 'pending':   statusColor = Color(0xFFF59E0B); break;
       case 'suspended': statusColor = Color(0xFFEF4444); break;
-      default:          statusColor = Color(0xFF78716C);
+      default:          statusColor = Color(0xFF64748B);
     }
 
     return Container(
@@ -130,11 +130,11 @@ class _UserCard extends StatelessWidget {
           //Initials avatar
           Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(color: Color(0xFFF97316).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: Color(0xFF2563EB).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
             child: Center(
               child: Text(
                 (user['name'] ?? 'No name').toString().split(' ').map((n) => n[0]).take(2).join(),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFFEA580C)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
               ),
             ),
           ),
@@ -146,9 +146,9 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1C1917))),
+                Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
                 SizedBox(height: 2),
-                Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
+                Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                 SizedBox(height: 6),
                 Row(
                   children: [

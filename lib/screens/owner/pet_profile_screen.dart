@@ -36,11 +36,21 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
           ),
           TextButton(
             onPressed: () async {
-              // TODO: Implement delete in FirestoreService
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pet deletion feature coming soon')),
-              );
+              try {
+                await _firestoreService.deletePet(pet.id);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${pet.name} deleted successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting pet: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
@@ -255,7 +265,6 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: textLight, size: 20),
                       onPressed: () {
-                        // Pass pet model to edit screen
                         Navigator.push(
                           context,
                           MaterialPageRoute(

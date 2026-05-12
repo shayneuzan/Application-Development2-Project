@@ -31,6 +31,14 @@ class FirestoreService {
     return _db.collection('pets').add(pet.toMap());
   }
 
+  Future<void> updatePet(String petId, Map<String, dynamic> data) {
+    return _db.collection('pets').doc(petId).update(data);
+  }
+
+  Future<void> deletePet(String petId) {
+    return _db.collection('pets').doc(petId).delete();
+  }
+
   // --- User Operations ---
   Future<UserModel> getUserById(String id) async {
     var doc = await _db.collection('users').doc(id).get();

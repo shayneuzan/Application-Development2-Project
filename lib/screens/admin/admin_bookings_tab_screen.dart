@@ -32,7 +32,7 @@ class AdminBookingsTab extends StatelessWidget {
           //Header
           Padding(
             padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-            child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
+            child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
           ),
 
           Expanded(
@@ -45,11 +45,11 @@ class AdminBookingsTab extends StatelessWidget {
                   //Status summary cards
                   Row(
                     children: [
-                      _StatCard(label: 'Total', value: total.toString(), color: Color(0xFF1C1917)),
+                      _StatCard(label: 'Total', value: total.toString(), color: Color(0xFF1E293B)),
                       SizedBox(width: 10),
                       _StatCard(label: 'Pending', value: pending.toString(), color: Color(0xFFF59E0B)),
                       SizedBox(width: 10),
-                      _StatCard(label: 'Confirmed', value: confirmed.toString(), color: Color(0xFFF97316)),
+                      _StatCard(label: 'Confirmed', value: confirmed.toString(), color: Color(0xFF2563EB)),
                       SizedBox(width: 10),
                       _StatCard(label: 'Completed', value: completed.toString(), color: Color(0xFF10B981)),
                     ],
@@ -96,7 +96,7 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
             SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 10, color: Color(0xFF78716C))),
+            Text(label, style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
           ],
         ),
       ),
@@ -116,10 +116,10 @@ class _BookingCard extends StatelessWidget {
     Color statusColor;
     switch (booking['status']) {
       case 'completed':  statusColor = Color(0xFF10B981); break; //green
-      case 'confirmed':  statusColor = Color(0xFFF97316); break; //orange
+      case 'confirmed':  statusColor = Color(0xFF2563EB); break; //orange
       case 'pending':    statusColor = Color(0xFFF59E0B); break; //yellow
       case 'active':     statusColor = Color(0xFF3B82F6); break; //blue
-      default:           statusColor = Color(0xFF78716C); //grey
+      default:           statusColor = Color(0xFF64748B); //grey
     }
 
     return Container(
@@ -150,7 +150,7 @@ class _BookingCard extends StatelessWidget {
               ),
               Text(
                 booking['price'],
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFF97316)),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
               ),
             ],
           ),
@@ -158,16 +158,16 @@ class _BookingCard extends StatelessWidget {
           SizedBox(height: 12),
 
           //Booking ID
-          Text('ID: ${booking['id']}', style: TextStyle(fontSize: 12, color: Color(0xFF78716C))),
+          Text('ID: ${booking['id']}', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
 
           SizedBox(height: 10),
 
           //Owner row
           Row(
             children: [
-              Icon(Icons.person_outline, size: 16, color: Color(0xFF78716C)),
+              Icon(Icons.person_outline, size: 16, color: Color(0xFF64748B)),
               SizedBox(width: 6),
-              Text('Owner: ${booking['owner']}', style: TextStyle(fontSize: 13, color: Color(0xFF1C1917))),
+              Text('Owner: ${booking['owner']}', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
             ],
           ),
 
@@ -176,9 +176,9 @@ class _BookingCard extends StatelessWidget {
           //Walker row
           Row(
             children: [
-              Icon(Icons.directions_walk, size: 16, color: Color(0xFF78716C)),
+              Icon(Icons.directions_walk, size: 16, color: Color(0xFF64748B)),
               SizedBox(width: 6),
-              Text('Walker: ${booking['walker']}', style: TextStyle(fontSize: 13, color: Color(0xFF1C1917))),
+              Text('Walker: ${booking['walker']}', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
             ],
           ),
 
@@ -187,15 +187,15 @@ class _BookingCard extends StatelessWidget {
           //Date, time, duration row
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF78716C)),
+              Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
               SizedBox(width: 4),
-              Text(booking['date'], style: TextStyle(fontSize: 12, color: Color(0xFF78716C))),
+              Text(booking['date'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
               SizedBox(width: 12),
-              Icon(Icons.access_time, size: 14, color: Color(0xFF78716C)),
+              Icon(Icons.access_time, size: 14, color: Color(0xFF64748B)),
               SizedBox(width: 4),
-              Text(booking['time'], style: TextStyle(fontSize: 12, color: Color(0xFF78716C))),
+              Text(booking['time'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
               SizedBox(width: 6),
-              Text(booking['duration'], style: TextStyle(fontSize: 12, color: Color(0xFF78716C))),
+              Text(booking['duration'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
             ],
           ),
 
@@ -214,8 +214,8 @@ class _BookingCard extends StatelessWidget {
               icon: Icon(Icons.remove_red_eye_outlined, size: 16),
               label: Text('View Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Color(0xFF7C2D12),
-                side: BorderSide(color: Color(0xFFE7E5E4)),
+                foregroundColor: Color(0xFF2563EB),
+                side: BorderSide(color: Color(0xFFE2E8F0)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 padding: EdgeInsets.symmetric(vertical: 12),
               ),

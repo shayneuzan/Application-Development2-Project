@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'owner_home_screen.dart';
 import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
@@ -6,6 +7,7 @@ import 'notifications_screen.dart';
 import 'schedule_screen.dart';
 import 'review_screen.dart';
 import 'booking_screen.dart';
+import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
@@ -18,43 +20,10 @@ class BookingHistoryScreen extends StatefulWidget {
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   bool isUpcomingSelected = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
-  // Placeholder data lists to demonstrate empty states if needed
-  final List<Map<String, dynamic>> _upcomingBookings = [
-    {
-      'walkerName': 'Sarah Johnson',
-      'dogs': 'Max',
-      'date': '2026-03-25',
-      'time': '10:00',
-      'duration': '60 min',
-      'price': '\$25',
-      'status': 'Confirmed',
-    },
-    {
-      'walkerName': 'Sarah Johnson',
-      'dogs': 'Rocky',
-      'date': '2026-03-24',
-      'time': '09:00',
-      'duration': '45 min',
-      'price': '\$19',
-      'status': 'Pending',
-    },
-  ];
-
-  final List<Map<String, dynamic>> _pastBookings = [
-    {
-      'walkerName': 'Mike Chen',
-      'dogs': 'Bella',
-      'date': '2026-03-20',
-      'time': '14:00',
-      'duration': '30 min',
-      'price': '\$15',
-      'status': 'Completed',
-      'rating': 5.0,
-    },
-  ];
-
-  void _showCancelDialog(int index) {
+  void _showCancelDialog(String bookingId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -66,13 +35,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             child: const Text('No, Keep It'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _upcomingBookings.removeAt(index);
-              });
+            onPressed: () async {
+              // TODO: Implement cancel/delete in FirestoreService
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking cancelled successfully')),
+                const SnackBar(content: Text('Cancellation feature coming soon')),
               );
             },
             child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
@@ -108,23 +75,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         ),
         actions: [
           IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
             onPressed: () {
               Navigator.push(
                 context,
@@ -136,111 +87,112 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Bookings'),
-      body: Column(
-        children: [
-          // Toggle Tabs
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
+      body: _userId == null 
+        ? const Center(child: Text('Please log in to see your bookings'))
+        : StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _firestoreService.getBookingsByOwner(_userId!),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              final allBookings = snapshot.data ?? [];
+              final upcomingBookings = allBookings.where((b) => b['status'] != 'completed').toList();
+              final pastBookings = allBookings.where((b) => b['status'] == 'completed').toList();
+
+              return Column(
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => isUpcomingSelected = true),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isUpcomingSelected ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: isUpcomingSelected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  )
-                                ]
-                              : [],
-                        ),
-                        margin: const EdgeInsets.all(4),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Upcoming (${_upcomingBookings.length})',
-                          style: TextStyle(
-                            color: isUpcomingSelected ? primaryBlue : textLight,
-                            fontWeight: FontWeight.bold,
+                  // Toggle Tabs
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => isUpcomingSelected = true),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isUpcomingSelected ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: isUpcomingSelected
+                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      : [],
+                                ),
+                                margin: const EdgeInsets.all(4),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Upcoming (${upcomingBookings.length})',
+                                  style: TextStyle(
+                                    color: isUpcomingSelected ? primaryBlue : textLight,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => isUpcomingSelected = false),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: !isUpcomingSelected ? Colors.white : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: !isUpcomingSelected
+                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      : [],
+                                ),
+                                margin: const EdgeInsets.all(4),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Past (${pastBookings.length})',
+                                  style: TextStyle(
+                                    color: !isUpcomingSelected ? primaryBlue : textLight,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+
+                  // Bookings List
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => isUpcomingSelected = false),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: !isUpcomingSelected ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: !isUpcomingSelected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  )
-                                ]
-                              : [],
-                        ),
-                        margin: const EdgeInsets.all(4),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Past (${_pastBookings.length})',
-                          style: TextStyle(
-                            color: !isUpcomingSelected ? primaryBlue : textLight,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: isUpcomingSelected 
+                        ? _buildList(upcomingBookings, true) 
+                        : _buildList(pastBookings, false),
                     ),
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
-
-          // Bookings List
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: isUpcomingSelected 
-                ? _buildUpcomingList() 
-                : _buildPastList(),
-            ),
-          ),
-        ],
-      ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black12,
               blurRadius: 10,
-              offset: const Offset(0, -5),
+              offset: Offset(0, -5),
             ),
           ],
         ),
         child: BottomNavigationBar(
           currentIndex: 2,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
@@ -262,59 +214,34 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  Widget _buildUpcomingList() {
-    if (_upcomingBookings.isEmpty) {
-      return _buildEmptyState('No upcoming walks scheduled.', Icons.calendar_today_outlined);
+  Widget _buildList(List<Map<String, dynamic>> bookings, bool isUpcoming) {
+    if (bookings.isEmpty) {
+      return _buildEmptyState(
+        isUpcoming ? 'No upcoming walks scheduled.' : 'No past walks yet.',
+        isUpcoming ? Icons.calendar_today_outlined : Icons.history
+      );
     }
 
-    return ListView(
-      key: const ValueKey('upcoming'),
+    return ListView.builder(
+      key: ValueKey(isUpcoming ? 'upcoming' : 'past'),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: [
-        // Active Walk Card
-        _buildActiveWalkCard(),
-        const SizedBox(height: 8),
-        ...List.generate(_upcomingBookings.length, (index) {
-          final b = _upcomingBookings[index];
-          return _buildBookingCard(
-            index: index,
-            walkerName: b['walkerName'],
-            dogs: b['dogs'],
-            date: b['date'],
-            time: b['time'],
-            duration: b['duration'],
-            price: b['price'],
-            status: b['status'],
-            isUpcoming: true,
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildPastList() {
-    if (_pastBookings.isEmpty) {
-      return _buildEmptyState('No past walks yet.', Icons.history);
-    }
-
-    return ListView(
-      key: const ValueKey('past'),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: List.generate(_pastBookings.length, (index) {
-        final b = _pastBookings[index];
+      itemCount: bookings.length,
+      itemBuilder: (context, index) {
+        final b = bookings[index];
         return _buildBookingCard(
-          index: index,
-          walkerName: b['walkerName'],
-          dogs: b['dogs'],
-          date: b['date'],
-          time: b['time'],
-          duration: b['duration'],
-          price: b['price'],
-          status: b['status'],
-          isUpcoming: false,
-          rating: b['rating'],
+          bookingId: b['id'],
+          walkerId: b['walkerId'] ?? '',
+          walkerName: b['walkerName'] ?? 'Walker',
+          dogs: b['petName'] ?? 'Pet',
+          date: b['date'] ?? '',
+          time: b['time'] ?? '',
+          duration: '${b['duration']} min',
+          price: '\$${b['totalPrice']}',
+          status: b['status'] ?? 'pending',
+          isUpcoming: isUpcoming,
+          rating: b['rating']?.toDouble(),
         );
-      }),
+      },
     );
   }
 
@@ -345,87 +272,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     );
   }
 
-  Widget _buildActiveWalkCard() {
-    const primaryBlue = Color(0xFF2563EB);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryBlue, primaryBlue.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: primaryBlue.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white24,
-                child: Icon(Icons.directions_walk, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Live Walk: Max & Bella',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      'With Sarah Johnson • 15 mins left',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'LIVE',
-                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to Active Walk Screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: primaryBlue,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Track Live', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBookingCard({
-    required int index,
+    required String bookingId,
+    required String walkerId,
     required String walkerName,
     required String dogs,
     required String date,
@@ -461,11 +310,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black12,
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -553,18 +402,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     children: [
                       TextButton(
                         onPressed: () {
-                          // Navigate to Schedule Screen to edit
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ScheduleScreen(
-                                walkerName: walkerName,
-                                hourlyRate: 25, // Placeholder
-                                selectedPet: dogs,
-                                selectedDuration: int.parse(duration.split(' ')[0]),
-                              ),
-                            ),
-                          );
+                          // TODO: Navigate to Schedule Screen to edit
                         },
                         child: const Text(
                           'Edit',
@@ -572,7 +410,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => _showCancelDialog(index),
+                        onPressed: () => _showCancelDialog(bookingId),
                         child: const Text(
                           'Cancel',
                           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
@@ -589,8 +427,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ReviewScreen(
+                                walkerId: walkerId,
                                 walkerName: walkerName,
                                 dogName: dogs,
+                                bookingId: bookingId,
                               ),
                             ),
                           );
@@ -608,8 +448,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => BookingScreen(
+                                walkerId: walkerId,
                                 walkerName: walkerName,
-                                hourlyRate: 30, // Placeholder using Mike Chen's rate from mockup
+                                hourlyRate: 30, // Placeholder
                               ),
                             ),
                           );

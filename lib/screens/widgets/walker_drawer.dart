@@ -27,7 +27,7 @@ class WalkerDrawer extends StatelessWidget {
                   accountName: Text(name),
                   accountEmail: const Text('Walker'),
                   currentAccountPicture: Image.network('https://static.vecteezy.com/system/resources/thumbnails/035/857/779/small/people-face-avatar-icon-cartoon-character-png.png'),
-                  decoration: const BoxDecoration(color: Colors.blue),
+                  decoration: const BoxDecoration(color: Color(0xFF1E3A5F)),
                 ),
                 _buildMenuItem(context, Icons.house, 'Dashboard', WalkerHomeScreen()),
                 _buildMenuItem(context, Icons.date_range, 'Booking Requests', RequestScreen()),

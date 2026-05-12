@@ -16,8 +16,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [
     {
       'icon': Icons.calendar_today,
-      'iconBg': const Color(0xFFFFF7ED),
-      'iconColor': Colors.orange,
+      'iconBg': const Color(0xFFEFF6FF),
+      'iconColor': const Color(0xFF2563EB),
       'title': 'Booking Confirmed',
       'description': 'Your booking with Sarah Johnson for March 25 has been confirmed.',
       'time': '2 mins ago',
@@ -79,7 +79,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF2563EB),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: textDark),
@@ -122,9 +122,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: BottomNavigationBar(
           currentIndex: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF94A3B8),
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));

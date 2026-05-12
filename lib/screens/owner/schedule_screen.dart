@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
+  final String walkerId;
   final String walkerName;
   final int hourlyRate;
   final String selectedPet;
@@ -10,6 +13,7 @@ class ScheduleScreen extends StatefulWidget {
 
   const ScheduleScreen({
     super.key,
+    required this.walkerId,
     required this.walkerName,
     required this.hourlyRate,
     required this.selectedPet,
@@ -24,6 +28,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   String? _selectedTimeSlot;
+  bool _isLoading = false;
+
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
   final List<String> _timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM',
@@ -37,11 +45,52 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _selectedDay = _focusedDay;
   }
 
+  Future<void> _confirmBooking() async {
+    if (_selectedDay == null || _selectedTimeSlot == null) return;
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to book a walk')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final double totalPrice = (widget.hourlyRate / 60) * widget.selectedDuration;
+      
+      final bookingData = {
+        'ownerId': _userId,
+        'walkerId': widget.walkerId,
+        'walkerName': widget.walkerName,
+        'petName': widget.selectedPet,
+        'duration': widget.selectedDuration,
+        'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),
+        'time': _selectedTimeSlot,
+        'totalPrice': totalPrice,
+        'status': 'pending',
+      };
+
+      await _firestoreService.createBooking(bookingData);
+
+      if (mounted) {
+        _showSuccessDialog(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating booking: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
     const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
@@ -58,140 +107,142 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Calendar Section
-            Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: TableCalendar(
-                firstDay: DateTime.now(),
-                lastDay: DateTime.now().add(const Duration(days: 30)),
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                },
-                calendarStyle: const CalendarStyle(
-                  selectedDecoration: BoxDecoration(
-                    color: primaryBlue,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Color(0xFFEFF6FF),
-                    shape: BoxShape.circle,
-                  ),
-                  todayTextStyle: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
-                ),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                  titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-            ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Text(
-                'Available Time Slots',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
-                ),
-              ),
-            ),
-
-            // Time Slots Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 2.2,
-                ),
-                itemCount: _timeSlots.length,
-                itemBuilder: (context, index) {
-                  final slot = _timeSlots[index];
-                  bool isSelected = _selectedTimeSlot == slot;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedTimeSlot = slot),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected ? primaryBlue : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
-                        ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Calendar Section
+                Container(
+                  margin: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Center(
-                        child: Text(
-                          slot,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : textDark,
+                    ],
+                  ),
+                  child: TableCalendar(
+                    firstDay: DateTime.now(),
+                    lastDay: DateTime.now().add(const Duration(days: 30)),
+                    focusedDay: _focusedDay,
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    calendarStyle: const CalendarStyle(
+                      selectedDecoration: BoxDecoration(
+                        color: primaryBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      todayDecoration: BoxDecoration(
+                        color: Color(0xFFEFF6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      todayTextStyle: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                    ),
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    'Available Time Slots',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textDark,
+                    ),
+                  ),
+                ),
+
+                // Time Slots Grid
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 2.2,
+                    ),
+                    itemCount: _timeSlots.length,
+                    itemBuilder: (context, index) {
+                      final slot = _timeSlots[index];
+                      bool isSelected = _selectedTimeSlot == slot;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedTimeSlot = slot),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected ? primaryBlue : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              slot,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.white : textDark,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Booking Details Summary
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
+                      );
+                    },
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    _buildSummaryItem(Icons.pets, 'Pet', widget.selectedPet),
-                    const SizedBox(height: 8),
-                    _buildSummaryItem(Icons.timer, 'Duration', '${widget.selectedDuration} minutes'),
-                    const SizedBox(height: 8),
-                    _buildSummaryItem(
-                      Icons.calendar_today,
-                      'Date',
-                      _selectedDay != null ? DateFormat('MMM dd, yyyy').format(_selectedDay!) : 'Not selected'
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
+                const SizedBox(height: 32),
+
+                // Booking Details Summary
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSummaryItem(Icons.pets, 'Pet', widget.selectedPet),
+                        const SizedBox(height: 8),
+                        _buildSummaryItem(Icons.timer, 'Duration', '${widget.selectedDuration} minutes'),
+                        const SizedBox(height: 8),
+                        _buildSummaryItem(
+                          Icons.calendar_today, 
+                          'Date', 
+                          _selectedDay != null ? DateFormat('MMM dd, yyyy').format(_selectedDay!) : 'Not selected'
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
       bottomSheet: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -210,9 +261,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           child: ElevatedButton(
             onPressed: (_selectedDay == null || _selectedTimeSlot == null)
                 ? null
-                : () {
-                    _showSuccessDialog(context);
-                  },
+                : _confirmBooking,
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryBlue,
               foregroundColor: Colors.white,

@@ -60,7 +60,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
               actions: [
                 WalkerNotificationIcon(),
@@ -83,7 +83,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             children: [
                               const CircleAvatar(
                                 radius: 55,
-                                backgroundColor: Colors.lightBlue,
+                                backgroundColor: const Color(0xFF2563EB),
                                 child: Icon(Icons.person, size: 50, color: Colors.white,),
                               ),
                               const SizedBox(height: 15),
@@ -234,7 +234,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

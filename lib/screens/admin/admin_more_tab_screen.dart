@@ -19,7 +19,7 @@ class AdminMoreTab extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     final List<Map<String, dynamic>> _menuItems = [
-      {'label': 'Send Announcement', 'icon': Icons.campaign_outlined,  'color': Color(0xFFF97316)},
+      {'label': 'Send Announcement', 'icon': Icons.campaign_outlined,  'color': Color(0xFF2563EB)},
       {'label': 'Platform Settings', 'icon': Icons.settings_outlined,   'color': Color(0xFF3B82F6)},
       {'label': 'View Reports',      'icon': Icons.bar_chart_outlined,  'color': Color(0xFF8B5CF6)},
       {'label': 'Help & Support',    'icon': Icons.help_outline,        'color': Color(0xFF10B981)},
@@ -34,7 +34,7 @@ class AdminMoreTab extends StatelessWidget {
 
             SizedBox(height: 24),
 
-            Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
+            Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
             SizedBox(height: 20),
 
             //Admin profile card
@@ -49,20 +49,20 @@ class AdminMoreTab extends StatelessWidget {
                 children: [
                   Container(
                     width: 52, height: 52,
-                    decoration: BoxDecoration(color: Color(0xFFF97316), borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: Color(0xFF2563EB), borderRadius: BorderRadius.circular(14)),
                     child: Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
                   ),
                   SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Administrator', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1C1917))),
-                      Text(user?.email ?? 'admin@pawwalk.com', style: TextStyle(fontSize: 12, color: Color(0xFF78716C))),
+                      Text('Administrator', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
+                      Text(user?.email ?? 'admin@pawwalk.com', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       SizedBox(height: 4),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Color(0xFFF97316).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                        child: Text('Admin', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFFEA580C))),
+                        decoration: BoxDecoration(color: Color(0xFF2563EB).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                        child: Text('Admin', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
                       ),
                     ],
                   ),
@@ -72,7 +72,7 @@ class AdminMoreTab extends StatelessWidget {
 
             SizedBox(height: 24),
 
-            Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF7C2D12))),
+            Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
             SizedBox(height: 12),
 
             //Menu items list
@@ -98,8 +98,8 @@ class AdminMoreTab extends StatelessWidget {
                       ),
                       child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 20),
                     ),
-                    title: Text(item['label'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1C1917))),
-                    trailing: Icon(Icons.chevron_right, color: Color(0xFF78716C), size: 20),
+                    title: Text(item['label'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1E293B))),
+                    trailing: Icon(Icons.chevron_right, color: Color(0xFF64748B), size: 20),
                     onTap: () {
                       // TODO: implement each action
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +122,7 @@ class AdminMoreTab extends StatelessWidget {
                 icon: Icon(Icons.logout, size: 18),
                 label: Text('Sign Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF7C2D12),
+                  backgroundColor: Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -6,6 +7,8 @@ import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'add_pet_screen.dart';
 import 'edit_pet_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../models/pet_model.dart';
 import '../widgets/owner_drawer.dart';
 
 class PetProfileScreen extends StatefulWidget {
@@ -17,42 +20,37 @@ class PetProfileScreen extends StatefulWidget {
 
 class _PetProfileScreenState extends State<PetProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  
-  final List<Map<String, String>> pets = [
-    {
-      'name': 'Max',
-      'breed': 'Golden Retriever',
-      'age': '3 years old',
-      'instructions': 'Loves treats, pull gently on leash'
-    },
-    {
-      'name': 'Bella',
-      'breed': 'French Bulldog',
-      'age': '2 years old',
-      'instructions': 'Needs water breaks every 15 minutes'
-    },
-  ];
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
-  void _showDeleteDialog(int index) {
+  void _showDeleteDialog(PetModel pet) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Pet'),
-        content: Text('Are you sure you want to delete ${pets[index]['name']}?'),
+        content: Text('Are you sure you want to delete ${pet.name}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                pets.removeAt(index);
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pet deleted successfully')),
-              );
+            onPressed: () async {
+              try {
+                await _firestoreService.deletePet(pet.id);
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${pet.name} deleted successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting pet: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
@@ -87,23 +85,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
             onPressed: () {
               Navigator.push(
                 context,
@@ -115,72 +97,92 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Pets'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Add New Pet Button
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddPetScreen()),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.add, color: textDark, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Add New Pet',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+      body: _userId == null 
+        ? const Center(child: Text('Please log in to see your pets'))
+        : StreamBuilder<List<PetModel>>(
+            stream: _firestoreService.getPetsByOwner(_userId!),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              final pets = snapshot.data ?? [];
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Add New Pet Button
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddPetScreen()),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add, color: textDark, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Add New Pet',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    if (pets.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 40),
+                        child: Text('No pets found. Add your first pet above!'),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: pets.length,
+                        itemBuilder: (context, index) {
+                          return _buildPetCard(pets[index]);
+                        },
+                      ),
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Pets List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: pets.length,
-              itemBuilder: (context, index) {
-                return _buildPetCard(index);
-              },
-            ),
-          ],
-        ),
-      ),
+              );
+            },
+          ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black12,
               blurRadius: 10,
-              offset: const Offset(0, -5),
+              offset: Offset(0, -5),
             ),
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 4, // Settings/Profile related
+          currentIndex: 4,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white54,
+          backgroundColor: const Color(0xFF2563EB),
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
@@ -188,8 +190,6 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
             } else if (index == 2) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
-            } else if (index == 3) {
-              // TODO: Navigate to Map Screen when built
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
@@ -206,8 +206,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     );
   }
 
-  Widget _buildPetCard(int index) {
-    final pet = pets[index];
+  Widget _buildPetCard(PetModel pet) {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
@@ -216,11 +215,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black12,
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -231,29 +230,31 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.pets, color: Colors.orange, size: 28),
-                ),
+                pet.imageUrl.isNotEmpty 
+                  ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(pet.imageUrl))
+                  : Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.pets, color: Color(0xFF2563EB), size: 28),
+                    ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        pet['name']!,
+                        pet.name,
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
                       ),
                       Text(
-                        pet['breed']!,
+                        pet.breed,
                         style: const TextStyle(fontSize: 14, color: textLight),
                       ),
                       Text(
-                        pet['age']!,
+                        '${pet.age} years old',
                         style: const TextStyle(fontSize: 13, color: textLight),
                       ),
                     ],
@@ -267,14 +268,20 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EditPetScreen(pet: pet),
+                            builder: (context) => EditPetScreen(pet: {
+                              'id': pet.id,
+                              'name': pet.name,
+                              'breed': pet.breed,
+                              'age': '${pet.age} years old',
+                              'instructions': pet.description,
+                            }),
                           ),
                         );
                       },
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                      onPressed: () => _showDeleteDialog(index),
+                      onPressed: () => _showDeleteDialog(pet),
                     ),
                   ],
                 ),
@@ -289,7 +296,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                 style: const TextStyle(fontSize: 13, color: textDark),
                 children: [
                   const TextSpan(text: 'Special instructions: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextSpan(text: pet['instructions']!, style: const TextStyle(color: textLight)),
+                  TextSpan(text: pet.description, style: const TextStyle(color: textLight)),
                 ],
               ),
             ),

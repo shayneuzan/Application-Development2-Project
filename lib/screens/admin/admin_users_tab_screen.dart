@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN USERS TAB
@@ -14,73 +15,85 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
   String _searchQuery = '';
 
-  //Dummy users, replace with real Firestore values later
-  //Structure matches what register_screen.dart saves to Firestore
-  final List<Map<String, dynamic>> _users = [
-    {'name': 'Shayne Uzan',     'email': 'shayne@gmail.com',  'role': 'owner',  'status': 'active',    'isApproved': true},
-    {'name': 'Jodel Santos',    'email': 'jodel@gmail.com',   'role': 'walker', 'status': 'active',    'isApproved': true},
-    {'name': 'John Pasiolan',   'email': 'john@gmail.com',    'role': 'walker', 'status': 'pending',   'isApproved': false},
-    {'name': 'Emily Chen',      'email': 'emily@gmail.com',   'role': 'owner',  'status': 'active',    'isApproved': true},
-    {'name': 'Daniel Tremblay', 'email': 'daniel@gmail.com',  'role': 'walker', 'status': 'suspended', 'isApproved': false},
-    {'name': 'Sarah Leblanc',   'email': 'sarah@gmail.com',   'role': 'owner',  'status': 'active',    'isApproved': true},
-  ];
-
   @override
   Widget build(BuildContext context) {
-
-    //Filter based on search
-    final filtered = _users.where((u) {
-      return u['name'].toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          u['email'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      // Wrap everything in a StreamBuilder so the list updates live
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').where('role', isNotEqualTo: 'admin').snapshots(),
+        builder: (context, snapshot) {
 
-          // Header
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-            child: Text('User Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: Text('${_users.length} total users', style: TextStyle(fontSize: 13, color: Color(0xFF78716C))),
-          ),
+          // Convert Firestore docs to maps and include the uid from the doc id
+          final allUsers = snapshot.hasData
+              ? snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return {...data, 'uid': doc.id};
+                }).toList()
+              : <Map<String, dynamic>>[];
 
-          // Search bar
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Search by name or email...',
-                hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Color(0xFF78716C), size: 20),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFE7E5E4))), //grey border when not tapped
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFF97316), width: 1.5)), //orange when tapped
+          // Filter based on search query
+          final filtered = allUsers.where((u) {
+            return (u['name'] ?? 'No name').toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                (u['email'] ?? 'No email').toString().toLowerCase().contains(_searchQuery.toLowerCase());
+          }).toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              // Header
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
+                child: Text('User Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF7C2D12))),
               ),
-            ),
-          ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: Color(0xFF78716C))),
+              ),
 
-          SizedBox(height: 16),
+              // Search bar
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  decoration: InputDecoration(
+                    hintText: 'Search by name or email...',
+                    hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: Color(0xFF78716C), size: 20),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFE7E5E4))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFF97316), width: 1.5)),
+                  ),
+                ),
+              ),
 
-          //User list
-          Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              itemCount: filtered.length,
-              separatorBuilder: (context, index) => SizedBox(height: 10),
-              itemBuilder: (context, index) => _UserCard(user: filtered[index]),
-            ),
-          ),
+              SizedBox(height: 16),
 
-          SizedBox(height: 16),
-        ],
+              // Show spinner while waiting for Firestore to respond
+              if (snapshot.connectionState == ConnectionState.waiting)
+                Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFFF97316))))
+
+              // Show message if no users match the search
+              else if (filtered.isEmpty)
+                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: Color(0xFF78716C)))))
+
+              // User list
+              else
+                Expanded(
+                  child: ListView.separated(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, index) => SizedBox(height: 10),
+                    itemBuilder: (context, index) => _UserCard(user: filtered[index]),
+                  ),
+                ),
+
+              SizedBox(height: 16),
+            ],
+          );
+        },
       ),
     );
   }
@@ -97,7 +110,7 @@ class _UserCard extends StatelessWidget {
 
     //Pick status badge color
     Color statusColor;
-    switch (user['status']) {
+    switch (user['status'] ?? 'active') {
       case 'active':    statusColor = Color(0xFF10B981); break;
       case 'pending':   statusColor = Color(0xFFF59E0B); break;
       case 'suspended': statusColor = Color(0xFFEF4444); break;
@@ -120,7 +133,7 @@ class _UserCard extends StatelessWidget {
             decoration: BoxDecoration(color: Color(0xFFF97316).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
             child: Center(
               child: Text(
-                user['name'].toString().split(' ').map((n) => n[0]).take(2).join(), //take the first the initial of the first and last name and join the 2
+                (user['name'] ?? 'No name').toString().split(' ').map((n) => n[0]).take(2).join(),
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFFEA580C)),
               ),
             ),
@@ -133,19 +146,19 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user['name'], style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1C1917))),
+                Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1C1917))),
                 SizedBox(height: 2),
-                Text(user['email'], style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
+                Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: Color(0xFF78716C))),
                 SizedBox(height: 6),
                 Row(
                   children: [
                     _Badge(
-                      label: user['role'] == 'walker' ? 'Walker' : 'Owner',
-                      color: user['role'] == 'walker' ? Color(0xFF3B82F6) : Color(0xFF10B981), //blue or walker, green for owner
+                      label: (user['role'] ?? 'owner') == 'walker' ? 'Walker' : 'Owner',
+                      color: (user['role'] ?? 'owner') == 'walker' ? Color(0xFF3B82F6) : Color(0xFF10B981),
                     ),
                     SizedBox(width: 6),
                     _Badge(
-                      label: user['status'].toString()[0].toUpperCase() + user['status'].toString().substring(1), //3 types of status. capitalize the first letter(cleaner)
+                      label: (user['status'] ?? 'active').toString()[0].toUpperCase() + (user['status'] ?? 'active').toString().substring(1),
                       color: statusColor,
                     ),
                   ],
@@ -184,17 +197,20 @@ class _ActionButton extends StatelessWidget {
 
   const _ActionButton({required this.user});
 
+  // Shortcut to the user's Firestore document
+  DocumentReference get _ref =>
+      FirebaseFirestore.instance.collection('users').doc(user['uid']);
+
   @override
   Widget build(BuildContext context) {
 
-    //Pending walker —> Approve
-    if (user['role'] == 'walker' && user['status'] == 'pending') {
+    //Pending walker — Approve
+    if ((user['role'] ?? 'owner') == 'walker' && (user['status'] ?? 'active') == 'pending') {
       return ElevatedButton(
-        onPressed: () {
-          // TODO: FirebaseFirestore.instance.collection('users')
-          //   .doc(user['uid']).update({'isApproved': true, 'status': 'active'})
+        onPressed: () async {
+          await _ref.update({'isApproved': true, 'status': 'active'});
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${user['name']} approved!'), backgroundColor: Color(0xFF10B981)),
+            SnackBar(content: Text('${user['name'] ?? 'No name'} approved!'), backgroundColor: Color(0xFF10B981)),
           );
         },
         style: ElevatedButton.styleFrom(
@@ -206,14 +222,13 @@ class _ActionButton extends StatelessWidget {
       );
     }
 
-    //Active —> Suspend
-    if (user['status'] == 'active') {
+    //Active — Suspend
+    if ((user['status'] ?? 'active') == 'active') {
       return OutlinedButton(
-        onPressed: () {
-          // TODO: FirebaseFirestore.instance.collection('users')
-          //   .doc(user['uid']).update({'status': 'suspended'})
+        onPressed: () async {
+          await _ref.update({'status': 'suspended'});
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${user['name']} suspended.'), backgroundColor: Color(0xFFEF4444)),
+            SnackBar(content: Text('${user['name'] ?? 'No name'} suspended.'), backgroundColor: Color(0xFFEF4444)),
           );
         },
         style: OutlinedButton.styleFrom(
@@ -225,14 +240,13 @@ class _ActionButton extends StatelessWidget {
       );
     }
 
-    //Suspended —> Restore
-    if (user['status'] == 'suspended') {
+    //Suspended — Restore
+    if ((user['status'] ?? 'active') == 'suspended') {
       return OutlinedButton(
-        onPressed: () {
-          // TODO: FirebaseFirestore.instance.collection('users')
-          //   .doc(user['uid']).update({'status': 'active'})
+        onPressed: () async {
+          await _ref.update({'status': 'active'});
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${user['name']} restored.'), backgroundColor: Color(0xFF10B981)),
+            SnackBar(content: Text('${user['name'] ?? 'No name'} restored.'), backgroundColor: Color(0xFF10B981)),
           );
         },
         style: OutlinedButton.styleFrom(
@@ -244,10 +258,7 @@ class _ActionButton extends StatelessWidget {
       );
     }
 
-    //safety fallback, if somehow a user has a status that does not match any of the conditions above,
-    //instead of crashing the app it just shows nothing
+    //Safety fallback — show nothing if status doesn't match any known case
     return SizedBox();
-
-
   }
 }

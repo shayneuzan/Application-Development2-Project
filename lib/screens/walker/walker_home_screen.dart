@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
 import '../chat/chat_service.dart';
-
+import '../auth/login_screen.dart';
 import '../widgets/walker_notification_icon.dart';
 
 class WalkerHomeScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   late final String _endDateStr = DateFormat('yyyy-MM-dd').format(_weekFromNow);
   bool _isTimedOut = false;
   final ChatService _chatService = ChatService();
+  StreamSubscription? _statusSub;
 
   Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
     if (uid == null) return;
@@ -73,6 +75,31 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) setState(() => _isTimedOut = true);
     });
+
+    // Listen to the user's document and sign them out if they get suspended
+    if (uid != null) {
+      _statusSub = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots()
+          .listen((doc) {
+        if (!doc.exists || !mounted) return;
+        final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
+        if (status == 'suspended') {
+          FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => LoginScreen()),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _statusSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -83,11 +110,13 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           String? name = "Walker";
           double todayEarnings = 0;
           double weeklyEarnings = 0;
+          bool isPending = false;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
             name = data['name'] ?? 'Guest';
             todayEarnings = (data['todayEarnings'] ?? 0).toDouble();
             weeklyEarnings = (data['weeklyEarnings'] ?? 0).toDouble();
+            isPending = !(data['isApproved'] ?? false) || data['status'] == 'pending';
           }
           return Scaffold(
             appBar: AppBar(
@@ -106,6 +135,32 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
+                      // Show banner if the walker has not been approved yet
+                      if (isPending)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.access_time, color: Color(0xFFD97706), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Your account is pending admin approval. You cannot accept bookings yet.',
+                                  style: TextStyle(color: Color(0xFF92400E), fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       Text('Hello, $name!', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                       const SizedBox(height: 10,),
                       const Text('Here\'s your activity overview'),

@@ -69,21 +69,25 @@ class _LoginScreenState extends State<LoginScreen> {
         role = doc.data()!['role'];
       }
 
+      //Read the status from the document if it exists.
+      String status = 'active'; //active set as default
+      if (doc.data() != null && doc.data()!['status'] != null) {
+        status = doc.data()!['status'];
+      }
+
+      // If the account is suspended sign them out immediately and show an error applies to all roles
+      if (status == 'suspended') {
+        await FirebaseAuth.instance.signOut();
+        setState(() {
+          _errorMessage = 'Your account has been suspended. Contact support.';
+          _isSigningIn  = false;
+        });
+        return;
+      }
+
       //Go to the right screen based on role
       switch (role) {
         case 'walker':
-          // final status     = doc.data()![‘status’] ?? ‘pending’;
-          // final isApproved = doc.data()![‘isApproved’] ?? false; //get the isApproved value from Firestore, if it doesn’t exist assume it’s false
-          //
-          // if (status == ‘suspended’) {
-          //   // Sign out and show suspended message
-          //   await FirebaseAuth.instance.signOut();
-          //   setState(() {
-          //     _errorMessage = ‘Your account has been suspended. Contact support.’;
-          //     _isSigningIn  = false;
-          //   });
-          //   return;
-          // }
 
           // Already verified so skip the verification screen and go straight to the portal
           if (result.user!.emailVerified) {

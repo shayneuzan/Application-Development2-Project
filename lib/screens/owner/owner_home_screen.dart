@@ -1,12 +1,55 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import '../widgets/owner_drawer.dart';
+import '../auth/login_screen.dart';
 
-class OwnerHomeScreen extends StatelessWidget {
+class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
+
+  @override
+  State<OwnerHomeScreen> createState() => _OwnerHomeScreenState();
+}
+
+class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
+  final String? uid = FirebaseAuth.instance.currentUser?.uid;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  StreamSubscription? _statusSub;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen to the user's document and sign them out if they get suspended
+    if (uid != null) {
+      _statusSub = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots()
+          .listen((doc) {
+        if (!doc.exists || !mounted) return;
+        final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
+        if (status == 'suspended') {
+          FirebaseAuth.instance.signOut();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => LoginScreen()),
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _statusSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +58,8 @@ class OwnerHomeScreen extends StatelessWidget {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
     return Scaffold(
+
       key: scaffoldKey,
       backgroundColor: backgroundGray,
       appBar: AppBar(

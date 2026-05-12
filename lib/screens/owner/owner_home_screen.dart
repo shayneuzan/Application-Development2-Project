@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
 import '../widgets/owner_drawer.dart';
 import '../auth/login_screen.dart';
 
@@ -17,8 +20,9 @@ class OwnerHomeScreen extends StatefulWidget {
 }
 
 class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
-  final String? uid = FirebaseAuth.instance.currentUser?.uid;
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  final FirestoreService _firestoreService = FirestoreService();
+  final AuthService _authService = AuthService();
+  final User? _user = FirebaseAuth.instance.currentUser;
   StreamSubscription? _statusSub;
 
   @override
@@ -26,6 +30,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     super.initState();
 
     // Listen to the user's document and sign them out if they get suspended
+    final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       _statusSub = FirebaseFirestore.instance
           .collection('users')
@@ -58,8 +63,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
 
-    return Scaffold(
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
+    return Scaffold(
       key: scaffoldKey,
       backgroundColor: backgroundGray,
       appBar: AppBar(
@@ -112,131 +118,146 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome Section
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Welcome back, John!',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
-                    ),
+            FutureBuilder<UserModel?>(
+              future: _authService.getCurrentUserData(),
+              builder: (context, snapshot) {
+                String userName = snapshot.data?.name ?? 'there';
+                return Container(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome back, $userName!',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Your furry friend is waiting for a walk',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: textLight,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Your furry friend is waiting for a walk',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: textLight,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              }
             ),
 
-            // Upcoming Walk Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              'Upcoming Walk',
-                              style: TextStyle(
-                                color: primaryBlue,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Text(
-                            '2026-03-25',
-                            style: TextStyle(color: textLight, fontSize: 13),
+            // Upcoming Walk Card - Ideally fetch the next booking
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                  final booking = snapshot.data!.first; // Simplification: take the most recent one
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
+                      child: Column(
                         children: [
-                          const CircleAvatar(
-                            radius: 26,
-                            backgroundColor: Color(0xFFF1F5F9),
-                            child: Text(
-                              'S',
-                              style: TextStyle(
-                                color: textDark,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Sarah Johnson',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: textDark,
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    'Latest Booking',
+                                    style: TextStyle(
+                                      color: primaryBlue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'with Max',
-                                style: TextStyle(color: textLight, fontSize: 14),
-                              ),
-                            ],
+                                Text(
+                                  booking['date'] ?? '',
+                                  style: const TextStyle(color: textLight, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 26,
+                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  child: Text(
+                                    (booking['walkerName'] as String?)?[0] ?? 'W',
+                                    style: const TextStyle(
+                                      color: textDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      booking['walkerName'] ?? 'Walker',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: textDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'with ${booking['petName'] ?? 'Pet'}',
+                                      style: const TextStyle(color: textLight, fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.access_time, size: 20, color: textLight),
+                                const SizedBox(width: 6),
+                                Text(booking['time'] ?? '', style: const TextStyle(color: textDark, fontWeight: FontWeight.w500)),
+                                const SizedBox(width: 24),
+                                const Icon(Icons.timer_outlined, size: 20, color: textLight),
+                                const SizedBox(width: 6),
+                                Text('${booking['duration']} min', style: const TextStyle(color: textDark, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.access_time, size: 20, color: textLight),
-                          SizedBox(width: 6),
-                          Text('10:00', style: TextStyle(color: textDark, fontWeight: FontWeight.w500)),
-                          SizedBox(width: 24),
-                          Icon(Icons.timer_outlined, size: 20, color: textLight),
-                          SizedBox(width: 6),
-                          Text('60 min', style: TextStyle(color: textDark, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }
             ),
 
             const SizedBox(height: 24),
@@ -292,33 +313,36 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildActivityCard(
-                  title: 'Max walked',
-                  subtitle: 'by Sarah Johnson',
-                  status: 'confirmed',
-                  date: '2026-03-25',
-                  avatarLetter: 'S',
-                ),
-                _buildActivityCard(
-                  title: 'Bella walked',
-                  subtitle: 'by Mike Chen',
-                  status: 'completed',
-                  date: '2026-03-20',
-                  avatarLetter: 'M',
-                ),
-                _buildActivityCard(
-                  title: 'Rocky walked',
-                  subtitle: 'by Sarah Johnson',
-                  status: 'pending',
-                  date: '2026-03-24',
-                  avatarLetter: 'S',
-                ),
-              ],
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final bookings = snapshot.data ?? [];
+                if (bookings.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text('No recent activity'),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: bookings.length > 3 ? 3 : bookings.length,
+                  itemBuilder: (context, index) {
+                    final b = bookings[index];
+                    return _buildActivityCard(
+                      title: '${b['petName']} walk',
+                      subtitle: 'by ${b['walkerName']}',
+                      status: b['status'] ?? 'pending',
+                      date: b['date'] ?? '',
+                      avatarLetter: (b['walkerName'] as String?)?[0] ?? 'W',
+                    );
+                  },
+                );
+              }
             ),
             const SizedBox(height: 24),
           ],
@@ -417,7 +441,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     Color statusBg;
     Color statusText;
 
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'completed':
         statusBg = const Color(0xFFDCFCE7);
         statusText = const Color(0xFF166534);

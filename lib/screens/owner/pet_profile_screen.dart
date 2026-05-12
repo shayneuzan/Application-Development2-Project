@@ -100,7 +100,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
       body: _userId == null 
         ? const Center(child: Text('Please log in to see your pets'))
         : StreamBuilder<List<PetModel>>(
-            stream: _firestoreService.getPetsByOwner(_userId!),
+            stream: _firestoreService.getPetsByOwner(_userId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

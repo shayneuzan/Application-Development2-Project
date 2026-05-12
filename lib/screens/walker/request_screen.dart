@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pawwalk/models/booking_model.dart';
+import 'package:pawwalk/services/firestore_service.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
@@ -17,25 +19,8 @@ class RequestScreen extends StatefulWidget {
 
 class _RequestScreenState extends State<RequestScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
-  final DateTime _presentDay = DateTime.now();
   final ChatService _chatService = ChatService();
-
-  // Helper method to send notifications to Firestore
-  Future<void> _sendNotification({
-    required String receiverID,
-    required String title,
-    required String message,
-    required String type,
-  }) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'receiverID': receiverID,
-      'title': title,
-      'message': message,
-      'type': type,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
-  }
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   Widget build(BuildContext context) {
@@ -57,40 +42,25 @@ class _RequestScreenState extends State<RequestScreen> {
             ],
           ),
           drawer: WalkerDrawer(name: walkerName!),
-          body: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('requests')
-                .where('walkerID', isEqualTo: uid)
-                .where('status', isEqualTo: 'pending')
-                .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                .orderBy('date')
-                .snapshots(),
+          body: StreamBuilder<List<BookingModel>>(
+            stream: _firestoreService.getBookingsByWalkerID(uid!),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
                 return const Center(
                   child: Text("No upcoming walks scheduled.",
                     style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                   ),
                 );
               }
-              final docs = snapshot.data!.docs;
+              final requests = snapshot.data!;
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: docs.map((doc) {
-                    final currentData = doc.data() as Map<String, dynamic>;
-                    String ownerID = currentData['ownerID'] ?? "";
-                    String ownerName = currentData['petOwner'] ?? "N/A";
-                    String petName = currentData['petName'] ?? "N/A";
-                    String payment = currentData['payment'] ?? '0';
-                    String date = currentData['date'] ?? 'N/A';
-                    String time = currentData['time'] ?? 'N/A';
-                    String duration = currentData['duration'] ?? 'N/A';
-
-                    String initials = ownerName.trim().isNotEmpty ? ownerName.trim()
+                  children: requests.map((booking) {
+                    String initials = booking.ownerName.trim().isNotEmpty ? booking.ownerName.trim()
                       .split(RegExp(r'\s+'))
                       .where((word) => word.isNotEmpty)
                       .map((word) => word[0].toUpperCase())
@@ -132,13 +102,13 @@ class _RequestScreenState extends State<RequestScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(ownerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          Text(booking.ownerName, style: const TextStyle(fontWeight: FontWeight.bold)),
                                           const SizedBox(height: 8),
                                           Row(
                                             children: [
                                               const Icon(Icons.pets, size: 16, color: Colors.grey),
                                               const SizedBox(width: 8),
-                                              Text(petName),
+                                              Text(booking.petName),
                                             ],
                                           ),
                                           const SizedBox(height: 14),
@@ -153,17 +123,17 @@ class _RequestScreenState extends State<RequestScreen> {
                                               children: [
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.calendar_month_outlined, size: 20, color: const Color(0xFF2563EB)),
+                                                    const Icon(Icons.calendar_month_outlined, size: 20, color: Color(0xFF2563EB)),
                                                     const SizedBox(width: 10),
-                                                    Text(date, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,))
+                                                    Text(DateFormat('yyyy-MM-dd').format(booking.date), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,))
                                                   ]
                                                 ),
                                                 const SizedBox(height: 12),
                                                 Row(
                                                   children: [
-                                                    const Icon(Icons.timer_outlined, size: 20, color: const Color(0xFF2563EB)),
+                                                    const Icon(Icons.timer_outlined, size: 20, color: Color(0xFF2563EB)),
                                                     const SizedBox(width: 10),
-                                                    Text("$time ($duration minutes)", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,)),
+                                                    Text("${booking.time} (${booking.duration} minutes)", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,)),
                                                   ]
                                                 ),
                                               ],
@@ -173,7 +143,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text("\$$payment", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text("\$${booking.totalPrice}", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
@@ -186,19 +156,20 @@ class _RequestScreenState extends State<RequestScreen> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: () async {
-                                    await doc.reference.update({'status': 'declined'});
-                                    if (ownerID.isNotEmpty) {
-                                      await _sendNotification(
-                                        receiverID: ownerID,
+                                    _firestoreService.updateBookingStatus(booking.id, 'declined');
+
+                                    if (booking.ownerId.isNotEmpty) {
+                                      _firestoreService.sendNotification(
+                                        receiverID: booking.ownerId,
                                         title: 'Request Declined',
-                                        message: '$walkerName declined your walk request for $petName.',
+                                        message: '$walkerName declined your walk request for ${booking.petName}.',
                                         type: 'request_declined',
                                       );
-                                      
-                                      await _sendNotification(
+
+                                      _firestoreService.sendNotification(
                                         receiverID: uid!,
                                         title: 'Request Declined',
-                                        message: 'You have declined the walk request for $petName from $ownerName.',
+                                        message: 'You have declined the walk request for ${booking.petName} from ${booking.ownerName}.',
                                         type: 'request_declined',
                                       );
                                     }
@@ -206,7 +177,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Declined! Pet: $petName\nOwner: $ownerName"),
+                                        content: Text("Request Declined! Pet: ${booking.petName}\nOwner: ${booking.ownerName}"),
                                         backgroundColor: Colors.red,
                                         duration: const Duration(seconds: 3),
                                       ),
@@ -226,29 +197,29 @@ class _RequestScreenState extends State<RequestScreen> {
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
-                                    await doc.reference.update({'status': 'accepted'});
-                                    if (ownerID.isNotEmpty) {
+                                    _firestoreService.updateBookingStatus(booking.id, 'accepted');
+                                    if (booking.ownerId.isNotEmpty) {
                                       // Create a chat room between the walker and the owner
-                                      await _chatService.createChatRoom(ownerID, ownerName, petName);
+                                      await _chatService.createChatRoom(booking.ownerId, booking.ownerName, booking.petName);
 
-                                      await _sendNotification(
-                                        receiverID: ownerID,
+                                      _firestoreService.sendNotification(
+                                        receiverID: booking.ownerId,
                                         title: 'Walk Request Accepted!',
-                                        message: '$walkerName is ready to walk $petName! Go to "Messages" in your drawer to coordinate details.',
+                                        message: '${booking.walkerName} is ready to walk ${booking.petName}! Go to "Messages" in your drawer to coordinate details.',
                                         type: 'request_accepted',
                                       );
 
-                                      await _sendNotification(
+                                      _firestoreService.sendNotification(
                                         receiverID: uid!,
                                         title: 'Walk Request Accepted!',
-                                        message: 'You have accepted the walk request for $petName. Open "View Chat" to discuss location with $ownerName.',
+                                        message: 'You have accepted the walk request for ${booking.petName}. Open "View Chat" to discuss location with ${booking.ownerName}.',
                                         type: 'request_accepted',
                                       );
                                     }
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
+                                        content: Text("Request Accepted! Pet: ${booking.petName}\nOwner: ${booking.ownerName}"),
                                         backgroundColor: Colors.green,
                                         duration: const Duration(seconds: 3),
                                       ),

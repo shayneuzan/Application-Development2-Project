@@ -90,7 +90,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       body: _userId == null 
         ? const Center(child: Text('Please log in to see your bookings'))
         : StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _firestoreService.getBookingsByOwner(_userId!),
+            stream: _firestoreService.getBookingsByOwner(_userId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

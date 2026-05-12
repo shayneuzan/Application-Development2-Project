@@ -37,7 +37,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
 
   void _toggleFavorite(bool isCurrentlyFavorite) {
     if (_userId == null) return;
-    _firestoreService.toggleFavorite(_userId!, widget.id, !isCurrentlyFavorite);
+    _firestoreService.toggleFavorite(_userId, widget.id, !isCurrentlyFavorite);
   }
 
   @override
@@ -50,7 +50,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
     return Scaffold(
       backgroundColor: backgroundGray,
       body: StreamBuilder<UserModel>(
-        stream: _userId != null ? _firestoreService.getUserStream(_userId!) : const Stream.empty(),
+        stream: _userId != null ? _firestoreService.getUserStream(_userId) : const Stream.empty(),
         builder: (context, userSnapshot) {
           final isFavorite = userSnapshot.data?.favoriteWalkers.contains(widget.id) ?? false;
 

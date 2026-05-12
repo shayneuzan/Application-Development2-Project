@@ -108,7 +108,7 @@ class _BookingScreenState extends State<BookingScreen> {
             _userId == null 
               ? const Text('Please login to select a pet')
               : StreamBuilder<List<PetModel>>(
-                  stream: _firestoreService.getPetsByOwner(_userId!),
+                  stream: _firestoreService.getPetsByOwner(_userId),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox(

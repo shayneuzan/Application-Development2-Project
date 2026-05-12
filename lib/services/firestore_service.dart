@@ -2,19 +2,54 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/walker_model.dart';
 import '../models/pet_model.dart';
 import '../models/user_model.dart';
+import '../models/booking_model.dart';
+
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // --- Walker Operations ---
   Stream<List<WalkerModel>> getWalkers() {
-    return _db.collection('walkers').snapshots().map((snapshot) =>
+    return _db.collection('users').where('role', isEqualTo: 'walker').snapshots().map((snapshot) =>
         snapshot.docs.map((doc) => WalkerModel.fromFirestore(doc)).toList());
   }
 
   Future<WalkerModel> getWalkerById(String id) async {
-    var doc = await _db.collection('walkers').doc(id).get();
+    final doc = await _db.collection('users').doc(id).get();
+    if (!doc.exists || doc['role'] != 'walker') {
+      throw Exception('Pet Walker not found or this user is not a Pet Walker.');
+    }
     return WalkerModel.fromFirestore(doc);
+  }
+
+  Future<UserModel> getOwnerById(String id) async {
+    final doc = await _db.collection('users').doc(id).get();
+    if (!doc.exists || doc['role'] != 'owner') {
+      throw Exception('Pet Owner not found or this user is not a Pet Owner.');
+    }
+    return UserModel.fromFirestore(doc);
+  }
+
+  // --- Booking Operations ---
+  Stream<List<BookingModel>> getBookingsByWalkerID(String walkerID) {
+    return _db.collection('bookings').where('walkerId', isEqualTo: walkerID).snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => BookingModel.fromFirestore(doc)).toList()
+    );
+  }
+
+  Stream<List<BookingModel>> getThreePendingRequestsByWalkerID(String walkerID, DateTime presentDay) {
+    return getBookingsByWalkerID(walkerID).map((bookings) => bookings
+        .where((request) => request.status == 'pending' && !request.date.isBefore(presentDay))
+        .take(3)
+        .toList()
+    );
+  }
+
+  Stream<List<BookingModel>> getUpcomingRequestsByWalkerID(String walkerID, DateTime presentDay) {
+    return getBookingsByWalkerID(walkerID).map((bookings) => bookings
+        .where((request) => request.status == 'accepted' && !request.date.isBefore(presentDay))
+        .toList()
+    );
   }
 
   // --- Pet Operations ---
@@ -105,6 +140,19 @@ class FirestoreService {
     return _db.collection('reviews').add({
       ...reviewData,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // --- Notification Operations ---
+  // Helper method to send notifications to Firestore
+  Future<void> sendNotification({required String receiverID, required String title, required String message, required String type,}) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'receiverID': receiverID,
+      'title': title,
+      'message': message,
+      'type': type,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
     });
   }
 }

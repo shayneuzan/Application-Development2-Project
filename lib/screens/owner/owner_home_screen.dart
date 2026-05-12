@@ -151,7 +151,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
             // Upcoming Walk Card - Ideally fetch the next booking
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final booking = snapshot.data!.first; // Simplification: take the most recent one
@@ -314,7 +314,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             ),
             const SizedBox(height: 16),
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

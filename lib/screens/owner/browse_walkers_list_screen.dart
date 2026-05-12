@@ -33,7 +33,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   void _toggleFavorite(String walkerId, List<String> currentFavorites) {
     if (_userId == null) return;
     bool isCurrentlyFavorite = currentFavorites.contains(walkerId);
-    _firestoreService.toggleFavorite(_userId!, walkerId, !isCurrentlyFavorite);
+    _firestoreService.toggleFavorite(_userId, walkerId, !isCurrentlyFavorite);
   }
 
   @override
@@ -79,7 +79,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
       body: _userId == null 
         ? const Center(child: Text("Please log in"))
         : StreamBuilder<UserModel>(
-            stream: _firestoreService.getUserStream(_userId!),
+            stream: _firestoreService.getUserStream(_userId),
             builder: (context, userSnapshot) {
               final favoriteIds = userSnapshot.data?.favoriteWalkers ?? [];
 

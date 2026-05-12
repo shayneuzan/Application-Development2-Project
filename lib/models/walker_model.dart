@@ -10,6 +10,15 @@ class WalkerModel {
   final String bio;
   final List<String> services;
   final int experienceYears;
+  final bool isApproved;
+  final String status;
+
+  final double todayEarnings;
+  final double weeklyEarnings;
+  final double monthEarnings;
+  final DateTime lastResetDaily;
+  final DateTime lastResetWeekly;
+  final DateTime lastResetMonthly;
 
   WalkerModel({
     required this.id,
@@ -21,6 +30,14 @@ class WalkerModel {
     required this.bio,
     required this.services,
     required this.experienceYears,
+    required this.todayEarnings,
+    required this.weeklyEarnings,
+    required this.monthEarnings,
+    required this.lastResetDaily,
+    required this.lastResetWeekly,
+    required this.lastResetMonthly,
+    required this.isApproved,
+    required this.status,
   });
 
   factory WalkerModel.fromFirestore(DocumentSnapshot doc) {
@@ -35,6 +52,14 @@ class WalkerModel {
       bio: data['bio'] ?? '',
       services: List<String>.from(data['services'] ?? []),
       experienceYears: data['experienceYears'] ?? 0,
+      todayEarnings: (data['todayEarnings'] ?? 0.0).toDouble(),
+      weeklyEarnings: (data['weeklyEarnings'] ?? 0.0).toDouble(),
+      monthEarnings: (data['monthEarnings'] ?? 0.0).toDouble(),
+      lastResetDaily: (data['lastResetDaily'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastResetWeekly: (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastResetMonthly: (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isApproved: data['isApproved'] ?? false,
+      status: data['status'] ?? '',
     );
   }
 
@@ -48,6 +73,14 @@ class WalkerModel {
       'bio': bio,
       'services': services,
       'experienceYears': experienceYears,
+      'todayEarnings': todayEarnings,
+      'weeklyEarnings': weeklyEarnings,
+      'monthEarnings': monthEarnings,
+      'lastResetDaily': lastResetDaily,
+      'lastResetWeekly': lastResetWeekly,
+      'lastResetMonthly': lastResetMonthly,
+      'isApproved': isApproved,
+      'status': status,
     };
   }
 }

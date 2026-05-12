@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'booking_screen.dart';
 import 'all_reviews_screen.dart';
 import '../../models/walker_model.dart';
+import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
 
 class WalkerProfileScreen extends StatefulWidget {
@@ -31,6 +33,12 @@ class WalkerProfileScreen extends StatefulWidget {
 class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
   bool _showReviews = false;
   final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
+
+  void _toggleFavorite(bool isCurrentlyFavorite) {
+    if (_userId == null) return;
+    _firestoreService.toggleFavorite(_userId!, widget.id, !isCurrentlyFavorite);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,170 +49,187 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
 
     return Scaffold(
       backgroundColor: backgroundGray,
-      body: CustomScrollView(
-        slivers: [
-          // Custom App Bar with Profile Image/Initials
-          SliverAppBar(
-            expandedHeight: 260,
-            pinned: true,
-            backgroundColor: primaryBlue,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: primaryBlue,
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    child: Text(
-                      widget.initials,
-                      style: const TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+      body: StreamBuilder<UserModel>(
+        stream: _userId != null ? _firestoreService.getUserStream(_userId!) : const Stream.empty(),
+        builder: (context, userSnapshot) {
+          final isFavorite = userSnapshot.data?.favoriteWalkers.contains(widget.id) ?? false;
+
+          return CustomScrollView(
+            slivers: [
+              // Custom App Bar with Profile Image/Initials
+              SliverAppBar(
+                expandedHeight: 260,
+                pinned: true,
+                backgroundColor: primaryBlue,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : Colors.white,
+                    ),
+                    onPressed: () => _toggleFavorite(isFavorite),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    color: primaryBlue,
+                    child: Center(
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: Text(
+                          widget.initials,
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name and Price Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Name and Price Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.name,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: textDark,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Professional Dog Walker',
+                                style: TextStyle(color: textLight, fontSize: 16),
+                              ),
+                            ],
+                          ),
                           Text(
-                            widget.name,
+                            '\$${widget.price}/hr',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: textDark,
+                              color: Colors.orange,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Professional Dog Walker',
-                            style: TextStyle(color: textLight, fontSize: 16),
                           ),
                         ],
                       ),
-                      Text(
-                        '\$${widget.price}/hr',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+
+                      const SizedBox(height: 24),
+
+                      // Stats Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatColumn('Rating', widget.rating.toString(), Icons.star, Colors.orange),
+                          _buildStatColumn('Walks', widget.walksCount.toString(), Icons.pets, primaryBlue),
+                          _buildStatColumn('Experience', '${widget.walker?.experienceYears ?? 3} years', Icons.timer, Colors.green),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Toggle Section (About vs Reviews)
+                      Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _showReviews = false),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: !_showReviews ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: !_showReviews 
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                      : [],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'About',
+                                    style: TextStyle(
+                                      color: !_showReviews ? primaryBlue : textLight,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _showReviews = true),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _showReviews ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: _showReviews 
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                      : [],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Reviews',
+                                    style: TextStyle(
+                                      color: _showReviews ? primaryBlue : textLight,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // Dynamic Content Area
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _showReviews ? _buildReviewsList() : _buildAboutSection(),
+                      ),
+                      
+                      const SizedBox(height: 100), // Space for bottom button
                     ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Stats Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildStatColumn('Rating', widget.rating.toString(), Icons.star, Colors.orange),
-                      _buildStatColumn('Walks', widget.walksCount.toString(), Icons.pets, primaryBlue),
-                      _buildStatColumn('Experience', '${widget.walker?.experienceYears ?? 3} years', Icons.timer, Colors.green),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Toggle Section (About vs Reviews)
-                  Container(
-                    height: 50,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _showReviews = false),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: !_showReviews ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: !_showReviews 
-                                  ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                                  : [],
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'About',
-                                style: TextStyle(
-                                  color: !_showReviews ? primaryBlue : textLight,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _showReviews = true),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _showReviews ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: _showReviews 
-                                  ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                                  : [],
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Reviews',
-                                style: TextStyle(
-                                  color: _showReviews ? primaryBlue : textLight,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Dynamic Content Area
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _showReviews ? _buildReviewsList() : _buildAboutSection(),
-                  ),
-                  
-                  const SizedBox(height: 100), // Space for bottom button
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        }
       ),
       bottomSheet: Container(
         padding: const EdgeInsets.all(20),

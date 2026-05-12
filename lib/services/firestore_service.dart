@@ -45,6 +45,19 @@ class FirestoreService {
     return _db.collection('users').doc(userId).update(data);
   }
 
+  // --- Favorite Operations ---
+  Future<void> toggleFavorite(String userId, String walkerId, bool isFavorite) {
+    return _db.collection('users').doc(userId).update({
+      'favoriteWalkers': isFavorite
+          ? FieldValue.arrayUnion([walkerId])
+          : FieldValue.arrayRemove([walkerId])
+    });
+  }
+
+  Stream<UserModel> getUserStream(String userId) {
+    return _db.collection('users').doc(userId).snapshots().map((doc) => UserModel.fromFirestore(doc));
+  }
+
   // --- Booking Operations ---
   Future<void> createBooking(Map<String, dynamic> bookingData) {
     return _db.collection('bookings').add({

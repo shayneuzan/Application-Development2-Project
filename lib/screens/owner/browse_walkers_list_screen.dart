@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -6,6 +7,7 @@ import 'notifications_screen.dart';
 import 'walker_profile_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/walker_model.dart';
+import '../../models/user_model.dart';
 import '../widgets/owner_drawer.dart';
 
 class BrowseWalkersListScreen extends StatefulWidget {
@@ -20,9 +22,7 @@ class BrowseWalkersListScreen extends StatefulWidget {
 class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   late bool _isShowingFavorites;
   final FirestoreService _firestoreService = FirestoreService();
-  
-  // Keep local favorites state for now or move to user profile in firestore later
-  final Set<String> _favoriteIds = {};
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
@@ -30,14 +30,10 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     _isShowingFavorites = widget.showFavoritesOnly;
   }
 
-  void _toggleFavorite(String walkerId) {
-    setState(() {
-      if (_favoriteIds.contains(walkerId)) {
-        _favoriteIds.remove(walkerId);
-      } else {
-        _favoriteIds.add(walkerId);
-      }
-    });
+  void _toggleFavorite(String walkerId, List<String> currentFavorites) {
+    if (_userId == null) return;
+    bool isCurrentlyFavorite = currentFavorites.contains(walkerId);
+    _firestoreService.toggleFavorite(_userId!, walkerId, !isCurrentlyFavorite);
   }
 
   @override
@@ -80,157 +76,167 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Walkers'),
-      body: StreamBuilder<List<WalkerModel>>(
-        stream: _firestoreService.getWalkers(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+      body: _userId == null 
+        ? const Center(child: Text("Please log in"))
+        : StreamBuilder<UserModel>(
+            stream: _firestoreService.getUserStream(_userId!),
+            builder: (context, userSnapshot) {
+              final favoriteIds = userSnapshot.data?.favoriteWalkers ?? [];
 
-          List<WalkerModel> walkers = snapshot.data ?? [];
-          
-          if (_isShowingFavorites) {
-            walkers = walkers.where((w) => _favoriteIds.contains(w.id)).toList();
-          }
+              return StreamBuilder<List<WalkerModel>>(
+                stream: _firestoreService.getWalkers(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!_isShowingFavorites)
-                  Container(
-                    height: 180,
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEDD5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Stack(
+                  List<WalkerModel> walkers = snapshot.data ?? [];
+                  
+                  if (_isShowingFavorites) {
+                    walkers = walkers.where((w) => favoriteIds.contains(w.id)).toList();
+                  }
+
+                  return SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
-                            ),
-                          ),
-                        ),
-                        const Positioned(top: 40, left: 100, child: _MapDot()),
-                        const Positioned(top: 100, left: 60, child: _MapDot()),
-                        const Positioned(top: 60, right: 80, child: _MapDot()),
-                        const Positioned(top: 30, right: 40, child: _MapDot()),
-                        
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        if (!_isShowingFavorites)
+                          Container(
+                            height: 180,
+                            width: double.infinity,
+                            margin: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFFFFEDD5),
                               borderRadius: BorderRadius.circular(20),
-                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                             ),
-                            child: Row(
+                            child: Stack(
                               children: [
-                                const Icon(Icons.location_on, color: Colors.orange, size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${walkers.length} walkers nearby',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                                Center(
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(top: 40, left: 100, child: _MapDot()),
+                                const Positioned(top: 100, left: 60, child: _MapDot()),
+                                const Positioned(top: 60, right: 80, child: _MapDot()),
+                                const Positioned(top: 30, right: 40, child: _MapDot()),
+                                
+                                Positioned(
+                                  bottom: 12,
+                                  left: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.location_on, color: Colors.orange, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${walkers.length} walkers nearby',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: textDark,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: _isShowingFavorites ? primaryBlue : Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: primaryBlue),
+                                  ),
+                                  child: Text(
+                                    _isShowingFavorites ? 'Show All' : 'Show Favorites',
+                                    style: TextStyle(
+                                      color: _isShowingFavorites ? Colors.white : primaryBlue,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+
+                        if (walkers.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 60),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    _isShowingFavorites ? Icons.favorite_border : Icons.search_off,
+                                    size: 64, 
+                                    color: Colors.grey.shade300
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _isShowingFavorites ? 'No favorites yet!' : 'No walkers available.',
+                                    style: const TextStyle(color: Colors.grey, fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: walkers.length,
+                            itemBuilder: (context, index) {
+                              final walker = walkers[index];
+                              return _buildWalkerCard(
+                                context,
+                                walker: walker,
+                                isFavorite: favoriteIds.contains(walker.id),
+                                onFavoriteToggle: () => _toggleFavorite(walker.id, favoriteIds),
+                              );
+                            },
+                          ),
+                        const SizedBox(height: 20),
                       ],
                     ),
-                  ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _isShowingFavorites ? primaryBlue : Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: primaryBlue),
-                          ),
-                          child: Text(
-                            _isShowingFavorites ? 'Show All' : 'Show Favorites',
-                            style: TextStyle(
-                              color: _isShowingFavorites ? Colors.white : primaryBlue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                if (walkers.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 60),
-                      child: Column(
-                        children: [
-                          Icon(
-                            _isShowingFavorites ? Icons.favorite_border : Icons.search_off,
-                            size: 64, 
-                            color: Colors.grey.shade300
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _isShowingFavorites ? 'No favorites yet!' : 'No walkers available.',
-                            style: const TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: walkers.length,
-                    itemBuilder: (context, index) {
-                      final walker = walkers[index];
-                      return _buildWalkerCard(
-                        context,
-                        walker: walker,
-                        isFavorite: _favoriteIds.contains(walker.id),
-                      );
-                    },
-                  ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          );
-        }
-      ),
+                  );
+                }
+              );
+            },
+          ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           boxShadow: [
@@ -272,6 +278,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     BuildContext context, {
     required WalkerModel walker,
     required bool isFavorite,
+    required VoidCallback onFavoriteToggle,
   }) {
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
@@ -283,7 +290,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => WalkerProfileScreen(
-              id: walker.id, // Pass ID
+              id: walker.id,
               name: walker.name,
               initials: walker.initials,
               rating: walker.rating,
@@ -368,7 +375,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => WalkerProfileScreen(
-                                        id: walker.id, // Pass ID
+                                        id: walker.id,
                                         name: walker.name,
                                         initials: walker.initials,
                                         rating: walker.rating,
@@ -400,7 +407,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
               top: 0,
               left: 0,
               child: GestureDetector(
-                onTap: () => _toggleFavorite(walker.id),
+                onTap: onFavoriteToggle,
                 child: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
                   color: Colors.red,

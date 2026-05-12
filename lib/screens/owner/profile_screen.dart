@@ -25,9 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
-  // Placeholder for favorites count
-  final int _favoriteCount = 2; 
-
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF2563EB);
@@ -61,8 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
       drawer: const OwnerDrawer(currentPage: 'Profile'),
-      body: FutureBuilder<UserModel?>(
-        future: _authService.getCurrentUserData(),
+      body: StreamBuilder<UserModel>(
+        stream: _firestoreService.getUserStream(_currentUser!.uid),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -99,10 +96,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: const Color(0xFFF1F5F9),
-                            backgroundImage: user.profileImageUrl != null 
+                            backgroundImage: (user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty)
                               ? NetworkImage(user.profileImageUrl!) 
                               : null,
-                            child: user.profileImageUrl == null 
+                            child: (user.profileImageUrl == null || user.profileImageUrl!.isEmpty)
                               ? const Icon(Icons.person, size: 55, color: Color(0xFF94A3B8))
                               : null,
                           ),
@@ -121,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       currentAddress: user.address,
                                     ),
                                   ),
-                                ).then((_) => setState(() {}));
+                                );
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(6),
@@ -152,6 +149,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: textLight,
                         ),
                       ),
+                      if (user.address != null && user.address!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.location_on, size: 14, color: primaryBlue),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  user.address!,
+                                  style: const TextStyle(fontSize: 13, color: textLight),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 16),
                       OutlinedButton(
                         onPressed: () {
@@ -165,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 currentAddress: user.address,
                               ),
                             ),
-                          ).then((_) => setState(() {}));
+                          );
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -215,7 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 12),
                     _buildStatCard(
-                      _favoriteCount.toString(),
+                      user.favoriteWalkers.length.toString(),
                       'Favorites',
                       primaryBlue,
                       onTap: () {

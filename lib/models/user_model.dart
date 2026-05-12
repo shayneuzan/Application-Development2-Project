@@ -8,6 +8,7 @@ class UserModel {
   final String? profileImageUrl;
   final String? phoneNumber;
   final String? address;
+  final List<String> favoriteWalkers; // Added favoriteWalkers
 
   UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.profileImageUrl,
     this.phoneNumber,
     this.address,
+    this.favoriteWalkers = const [],
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -29,6 +31,7 @@ class UserModel {
       profileImageUrl: data['profileImageUrl'],
       phoneNumber: data['phoneNumber'],
       address: data['address'],
+      favoriteWalkers: List<String>.from(data['favoriteWalkers'] ?? []),
     );
   }
 
@@ -40,6 +43,7 @@ class UserModel {
       'profileImageUrl': profileImageUrl,
       'phoneNumber': phoneNumber,
       'address': address,
+      'favoriteWalkers': favoriteWalkers,
     };
   }
 }

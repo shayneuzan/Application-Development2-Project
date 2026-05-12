@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../services/firestore_service.dart';
 import 'chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -20,23 +21,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  final FirestoreService _firestoreService = FirestoreService();
 
-  // Helper method to send notifications to Firestore
-  Future<void> _sendNotification({
-    required String receiverID,
-    required String title,
-    required String message,
-    required String type,
-  }) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'receiverID': receiverID,
-      'title': title,
-      'message': message,
-      'type': type,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
-  }
 
   void sendMessage() async {
     String messageText = _messageController.text.trim();
@@ -55,7 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final name = userDoc.data()?['name'] ?? 'User';
 
     // Notify the receiver
-    await _sendNotification(
+    _firestoreService.sendNotification(
       receiverID: widget.receiverID,
       title: "New Message from $name",
       message: messageText,
@@ -98,7 +84,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 String closingReason = isCompletion ? "Finished: Walk marked complete by $role ($name)" : "Ended: $role ($name) requested to cancel/stop coordination";
 
                 // Notify the other user
-                await _sendNotification(
+                _firestoreService.sendNotification(
                   receiverID: widget.receiverID,
                   title: isCompletion ? "Walk Completed!" : "Walk Ended Early",
                   message: closingReason,
@@ -107,6 +93,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 // Update status to 'closed' in Firestore
                 await _chatService.closeChatRoom(widget.chatRoomID, closingReason,);
+
+                // Increment walk count for the walker
+                if (isCompletion) {
+                  await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                    'walksCount': FieldValue.increment(1),
+                  });
+                }
 
                 if (!mounted) return;
                 messenger.showSnackBar(
@@ -311,10 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            _showEndSessionConfirmation(
-                              "Walk completed successfully.",
-                              true,
-                            );
+                            _showEndSessionConfirmation("Walk completed successfully.", true,);
                           },
                           icon: const Icon(Icons.check_circle),
                           label: const Text("Complete Walk"),

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/message_model.dart';
+
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -84,7 +86,7 @@ class ChatService {
     }
 
     // Create a new message
-    Message newMessage = Message(
+    MessageModel newMessage = MessageModel(
       senderID: currentUserID,
       receiverID: receiverID,
       message: message,
@@ -116,29 +118,5 @@ class ChatService {
         .collection('messages')
         .orderBy("timestamp", descending: false)
         .snapshots();
-  }
-}
-
-// Message Model
-class Message {
-  final String senderID;
-  final String receiverID;
-  final String message;
-  final Timestamp timestamp;
-
-  Message({
-    required this.senderID,
-    required this.receiverID,
-    required this.message,
-    required this.timestamp,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'senderID': senderID,
-      'receiverID': receiverID,
-      'message': message,
-      'timestamp': timestamp
-    };
   }
 }

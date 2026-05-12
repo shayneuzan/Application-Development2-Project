@@ -295,7 +295,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
               initials: walker.initials,
               rating: walker.rating,
               walksCount: walker.walksCount,
-              price: walker.price,
+              hourlyRate: walker.hourlyRate,
               walker: walker,
             ),
           ),
@@ -337,32 +337,23 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                walker.name,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
-                              ),
+                              Text(walker.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),),
                               Row(
                                 children: [
                                   const Icon(Icons.star, color: Colors.orange, size: 18),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    walker.rating.toString(),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
-                                  ),
+                                  Text(walker.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),),
                                 ],
                               ),
                             ],
                           ),
-                          Text(
-                            '${walker.walksCount} walks completed',
-                            style: const TextStyle(color: textLight, fontSize: 14),
-                          ),
+                          Text('${walker.walksCount} walks completed', style: const TextStyle(color: textLight, fontSize: 14),),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '\$ ${walker.price}/hr',
+                                '\$ ${walker.hourlyRate % 1 == 0 ? walker.hourlyRate.toInt() : walker.hourlyRate.toStringAsFixed(2)}/hr',
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -380,7 +371,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                         initials: walker.initials,
                                         rating: walker.rating,
                                         walksCount: walker.walksCount,
-                                        price: walker.price,
+                                        hourlyRate: walker.hourlyRate,
                                         walker: walker,
                                       ),
                                     ),

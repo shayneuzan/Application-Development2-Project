@@ -84,8 +84,7 @@ class FirestoreService {
         .collection('pets')
         .where('ownerId', isEqualTo: ownerId)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => PetModel.fromFirestore(doc)).toList());
+        .map((snapshot) => snapshot.docs.map((doc) => PetModel.fromFirestore(doc)).toList());
   }
 
   Future<void> addPet(PetModel pet) {
@@ -180,5 +179,38 @@ class FirestoreService {
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
     });
+  }
+
+  Future<void> checkAndResetEarnings(Map<String, dynamic> data, String uid) async {
+    DateTime now = DateTime.now();
+
+    // Get last reset dates from Firestore (or use current time if they don't exist)
+    DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
+    DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
+    DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
+
+    Map<String, dynamic> updates = {};
+
+    // RESET DAILY: If calendar day changed
+    if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
+      updates['todayEarnings'] = 0.0;
+      updates['lastResetDaily'] = FieldValue.serverTimestamp();
+    }
+
+    // RESET WEEKLY: If today is Monday and we haven't reset yet today
+    if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
+      updates['weeklyEarnings'] = 0.0;
+      updates['lastResetWeekly'] = FieldValue.serverTimestamp();
+    }
+
+    // RESET MONTHLY: If month changed
+    if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
+      updates['monthEarnings'] = 0.0;
+      updates['lastResetMonthly'] = FieldValue.serverTimestamp();
+    }
+
+    if (updates.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
+    }
   }
 }

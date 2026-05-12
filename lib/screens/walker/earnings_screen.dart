@@ -6,7 +6,7 @@ import 'package:syncfusion_flutter_charts/charts.dart'; // For Charts Feature
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import '../widgets/walker_notification_icon.dart';
-import 'notification_screen.dart';
+import '/services/firestore_service.dart';
 
 class EarningsScreen extends StatefulWidget {
   const EarningsScreen({super.key});
@@ -17,52 +17,18 @@ class EarningsScreen extends StatefulWidget {
 
 class _EarningsScreenState extends State<EarningsScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
+  final FirestoreService _firestoreService = FirestoreService();
   @override
   Widget build(BuildContext context) {
     final double containerHeightForTop = 120;
     final double containerWidthForTop = 120;
-
-    Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
-      if (uid == null) return;
-
-      DateTime now = DateTime.now();
-
-      // Get last reset dates from Firestore (or use current time if they don't exist)
-      DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
-      DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
-      DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
-
-      Map<String, dynamic> updates = {};
-
-      // RESET DAILY: If calendar day changed
-      if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
-        updates['todayEarnings'] = 0.0;
-        updates['lastResetDaily'] = FieldValue.serverTimestamp();
-      }
-
-      // RESET WEEKLY: If today is Monday and we haven't reset yet today
-      if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
-        updates['weeklyEarnings'] = 0.0;
-        updates['lastResetWeekly'] = FieldValue.serverTimestamp();
-      }
-
-      // RESET MONTHLY: If month changed
-      if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
-        updates['monthEarnings'] = 0.0;
-        updates['lastResetMonthly'] = FieldValue.serverTimestamp();
-      }
-
-      if (updates.isNotEmpty) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
-      }
-    }
 
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
           // Background check: This resets the numbers if the date has changed
-          checkAndResetEarnings(userData);
+          _firestoreService.checkAndResetEarnings(userData, uid!);
           num today = userData['todayEarnings'] ?? 0.0;
           num week = userData['weeklyEarnings'] ?? 0.0;
           num month = userData['monthEarnings'] ?? 0.0;
@@ -146,7 +112,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF2563EB),
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -177,7 +143,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF2563EB),
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                             ],

@@ -6,7 +6,7 @@ class WalkerModel {
   final String initials;
   final double rating;
   final int walksCount;
-  final int price;
+  final double hourlyRate;
   final String bio;
   final List<String> services;
   final int experienceYears;
@@ -26,7 +26,7 @@ class WalkerModel {
     required this.initials,
     required this.rating,
     required this.walksCount,
-    required this.price,
+    required this.hourlyRate,
     required this.bio,
     required this.services,
     required this.experienceYears,
@@ -48,7 +48,7 @@ class WalkerModel {
       initials: data['initials'] ?? '',
       rating: (data['rating'] ?? 0.0).toDouble(),
       walksCount: data['walksCount'] ?? 0,
-      price: data['price'] ?? 0,
+      hourlyRate: (data['hourlyRate'] ?? 0.0).toDouble(),
       bio: data['bio'] ?? '',
       services: List<String>.from(data['services'] ?? []),
       experienceYears: data['experienceYears'] ?? 0,
@@ -69,7 +69,7 @@ class WalkerModel {
       'initials': initials,
       'rating': rating,
       'walksCount': walksCount,
-      'price': price,
+      'hourlyRate': hourlyRate,
       'bio': bio,
       'services': services,
       'experienceYears': experienceYears,

@@ -3,11 +3,12 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
+import 'owner_home_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String walkerId;
   final String walkerName;
-  final int hourlyRate;
+  final double hourlyRate;
   final String selectedPet;
   final int selectedDuration;
   final String? ownerName;
@@ -322,7 +323,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // Go back to Home
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OwnerHomeScreen(),
+                    ),
+                        (route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../auth/login_screen.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
@@ -39,22 +40,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           String name = 'Guest';
           String email = 'No Email';
           String bio = 'No Bio';
-          String hourlyRate = '';
-          String experience = '';
+          double hourlyRate = 0.0;
+          int experience = 0;
 
           if (snapshot.hasData && snapshot.data!.exists) {
             var data = snapshot.data!.data() as Map<String, dynamic>;
             name = data['name'] ?? 'Guest';
             email = data['email'] ?? 'No Email';
             bio = data['bio'] ?? 'No Bio';
-            hourlyRate = (data['hourlyRate'] ?? '').toString();
-            experience = data['experience'] ?? '';
+            hourlyRate = (data['hourlyRate'] ?? 0.0).toDouble();
+            experience = (data['experienceYears'] ?? 0).toInt();
 
-            // 3. Set initial text only if the user hasn't started typing yet
+            // Set initial text only if the user hasn't started typing yet
             if (_nameController.text.isEmpty) _nameController.text = name;
             if (_bioController.text.isEmpty) _bioController.text = bio;
-            if (_hourlyRateController.text.isEmpty) _hourlyRateController.text = hourlyRate;
-            if (_experienceController.text.isEmpty) _experienceController.text = experience;
+            if (_hourlyRateController.text.isEmpty) _hourlyRateController.text = hourlyRate.toDouble().toStringAsFixed(2);
+            if (_experienceController.text.isEmpty) _experienceController.text = experience.toInt().toString();
           }
 
           return Scaffold(
@@ -76,6 +77,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      color: Colors.white,
                       child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -83,7 +85,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             children: [
                               const CircleAvatar(
                                 radius: 55,
-                                backgroundColor: const Color(0xFF2563EB),
+                                backgroundColor: Color(0xFF2563EB),
                                 child: Icon(Icons.person, size: 50, color: Colors.white,),
                               ),
                               const SizedBox(height: 15),
@@ -101,6 +103,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      color: Colors.white,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -127,6 +130,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      color: Colors.white,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -152,6 +156,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
+                      color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -162,14 +167,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             const SizedBox(height: 12),
                             TextField(
                               controller: _hourlyRateController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                //label: Text("Hourly Rate"),
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}'),
+                                ),
+                              ],
+                              decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.monetization_on_outlined),
-                                prefix: Text("\$ "),
-                                suffix: Text("/hour"),
-                                hint: Text("25"),
+                                prefixText: "\$ ",
+                                suffixText: "/hour",
+                                hintText: "25.00",
                               ),
                             ),
                           ]
@@ -182,21 +193,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
+                      color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Experience:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
+                            const Text('# of Years of Experience:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
                             const SizedBox(height: 12),
                             TextField(
                               controller: _experienceController,
-                              decoration: InputDecoration(
-                                //label: Text("Experience"),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              decoration: const InputDecoration(
                                 border: OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.history),
-                                hint: Text("e.g. 5 years of Dog Walking"),
+                                hintText: "Years of experience",
                               ),
                             ),
                           ]
@@ -219,16 +234,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Hourly Rate must be greater than \$0.")),);
                             throw 'ERROR: One or more fields is empty. Fill them up!';
                           }
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(uid)
-                              .update({
-                            'name': _nameController.text,
-                            'bio': _bioController.text,
-                            'hourlyRate': _hourlyRateController.text,
-                            'experience': _experienceController.text,
+                          String name = _nameController.text;
+                          String bio = _bioController.text;
+                          String hourlyRate = _hourlyRateController.text;
+                          String exp = _experienceController.text;
+                          await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                            'name': name,
+                            'bio': bio,
+                            'hourlyRate': double.parse(hourlyRate),
+                            'experienceYears': int.parse(exp),
                             'updatedAt': FieldValue.serverTimestamp(),
                           });
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Profile Updated!")),
                           );
@@ -250,12 +267,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          // 1. Log out
                           await FirebaseAuth.instance.signOut();
-                          // 2. CHECK THE ASYNC GAP: Make sure the screen is still active
                           if (!context.mounted) return;
-                          // 3. Now it is safe to navigate
-                          Navigator.pop(context); // Close drawer
                           Navigator.pushReplacement(
                             context,
                             PageRouteBuilder(

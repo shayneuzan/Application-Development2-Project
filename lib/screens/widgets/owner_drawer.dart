@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../chat/chat_list_screen.dart';
 import '../owner/owner_home_screen.dart';
 import '../owner/booking_history_screen.dart';
 import '../owner/profile_screen.dart';
@@ -135,6 +136,14 @@ class OwnerDrawer extends StatelessWidget {
                   isSelected: currentPage == 'Notifications',
                   onTap: () => _navigateTo(context, const NotificationsScreen()),
                 ),
+                // This is for the Chat Group List
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.chat_bubble_outline,
+                  title: 'Messages',
+                  isSelected: currentPage == 'Messages',
+                  onTap: () => _navigateTo(context, ChatListScreen()),
+                ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.person_outline,
@@ -163,10 +172,7 @@ class OwnerDrawer extends StatelessWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
+            title: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),),
             onTap: () async {
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {

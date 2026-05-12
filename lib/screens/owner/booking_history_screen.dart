@@ -7,6 +7,7 @@ import 'notifications_screen.dart';
 import 'schedule_screen.dart';
 import 'review_screen.dart';
 import 'booking_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
 
@@ -121,7 +122,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   color: isUpcomingSelected ? Colors.white : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: isUpcomingSelected
-                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                       : [],
                                 ),
                                 margin: const EdgeInsets.all(4),
@@ -144,7 +145,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   color: !isUpcomingSelected ? Colors.white : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: !isUpcomingSelected
-                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                       : [],
                                 ),
                                 margin: const EdgeInsets.all(4),
@@ -178,12 +179,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             },
           ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, -5),
+              offset: const Offset(0, -5),
             ),
           ],
         ),
@@ -198,6 +199,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
             } else if (index == 1) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
+            } else if (index == 3) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
@@ -310,11 +313,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 15,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),

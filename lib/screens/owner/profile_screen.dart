@@ -7,6 +7,7 @@ import 'pet_profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'edit_profile_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
@@ -364,7 +365,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
               );
             } else if (index == 3) {
-              // TODO: Navigate to Map Screen when built
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+              );
             }
           },
           items: const [

@@ -7,6 +7,7 @@ import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'add_pet_screen.dart';
 import 'edit_pet_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/pet_model.dart';
 import '../widgets/owner_drawer.dart';
@@ -178,7 +179,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 4,
+          currentIndex: 4, // Profile/Settings related
           type: BottomNavigationBarType.fixed,
           selectedItemColor: primaryBlue,
           unselectedItemColor: const Color(0xFF94A3B8),
@@ -190,6 +191,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
             } else if (index == 2) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
+            } else if (index == 3) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }

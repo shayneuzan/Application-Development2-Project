@@ -8,6 +8,8 @@ import '../owner/notifications_screen.dart';
 import '../owner/browse_walkers_list_screen.dart';
 import '../owner/settings_screen.dart';
 import '../auth/login_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../models/user_model.dart';
 
 class OwnerDrawer extends StatelessWidget {
   final String currentPage;
@@ -16,49 +18,75 @@ class OwnerDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FirestoreService firestoreService = FirestoreService();
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+
     return Drawer(
       child: Column(
         children: [
           // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-            color: const Color(0xFF1E3A5F),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, color: Colors.white, size: 35),
-                ),
-                const SizedBox(width: 15),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'John Smith',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          currentUser == null
+              ? Container(
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+                  color: const Color(0xFF1E3A5F),
+                  child: const Center(child: Text('Not Logged In', style: TextStyle(color: Colors.white))),
+                )
+              : StreamBuilder<UserModel>(
+                  stream: firestoreService.getUserStream(currentUser.uid),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    final String name = user?.name ?? 'Loading...';
+                    final String role = user?.role ?? 'Owner';
+                    final String? profilePic = user?.profileImageUrl;
+
+                    return Container(
+                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+                      color: const Color(0xFF1E3A5F),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: (profilePic != null && profilePic.isNotEmpty)
+                                ? NetworkImage(profilePic)
+                                : null,
+                            child: (profilePic == null || profilePic.isEmpty)
+                                ? const Icon(Icons.person, color: Colors.white, size: 35)
+                                : null,
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  role[0].toUpperCase() + role.substring(1),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
                       ),
-                    ),
-                    Text(
-                      'Owner',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
           
           // Menu Items
           Expanded(

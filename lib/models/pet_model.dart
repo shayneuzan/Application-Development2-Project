@@ -20,7 +20,7 @@ class PetModel {
     required this.gender,
     required this.weight,
     required this.description,
-    required this.imageUrl,
+    this.imageUrl = '',
   });
 
   factory PetModel.fromFirestore(DocumentSnapshot doc) {

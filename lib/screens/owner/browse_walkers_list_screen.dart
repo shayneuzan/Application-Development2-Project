@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -24,6 +25,10 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   late bool _isShowingFavorites;
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
+  
+  // Default position matches ExploreMapScreen
+  static const LatLng _initialPosition = LatLng(45.485, -73.625);
+  final Set<Marker> _miniMapMarkers = {};
 
   @override
   void initState() {
@@ -97,6 +102,21 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
 
                   List<WalkerModel> walkers = snapshot.data ?? [];
                   
+                  // Update mini-map markers
+                  _miniMapMarkers.clear();
+                  for (var walker in walkers) {
+                    _miniMapMarkers.add(
+                      Marker(
+                        markerId: MarkerId('mini_${walker.id}'),
+                        position: LatLng(
+                          _initialPosition.latitude + (0.005 * (walker.name.length % 5 - 2)),
+                          _initialPosition.longitude + (0.005 * (walker.walksCount % 5 - 2)),
+                        ),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                      ),
+                    );
+                  }
+
                   if (_isShowingFavorites) {
                     walkers = walkers.where((w) => favoriteIds.contains(w.id)).toList();
                   }
@@ -106,55 +126,79 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (!_isShowingFavorites)
-                          Container(
-                            height: 180,
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFEDD5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Stack(
-                              children: [
-                                Center(
-                                  child: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
+                          // Mini Map Visualization
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+                              );
+                            },
+                            child: Container(
+                              height: 180,
+                              width: double.infinity,
+                              margin: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  AbsorbPointer(
+                                    child: GoogleMap(
+                                      initialCameraPosition: const CameraPosition(
+                                        target: _initialPosition,
+                                        zoom: 13.0,
+                                      ),
+                                      markers: _miniMapMarkers,
+                                      myLocationEnabled: false,
+                                      zoomControlsEnabled: false,
+                                      mapToolbarEnabled: false,
+                                      liteModeEnabled: true, // Optimizes for static/preview use
                                     ),
                                   ),
-                                ),
-                                const Positioned(top: 40, left: 100, child: _MapDot()),
-                                const Positioned(top: 100, left: 60, child: _MapDot()),
-                                const Positioned(top: 60, right: 80, child: _MapDot()),
-                                const Positioned(top: 30, right: 40, child: _MapDot()),
-                                
-                                Positioned(
-                                  bottom: 12,
-                                  left: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.location_on, color: Colors.orange, size: 14),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${walkers.length} walkers nearby',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
-                                        ),
-                                      ],
+                                  
+                                  // Nearby Badge
+                                  Positioned(
+                                    bottom: 12,
+                                    left: 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.location_on, color: primaryBlue, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${walkers.length} walkers nearby',
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  
+                                  // Click to enlarge hint
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.fullscreen, color: primaryBlue, size: 20),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
 
@@ -420,23 +464,6 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _MapDot extends StatelessWidget {
-  const _MapDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2563EB),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
       ),
     );
   }

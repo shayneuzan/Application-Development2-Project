@@ -247,13 +247,11 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            pet.imageUrl.isNotEmpty 
-              ? CircleAvatar(radius: 15, backgroundImage: NetworkImage(pet.imageUrl))
-              : Icon(
-                  Icons.pets,
-                  color: isSelected ? Colors.white : primaryBlue,
-                  size: 30,
-                ),
+            Icon(
+              Icons.pets,
+              color: isSelected ? Colors.white : primaryBlue,
+              size: 30,
+            ),
             const SizedBox(height: 8),
             Text(
               pet.name,

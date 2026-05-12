@@ -233,16 +233,14 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                pet.imageUrl.isNotEmpty 
-                  ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(pet.imageUrl))
-                  : Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF7ED),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.pets, color: Colors.orange, size: 28),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.pets, color: Colors.orange, size: 28),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(

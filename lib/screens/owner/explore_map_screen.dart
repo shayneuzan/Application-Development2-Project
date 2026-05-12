@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'owner_home_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'booking_history_screen.dart';
@@ -18,14 +20,60 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   late GoogleMapController mapController;
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Default initial position (Montreal area as in the reference image)
-  static const LatLng _initialPosition = LatLng(45.485, -73.625);
-  
+  static const LatLng _defaultPosition = LatLng(45.485, -73.625);
+  LatLng _currentMapPosition = _defaultPosition;
   final Set<Marker> _markers = {};
+
+  // Application Colors
+  static const primaryBlue = Color(0xFF2563EB);
+  static const textDark = Color(0xFF1E293B);
+  static const textLight = Color(0xFF64748B);
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissionsAndGetLocation();
+  }
+
+  Future<void> _checkPermissionsAndGetLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    
+    if (permission == LocationPermission.deniedForever) return;
+
+    _goToCurrentLocation();
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+    mapController.setMapStyle(_mapStyle);
     _loadWalkerMarkers();
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high
+      );
+      setState(() {
+        _currentMapPosition = LatLng(position.latitude, position.longitude);
+      });
+      mapController.animateCamera(
+        CameraUpdate.newLatLng(_currentMapPosition),
+      );
+      _loadWalkerMarkers();
+    } catch (e) {
+      debugPrint("Could not get current location: $e");
+    }
   }
 
   void _loadWalkerMarkers() {
@@ -34,13 +82,12 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
         setState(() {
           _markers.clear();
           for (var walker in walkers) {
-            // Placing markers around the initial position for demo purposes
             _markers.add(
               Marker(
                 markerId: MarkerId(walker.id),
                 position: LatLng(
-                  _initialPosition.latitude + (0.01 * (walker.name.length % 5 - 2)),
-                  _initialPosition.longitude + (0.01 * (walker.walksCount % 5 - 2)),
+                  _currentMapPosition.latitude + (0.005 * (walker.name.length % 5 - 2)),
+                  _currentMapPosition.longitude + (0.005 * (walker.walksCount % 5 - 2)),
                 ),
                 infoWindow: InfoWindow(
                   title: walker.name,
@@ -57,16 +104,14 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const textDark = Color(0xFF1E293B);
-
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Google Map
+          // 1. Custom Styled Google Map
           GoogleMap(
             onMapCreated: _onMapCreated,
-            initialCameraPosition: const CameraPosition(
-              target: _initialPosition,
+            initialCameraPosition: CameraPosition(
+              target: _currentMapPosition,
               zoom: 14.0,
             ),
             markers: _markers,
@@ -74,21 +119,22 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
+            compassEnabled: false,
           ),
 
-          // 2. Floating Search Bar (Chips removed as requested)
+          // 2. Floating Search Bar
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Container(
-                height: 50,
+                height: 54,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 15,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -96,10 +142,10 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                 child: const TextField(
                   decoration: InputDecoration(
                     hintText: 'Search for walkers nearby',
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
-                    prefixIcon: Icon(Icons.search, color: Colors.black54),
+                    hintStyle: TextStyle(color: textLight, fontSize: 15),
+                    prefixIcon: Icon(Icons.search, color: primaryBlue),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -109,32 +155,30 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
           // 3. Current Location Button
           Positioned(
             right: 16,
-            top: MediaQuery.of(context).size.height * 0.12,
+            top: MediaQuery.of(context).size.height * 0.14,
             child: FloatingActionButton(
               mini: true,
               backgroundColor: Colors.white,
               elevation: 4,
-              onPressed: () {
-                mapController.animateCamera(CameraUpdate.newLatLng(_initialPosition));
-              },
-              child: const Icon(Icons.my_location, color: Colors.black87),
+              onPressed: _goToCurrentLocation,
+              child: const Icon(Icons.my_location, color: primaryBlue),
             ),
           ),
 
-          // 4. Bottom Info Card styled exactly like the photo
+          // 4. Bottom Info Card
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 20,
-                    offset: const Offset(0, -5),
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
@@ -144,23 +188,25 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Walkers in Montreal',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: textDark,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Walkers Nearby',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: textDark,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            '12 available walkers found near you',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                          ),
-                        ],
+                            SizedBox(height: 6),
+                            Text(
+                              'Discover active walkers ready to help',
+                              style: TextStyle(color: textLight, fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
                       ElevatedButton(
                         onPressed: () {
@@ -170,26 +216,26 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          foregroundColor: textDark,
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                         child: const Text('View List', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  // Bottom icons in circles as seen in photo
+                  const SizedBox(height: 24),
+                  // Updated order to match main application navigation
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildBottomCircleIcon(Icons.home_outlined, () => _navigateTo(context, 0)),
-                      _buildBottomCircleIcon(Icons.location_on, () => _navigateTo(context, 3), isActive: true),
-                      _buildBottomCircleIcon(Icons.search, () => _navigateTo(context, 1)),
-                      _buildBottomCircleIcon(Icons.calendar_month_outlined, () => _navigateTo(context, 2)),
-                      _buildBottomCircleIcon(Icons.person_outline, () => _navigateTo(context, 4)),
+                      _buildBottomNavIcon(Icons.home_filled, 'Home', 0),
+                      _buildBottomNavIcon(Icons.search, 'Walkers', 1),
+                      _buildBottomNavIcon(Icons.calendar_today, 'Bookings', 2),
+                      _buildBottomNavIcon(Icons.location_on, 'Map', 3, isActive: true),
+                      _buildBottomNavIcon(Icons.person, 'Profile', 4),
                     ],
                   ),
                 ],
@@ -201,26 +247,211 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
     );
   }
 
-  Widget _buildBottomCircleIcon(IconData icon, VoidCallback onTap, {bool isActive = false}) {
+  Widget _buildBottomNavIcon(IconData icon, String label, int index, {bool isActive = false}) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFEFF6FF) : Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: isActive ? const Color(0xFF2563EB).withOpacity(0.2) : Colors.black12),
-        ),
-        child: Icon(icon, color: isActive ? const Color(0xFF2563EB) : Colors.black54),
+      onTap: () => _navigateTo(context, index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isActive ? primaryBlue.withOpacity(0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: isActive ? primaryBlue : textLight.withOpacity(0.7),
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              color: isActive ? primaryBlue : textLight,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   void _navigateTo(BuildContext context, int index) {
-    if (index == 0) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
-    else if (index == 1) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
-    else if (index == 2) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
-    else if (index == 3) return; // Already on map
-    else if (index == 4) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+    if (index == 3) return;
+    Widget screen;
+    switch (index) {
+      case 0: screen = const OwnerHomeScreen(); break;
+      case 1: screen = const BrowseWalkersListScreen(); break;
+      case 2: screen = const BookingHistoryScreen(); break;
+      case 4: screen = const ProfileScreen(); break;
+      default: screen = const OwnerHomeScreen();
+    }
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => screen));
   }
+
+  final String _mapStyle = '''
+[
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#ffffff"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#dadada"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#c9c9c9"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  }
+]
+''';
 }

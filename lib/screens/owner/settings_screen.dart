@@ -4,6 +4,7 @@ import 'payment_methods_screen.dart';
 import 'address_management_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
+import '../auth/login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -60,11 +61,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _handleLogout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Log Out', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+        content: const Text(
+          'This action is permanent and cannot be undone. All your data, including saved addresses and payment methods, will be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && _userId != null) {
+      try {
+        // 1. Delete Firestore data
+        await _firestoreService.deleteUser(_userId!);
+        
+        // 2. Delete Auth user
+        await FirebaseAuth.instance.currentUser?.delete();
+
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account successfully deleted')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          String errorMessage = 'Failed to delete account.';
+          if (e is FirebaseAuthException && e.code == 'requires-recent-login') {
+            errorMessage = 'For security, please log out and log back in before deleting your account.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage)),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const textDark = Color(0xFF1E293B);
     const backgroundGray = Color(0xFFF8FAFC);
-    const primaryBlue = Color(0xFF2563EB);
 
     if (_userId == null) {
       return const Scaffold(body: Center(child: Text("Please log in")));
@@ -95,19 +177,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
 
           final user = snapshot.data!;
+          
+          // Find default payment method
+          String paymentSubtitle = 'Manage your cards';
+          final defaultCard = user.paymentMethods.firstWhere(
+            (c) => c['isDefault'] == true, 
+            orElse: () => {},
+          );
+          if (defaultCard.isNotEmpty) {
+            paymentSubtitle = '${defaultCard['type']} •••• ${defaultCard['last4']}';
+          }
+
+          // Find default address label
+          String addressSubtitle = user.address ?? 'Add your address';
+          final defaultAddr = user.savedAddresses.firstWhere(
+            (a) => a['isDefault'] == true,
+            orElse: () => {},
+          );
+          if (defaultAddr.isNotEmpty) {
+            addressSubtitle = '${defaultAddr['label']}: ${user.address}';
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Account Section
                 _buildSectionHeader('Account'),
                 _buildSettingsCard([
                   _buildSettingItem(
                     Icons.credit_card,
                     'Payment Methods',
-                    subtitle: 'Manage your cards',
+                    subtitle: paymentSubtitle,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -119,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingItem(
                     Icons.location_on_outlined,
                     'Saved Addresses',
-                    subtitle: user.address ?? 'Add your address',
+                    subtitle: addressSubtitle,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -138,7 +239,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                // Notifications Section
                 _buildSectionHeader('Notifications'),
                 _buildSettingsCard([
                   _buildToggleItem(
@@ -158,7 +258,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                // Appearance Section
                 _buildSectionHeader('Appearance'),
                 _buildSettingsCard([
                   _buildToggleItem(
@@ -171,7 +270,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                // Support & About Section
                 _buildSectionHeader('Support'),
                 _buildSettingsCard([
                   _buildSettingItem(Icons.help_outline, 'Help Center'),
@@ -181,8 +279,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingItem(Icons.info_outline, 'About PawWalk'),
                 ]),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
+                // Danger Zone Section
+                _buildSectionHeader('Danger Zone'),
+                _buildSettingsCard([
+                  _buildSettingItem(
+                    Icons.delete_forever_outlined,
+                    'Delete Account',
+                    titleColor: Colors.red,
+                    onTap: _handleDeleteAccount,
+                  ),
+                ]),
+
+                const SizedBox(height: 32),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: _handleLogout,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      foregroundColor: Colors.red,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout),
+                        SizedBox(width: 8),
+                        Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
                 Center(
                   child: Text(
                     'Version 1.0.0',
@@ -228,7 +359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, {String? subtitle, VoidCallback? onTap}) {
+  Widget _buildSettingItem(IconData icon, String title, {String? subtitle, Color? titleColor, VoidCallback? onTap}) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -236,16 +367,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: const Color(0xFF64748B), size: 20),
+        child: Icon(icon, color: titleColor ?? const Color(0xFF64748B), size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
+          color: titleColor ?? const Color(0xFF1E293B),
         ),
       ),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
       trailing: const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
       onTap: onTap,
     );

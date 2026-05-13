@@ -53,6 +53,10 @@ class FirestoreService {
     return _db.collection('users').doc(userId).update(data);
   }
 
+  Future<void> deleteUser(String userId) {
+    return _db.collection('users').doc(userId).delete();
+  }
+
   // --- Favorite Operations ---
   Future<void> toggleFavorite(String userId, String walkerId, bool isFavorite) {
     return _db.collection('users').doc(userId).update({

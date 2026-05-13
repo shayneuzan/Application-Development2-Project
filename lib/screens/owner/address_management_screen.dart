@@ -113,7 +113,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
     String mainAddress = updatedAddresses[index]['address'];
 
-    await _firestoreService.updateUser(_userId!, {
+    await _firestoreService.updateUser(_userId, {
       'savedAddresses': updatedAddresses,
       'address': mainAddress,
     });
@@ -131,7 +131,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
     List<Map<String, dynamic>> updatedAddresses = List.from(addresses);
     updatedAddresses.removeAt(index);
 
-    await _firestoreService.updateUser(_userId!, {
+    await _firestoreService.updateUser(_userId, {
       'savedAddresses': updatedAddresses,
     });
   }
@@ -171,7 +171,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
           updateData['address'] = fullAddress;
         }
 
-        await _firestoreService.updateUser(_userId!, updateData);
+        await _firestoreService.updateUser(_userId, updateData);
         
         _labelController.clear();
         _streetController.clear();
@@ -219,7 +219,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
         ),
       ),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_userId!),
+        stream: _firestoreService.getUserStream(_userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

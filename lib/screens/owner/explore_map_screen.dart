@@ -91,7 +91,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                 ),
                 infoWindow: InfoWindow(
                   title: walker.name,
-                  snippet: '${walker.rating} ⭐ • \$${walker.price}/hr',
+                  snippet: '${walker.rating} ⭐ • \$${walker.hourlyRate}/hr',
                 ),
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
               ),

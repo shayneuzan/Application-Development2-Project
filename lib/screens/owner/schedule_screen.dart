@@ -52,7 +52,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _fetchOwnerData() async {
     if (_userId == null) return;
     try {
-      final userData = await _firestoreService.getUserById(_userId!);
+      final userData = await _firestoreService.getUserById(_userId);
       if (mounted) {
         setState(() {
           _ownerName = userData.name;

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../shared/notification_screen.dart';
+import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
 import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
@@ -75,15 +77,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
+          //     );
+          //   },
+          // ),
+          WalkerNotificationIcon(), // Custom notification icon
           const SizedBox(width: 8),
         ],
       ),

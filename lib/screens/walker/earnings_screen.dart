@@ -80,7 +80,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF2563EB),
+                                  color: Color(0xFF2563EB),
                                 ),
                               ),
                             ],
@@ -248,7 +248,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                               elevation: 2,
                               margin: const EdgeInsets.symmetric(vertical: 5),
                               child: ListTile(
-                                leading: const Icon(Icons.pets, color: const Color(0xFF2563EB)),
+                                leading: const Icon(Icons.pets, color: Color(0xFF2563EB)),
                                 title: Text('$date, (${doc['dayOfWeek']})'),
                                 subtitle: Text('${doc['walkTitle']}'),
                                 trailing: Text(

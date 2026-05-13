@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login_screen.dart';
+import '../shared/notification_screen.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'pet_profile_screen.dart';
@@ -281,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                            MaterialPageRoute(builder: (context) => const NotificationScreen()),
                           );
                         },
                       ),

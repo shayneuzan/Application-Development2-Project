@@ -34,14 +34,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     for (int i = 0; i < updatedCards.length; i++) {
       updatedCards[i]['isDefault'] = (i == index);
     }
-    await _firestoreService.updateUser(_userId!, {'paymentMethods': updatedCards});
+    await _firestoreService.updateUser(_userId, {'paymentMethods': updatedCards});
   }
 
   Future<void> _removeCard(List<Map<String, dynamic>> cards, int index) async {
     if (_userId == null) return;
     List<Map<String, dynamic>> updatedCards = List.from(cards);
     updatedCards.removeAt(index);
-    await _firestoreService.updateUser(_userId!, {'paymentMethods': updatedCards});
+    await _firestoreService.updateUser(_userId, {'paymentMethods': updatedCards});
   }
 
   Future<void> _addCard(List<Map<String, dynamic>> cards) async {
@@ -70,7 +70,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       'isDefault': updatedCards.isEmpty,
     });
 
-    await _firestoreService.updateUser(_userId!, {'paymentMethods': updatedCards});
+    await _firestoreService.updateUser(_userId, {'paymentMethods': updatedCards});
     
     _nameController.clear();
     _numberController.clear();
@@ -103,7 +103,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         ),
       ),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_userId!),
+        stream: _firestoreService.getUserStream(_userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

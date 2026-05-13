@@ -5,12 +5,12 @@ import '../owner/owner_home_screen.dart';
 import '../owner/booking_history_screen.dart';
 import '../owner/profile_screen.dart';
 import '../owner/pet_profile_screen.dart';
-import '../owner/notifications_screen.dart';
 import '../owner/browse_walkers_list_screen.dart';
 import '../owner/settings_screen.dart';
 import '../auth/login_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
+import 'package:pawwalk/screens/shared/notification_screen.dart';
 
 class OwnerDrawer extends StatelessWidget {
   final String currentPage;
@@ -134,7 +134,7 @@ class OwnerDrawer extends StatelessWidget {
                   icon: Icons.notifications_none,
                   title: 'Notifications',
                   isSelected: currentPage == 'Notifications',
-                  onTap: () => _navigateTo(context, const NotificationsScreen()),
+                  onTap: () => _navigateTo(context, NotificationScreen()),
                 ),
                 // This is for the Chat Group List
                 _buildDrawerItem(

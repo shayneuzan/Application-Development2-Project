@@ -66,11 +66,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     },
                     calendarStyle: const CalendarStyle(
                       selectedDecoration: BoxDecoration(
-                        color: const Color(0xFF2563EB),
+                        color: Color(0xFF2563EB),
                         shape: BoxShape.circle,
                       ),
                       todayDecoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: Color(0xFFEFF6FF),
                         shape: BoxShape.circle,
                       ),
                     ),

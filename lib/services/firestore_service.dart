@@ -4,6 +4,8 @@ import '../models/walker_model.dart';
 import '../models/pet_model.dart';
 import '../models/user_model.dart';
 import '../models/booking_model.dart';
+import '../models/notification_model.dart';
+
 
 
 class FirestoreService {
@@ -29,53 +31,6 @@ class FirestoreService {
       throw Exception('Pet Owner not found or this user is not a Pet Owner.');
     }
     return UserModel.fromFirestore(doc);
-  }
-
-  // --- Booking Operations ---
-  Stream<List<BookingModel>> getAllBookingsByWalkerID(String walkerID) {
-    return _db.collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
-        .where('status', isEqualTo: 'pending')
-        .snapshots().map((snapshot) => snapshot.docs
-        .map((doc) => BookingModel.fromFirestore(doc)).toList());
-  }
-
-  // Home screen - 3 pending from today
-  Stream<List<BookingModel>> getThreePendingRequestsByWalkerID(String walkerID, DateTime presentDay) {
-    return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
-        .where('status', isEqualTo: 'pending')
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) => BookingModel.fromFirestore(doc))
-        .where((b) => !b.date.isBefore(presentDay))
-        .take(3)
-        .toList());
-  }
-
-  // Home screen - accepted from today
-  Stream<List<BookingModel>> getUpcomingWalksByWalkerID(String walkerID, DateTime presentDay) {
-    return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
-        .where('status', isEqualTo: 'accepted')
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) => BookingModel.fromFirestore(doc))
-        .where((b) => !b.date.isBefore(presentDay))
-        .toList());
-  }
-
-  Stream<List<BookingModel>> getUpcomingWalksByDay(String walkerID, DateTime selectedDay) {
-    return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
-        .where('status', isEqualTo: 'accepted')
-        .where('date', isEqualTo: DateFormat('yyyy-MM-dd').format(selectedDay))
-        .snapshots()
-        .map((snapshot) => snapshot.docs)
-        .map((docs) => docs.map((doc) => BookingModel.fromFirestore(doc)).toList());
   }
 
   // --- Pet Operations ---
@@ -153,6 +108,52 @@ class FirestoreService {
     return _db.collection('requests').doc(bookingId).update({'isReviewed': true});
   }
 
+  Stream<List<BookingModel>> getAllBookingsByWalkerID(String walkerID) {
+    return _db.collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'pending')
+        .snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc)).toList());
+  }
+
+  // Home screen - 3 pending from today
+  Stream<List<BookingModel>> getThreePendingRequestsByWalkerID(String walkerID, DateTime presentDay) {
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc))
+        .where((b) => !b.date.isBefore(presentDay))
+        .take(3)
+        .toList());
+  }
+
+  // Home screen - accepted from today
+  Stream<List<BookingModel>> getUpcomingWalksByWalkerID(String walkerID, DateTime presentDay) {
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'accepted')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => BookingModel.fromFirestore(doc))
+        .where((b) => !b.date.isBefore(presentDay))
+        .toList());
+  }
+
+  Stream<List<BookingModel>> getUpcomingWalksByDay(String walkerID, DateTime selectedDay) {
+    return _db
+        .collection('bookings')
+        .where('walkerId', isEqualTo: walkerID)
+        .where('status', isEqualTo: 'accepted')
+        .where('date', isEqualTo: DateFormat('yyyy-MM-dd').format(selectedDay))
+        .snapshots()
+        .map((snapshot) => snapshot.docs)
+        .map((docs) => docs.map((doc) => BookingModel.fromFirestore(doc)).toList());
+  }
+
   // --- Review Operations ---
   Stream<List<Map<String, dynamic>>> getReviewsByWalker(String walkerId) {
     return _db
@@ -165,6 +166,9 @@ class FirestoreService {
             .toList());
   }
 
+  Future<void> deleteUser(String userId) {
+    return _db.collection('users').doc(userId).delete();
+  }
   Future<void> addReview(Map<String, dynamic> reviewData) {
     return _db.collection('reviews').add({
       ...reviewData,
@@ -184,6 +188,49 @@ class FirestoreService {
       'isRead': false,
     });
   }
+
+  Stream<List<NotificationModel>> getAllNotificationsByUserID(String uid) {
+    return _db.collection('notifications')
+        .where('receiverID', isEqualTo: uid)
+        .orderBy('timestamp', descending: true)
+        .snapshots().map((snapshot) => snapshot.docs
+        .map((doc) => NotificationModel.fromFirestore(doc)).toList());
+  }
+
+  Future<void> markAllRead(String uid) async {
+    final snapshot = await _db.collection('notifications')
+        .where('receiverID', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    if (snapshot.docs.isEmpty) return;
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
+
+  Future<List<NotificationModel>> getNotificationsByUserID(String uid) async {
+    final snapshot = await _db.collection('notifications').where('receiverID', isEqualTo: uid).get();
+    return snapshot.docs.map((d) => NotificationModel.fromFirestore(d)).toList();
+  }
+
+  Future<void> clearAll(String uid) async {
+    final snapshot = await _db
+        .collection('notifications')
+        .where('receiverID', isEqualTo: uid)
+        .get();
+
+    if (snapshot.docs.isEmpty) return;
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
 
   Future<void> checkAndResetEarnings(Map<String, dynamic> data, String uid) async {
     DateTime now = DateTime.now();
@@ -216,5 +263,13 @@ class FirestoreService {
     if (updates.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
     }
+  }
+
+  Future<void> markAsRead(String notificationId) async {
+    await _db.collection('notifications').doc(notificationId).update({'isRead': true});
+  }
+
+  Future<void> deleteNotification(String notificationId) async {
+    await _db.collection('notifications').doc(notificationId).delete();
   }
 }

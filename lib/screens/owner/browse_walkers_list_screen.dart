@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../shared/notification_screen.dart';
+import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -105,15 +107,17 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
+          //     );
+          //   },
+          // ),
+          // const SizedBox(width: 8),
+          WalkerNotificationIcon(), // Custom notification icon
           const SizedBox(width: 8),
         ],
       ),

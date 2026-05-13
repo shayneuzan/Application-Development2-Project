@@ -62,7 +62,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
 
     try {
       // Get current user data to update the specific address in the list
-      UserModel user = await _firestoreService.getUserById(_userId!);
+      UserModel user = await _firestoreService.getUserById(_userId);
       List<Map<String, dynamic>> updatedAddresses = List.from(user.savedAddresses);
       
       bool wasDefault = updatedAddresses[widget.index]['isDefault'] == true;
@@ -80,7 +80,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         updateData['address'] = fullAddress;
       }
 
-      await _firestoreService.updateUser(_userId!, updateData);
+      await _firestoreService.updateUser(_userId, updateData);
 
       if (mounted) {
         Navigator.pop(context);

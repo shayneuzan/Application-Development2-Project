@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pawwalk/screens/widgets/walker_notification_icon.dart';
+import '../shared/notification_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
@@ -85,31 +87,32 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: Stack(
+          //     children: [
+          //       const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+          //       Positioned(
+          //         right: 4,
+          //         top: 4,
+          //         child: Container(
+          //           width: 8,
+          //           height: 8,
+          //           decoration: const BoxDecoration(
+          //             color: Colors.red,
+          //             shape: BoxShape.circle,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
+          //     );
+          //   },
+          // ),
+          WalkerNotificationIcon(),
           const SizedBox(width: 8),
         ],
       ),

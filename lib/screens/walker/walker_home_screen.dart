@@ -67,19 +67,16 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
     // Listen to the user's document and sign them out if they get suspended
     if (uid != null) {
       _statusSub = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .snapshots()
-          .listen((doc) {
-        if (!doc.exists || !mounted) return;
-        final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
-        if (status == 'suspended') {
-          FirebaseAuth.instance.signOut();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        }
+          .collection('users').doc(uid).snapshots().listen((doc) {
+          if (!doc.exists || !mounted) return;
+          final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
+          if (status == 'suspended') {
+            FirebaseAuth.instance.signOut();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          }
       });
     }
   }

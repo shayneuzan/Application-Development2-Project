@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../shared/notification_screen.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -39,18 +40,16 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             onPressed: () async {
               try {
                 await _firestoreService.deletePet(pet.id);
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${pet.name} deleted successfully')),
-                  );
-                }
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${pet.name} deleted successfully')),
+                );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error deleting pet: $e')),
-                  );
-                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting pet: $e')),
+                );
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -90,7 +89,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
               );
             },
           ),

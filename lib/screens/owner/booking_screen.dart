@@ -219,7 +219,6 @@ class _BookingScreenState extends State<BookingScreen> {
                           walkerId: widget.walkerId,
                           walkerName: widget.walkerName,
                           hourlyRate: widget.hourlyRate,
-                          ownerName: _ownerName,
                           selectedPet: _selectedPetName!,
                           selectedDuration: _selectedDuration,
                         ),

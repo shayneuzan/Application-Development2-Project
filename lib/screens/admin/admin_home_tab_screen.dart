@@ -35,6 +35,8 @@ class AdminHomeTab extends StatelessWidget {
     {'message': 'New owner registered: Emily Chen',      'time': '3 hours ago', 'icon': Icons.person_add,   'color': Color(0xFF10B981)},
   ];
 
+  AdminHomeTab({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(

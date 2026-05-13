@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       activeColor: const Color(0xFF2563EB),
       onChanged: (value) async {
         if (value != null && _userId != null) {
-          await _firestoreService.updateUser(_userId!, {'language': value});
+          await _firestoreService.updateUser(_userId, {'language': value});
           if (mounted) Navigator.pop(context);
         }
       },
@@ -57,7 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateSetting(String key, bool value) async {
     if (_userId != null) {
-      await _firestoreService.updateUser(_userId!, {key: value});
+      await _firestoreService.updateUser(_userId, {key: value});
     }
   }
 
@@ -115,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm == true && _userId != null) {
       try {
         // 1. Delete Firestore data
-        await _firestoreService.deleteUser(_userId!);
+        await _firestoreService.deleteUser(_userId);
         
         // 2. Delete Auth user
         await FirebaseAuth.instance.currentUser?.delete();
@@ -167,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_userId!),
+        stream: _firestoreService.getUserStream(_userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

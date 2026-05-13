@@ -10,7 +10,7 @@ class AdminMoreTab extends StatelessWidget {
 
   // Logout callback from parent
   final VoidCallback onLogout;
-  const AdminMoreTab({required this.onLogout});
+  const AdminMoreTab({super.key, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class AdminMoreTab extends StatelessWidget {
     //Get current admin user email
     final user = FirebaseAuth.instance.currentUser;
 
-    final List<Map<String, dynamic>> _menuItems = [
+    final List<Map<String, dynamic>> menuItems = [
       {'label': 'Send Announcement', 'icon': Icons.campaign_outlined,  'color': Color(0xFF2563EB)},
       {'label': 'Platform Settings', 'icon': Icons.settings_outlined,   'color': Color(0xFF3B82F6)},
       {'label': 'View Reports',      'icon': Icons.bar_chart_outlined,  'color': Color(0xFF8B5CF6)},
@@ -85,10 +85,10 @@ class AdminMoreTab extends StatelessWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: _menuItems.length,
+                itemCount: menuItems.length,
                 separatorBuilder: (context, index) => Divider(height: 1, color: Color(0xFFF5F5F4)),
                 itemBuilder: (context, index) {
-                  final item = _menuItems[index];
+                  final item = menuItems[index];
                   return ListTile(
                     leading: Container(
                       width: 36, height: 36,

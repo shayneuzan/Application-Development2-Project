@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'walker_profile_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/walker_model.dart';
 import '../../models/user_model.dart';
@@ -24,10 +28,47 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
+  static const LatLng _defaultPosition = LatLng(45.485, -73.625);
+  LatLng _currentPosition = _defaultPosition;
+  GoogleMapController? _miniMapController;
+  final Set<Marker> _miniMapMarkers = {};
+
   @override
   void initState() {
     super.initState();
     _isShowingFavorites = widget.showFavoritesOnly;
+    _getUserLocation();
+  }
+
+  Future<void> _getUserLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      if (mounted) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+        });
+        _miniMapController?.animateCamera(
+          CameraUpdate.newLatLng(_currentPosition),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error getting location: $e");
+    }
   }
 
   void _toggleFavorite(String walkerId, List<String> currentFavorites) {
@@ -41,6 +82,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
+    const textLight = Color(0xFF64748B);
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -96,6 +138,20 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
 
                   List<WalkerModel> walkers = snapshot.data ?? [];
                   
+                  _miniMapMarkers.clear();
+                  for (var walker in walkers) {
+                    _miniMapMarkers.add(
+                      Marker(
+                        markerId: MarkerId('mini_${walker.id}'),
+                        position: LatLng(
+                          _currentPosition.latitude + (0.005 * (walker.name.length % 5 - 2)),
+                          _currentPosition.longitude + (0.005 * (walker.walksCount % 5 - 2)),
+                        ),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                      ),
+                    );
+                  }
+
                   if (_isShowingFavorites) {
                     walkers = walkers.where((w) => favoriteIds.contains(w.id)).toList();
                   }
@@ -105,55 +161,106 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (!_isShowingFavorites)
-                          Container(
-                            height: 180,
-                            width: double.infinity,
-                            margin: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Stack(
-                              children: [
-                                Center(
-                                  child: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Colors.greenAccent, blurRadius: 10)],
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+                              );
+                            },
+                            child: Container(
+                              height: 190,
+                              width: double.infinity,
+                              margin: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  AbsorbPointer(
+                                    child: GoogleMap(
+                                      initialCameraPosition: CameraPosition(
+                                        target: _currentPosition,
+                                        zoom: 13.5,
+                                      ),
+                                      onMapCreated: (controller) {
+                                        _miniMapController = controller;
+                                        controller.setMapStyle(_mapStyle);
+                                      },
+                                      markers: _miniMapMarkers,
+                                      myLocationEnabled: true,
+                                      myLocationButtonEnabled: false,
+                                      zoomControlsEnabled: false,
+                                      mapToolbarEnabled: false,
+                                      compassEnabled: false,
+                                      liteModeEnabled: false,
                                     ),
                                   ),
-                                ),
-                                const Positioned(top: 40, left: 100, child: _MapDot()),
-                                const Positioned(top: 100, left: 60, child: _MapDot()),
-                                const Positioned(top: 60, right: 80, child: _MapDot()),
-                                const Positioned(top: 30, right: 40, child: _MapDot()),
-                                
-                                Positioned(
-                                  bottom: 12,
-                                  left: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.location_on, color: Color(0xFF2563EB), size: 14),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${walkers.length} walkers nearby',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
-                                        ),
-                                      ],
+
+                                  // Nearby Badge
+                                  Positioned(
+                                    bottom: 16,
+                                    left: 16,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.location_on, color: primaryBlue, size: 16),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '${walkers.length} walkers nearby',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: textDark
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+
+                                  // Fullscreen Icon
+                                  Positioned(
+                                    top: 16,
+                                    right: 16,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(Icons.fullscreen_rounded, color: primaryBlue, size: 24),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
 
@@ -162,30 +269,28 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                _isShowingFavorites ? 'Your Favorites' : 'Available Walkers',
-                                style: const TextStyle(
-                                  fontSize: 20,
+                              const Text(
+                                'Available Walkers',
+                                style: TextStyle(
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: textDark,
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: _isShowingFavorites ? primaryBlue : Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: primaryBlue),
-                                  ),
-                                  child: Text(
-                                    _isShowingFavorites ? 'Show All' : 'Show Favorites',
-                                    style: TextStyle(
-                                      color: _isShowingFavorites ? Colors.white : primaryBlue,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                              OutlinedButton(
+                                onPressed: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: _isShowingFavorites ? primaryBlue : Colors.white,
+                                  side: const BorderSide(color: primaryBlue),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                ),
+                                child: Text(
+                                  _isShowingFavorites ? 'Show All' : 'Show Favorites',
+                                  style: TextStyle(
+                                    color: _isShowingFavorites ? Colors.white : primaryBlue,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
@@ -196,7 +301,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                         if (walkers.isEmpty)
                           Center(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 60),
+                              padding: const EdgeInsets.only(top: 60, bottom: 60),
                               child: Column(
                                 children: [
                                   Icon(
@@ -238,26 +343,28 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
             },
           ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, -5),
+              offset: const Offset(0, -5),
             ),
           ],
         ),
         child: BottomNavigationBar(
           currentIndex: 1,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          backgroundColor: const Color(0xFF2563EB),
+          selectedItemColor: primaryBlue,
+          unselectedItemColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.white,
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
             } else if (index == 2) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
+            } else if (index == 3) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
@@ -307,11 +414,11 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 15,
-              offset: Offset(0, 5),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -323,7 +430,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: const Color(0xFFF1F5F9),
+                      backgroundColor: const Color(0xFFFFEDD5),
                       child: Text(
                         walker.initials,
                         style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
@@ -411,21 +518,167 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
       ),
     );
   }
-}
 
-class _MapDot extends StatelessWidget {
-  const _MapDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2563EB),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-    );
+  final String _mapStyle = '''
+[
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#f5f5f5"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#ffffff"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#dadada"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#c9c9c9"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
   }
+]
+''';
 }

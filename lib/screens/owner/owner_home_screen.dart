@@ -6,6 +6,7 @@ import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
@@ -378,7 +379,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                 MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
               );
             } else if (index == 3) {
-              // Map screen (Placeholder)
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+              );
             } else if (index == 4) {
               Navigator.push(
                 context,

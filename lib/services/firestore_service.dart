@@ -146,7 +146,11 @@ class FirestoreService {
   }
 
   Future<void> updateBookingStatus(String bookingId, String status) {
-    return _db.collection('bookings').doc(bookingId).update({'status': status});
+    return _db.collection('requests').doc(bookingId).update({'status': status});
+  }
+
+  Future<void> markBookingAsReviewed(String bookingId) {
+    return _db.collection('requests').doc(bookingId).update({'isReviewed': true});
   }
 
   // --- Review Operations ---

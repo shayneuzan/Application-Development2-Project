@@ -4,10 +4,10 @@ import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 
 class ReviewScreen extends StatefulWidget {
-  final String walkerId; // Added walkerId
+  final String walkerId;
   final String walkerName;
   final String dogName;
-  final String? bookingId; // Added bookingId to mark as reviewed
+  final String? bookingId;
 
   const ReviewScreen({
     super.key,
@@ -52,9 +52,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         'dogName': widget.dogName,
       });
 
-      // Optionally update booking status or a 'reviewed' flag
+      // Update booking to mark it as reviewed
       if (widget.bookingId != null) {
-        // await _firestoreService.markBookingAsReviewed(widget.bookingId!);
+        await _firestoreService.markBookingAsReviewed(widget.bookingId!);
       }
 
       if (mounted) {

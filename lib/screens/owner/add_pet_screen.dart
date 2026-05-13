@@ -46,15 +46,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
       try {
         final newPet = PetModel(
-          id: '', // Firestore will generate this
+          id: '', // Firestore will generate this real ID
           ownerId: _userId,
           name: _nameController.text.trim(),
           breed: _breedController.text.trim(),
           age: int.parse(_ageController.text.trim()),
-          gender: '', // Add gender field to UI if needed
-          weight: 0.0, // Add weight field to UI if needed
+          gender: '',
+          weight: 0.0,
           description: _instructionController.text.trim(),
-          imageUrl: '', // TODO: Implement image upload to Firebase Storage
         );
 
         await _firestoreService.addPet(newPet);
@@ -106,36 +105,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image Picker Placeholder
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        // Placeholder for image picker
-                      },
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
-                        ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.camera_alt_outlined, color: primaryBlue, size: 32),
-                            SizedBox(height: 4),
-                            Text(
-                              'Add Photo',
-                              style: TextStyle(fontSize: 12, color: primaryBlue, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 10),
 
                   // Pet Name
                   const Text(

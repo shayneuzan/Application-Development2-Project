@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'payment_methods_screen.dart';
 import 'address_management_screen.dart';
+import '../../services/firestore_service.dart';
+import '../../models/user_model.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,12 +13,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _pushNotifications = true;
-  bool _darkMode = false;
-  bool _emailUpdates = false;
-  String _selectedLanguage = 'English (US)';
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
-  void _showLanguageDialog() {
+  void _showLanguageDialog(String currentLanguage) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -24,8 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildLanguageOption('English (US)'),
-            _buildLanguageOption('French (FR)'),
+            _buildLanguageOption('English (US)', currentLanguage),
+            _buildLanguageOption('French (FR)', currentLanguage),
           ],
         ),
         actions: [
@@ -38,25 +39,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildLanguageOption(String language) {
+  Widget _buildLanguageOption(String language, String currentLanguage) {
     return RadioListTile<String>(
       title: Text(language),
       value: language,
-      groupValue: _selectedLanguage,
+      groupValue: currentLanguage,
       activeColor: const Color(0xFF2563EB),
-      onChanged: (value) {
-        setState(() {
-          _selectedLanguage = value!;
-        });
-        Navigator.pop(context);
+      onChanged: (value) async {
+        if (value != null && _userId != null) {
+          await _firestoreService.updateUser(_userId!, {'language': value});
+          if (mounted) Navigator.pop(context);
+        }
       },
     );
+  }
+
+  Future<void> _updateSetting(String key, bool value) async {
+    if (_userId != null) {
+      await _firestoreService.updateUser(_userId!, {key: value});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     const textDark = Color(0xFF1E293B);
     const backgroundGray = Color(0xFFF8FAFC);
+    const primaryBlue = Color(0xFF2563EB);
+
+    if (_userId == null) {
+      return const Scaffold(body: Center(child: Text("Please log in")));
+    }
 
     return Scaffold(
       backgroundColor: backgroundGray,
@@ -72,101 +84,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Account Section
-            _buildSectionHeader('Account'),
-            _buildSettingsCard([
-              _buildSettingItem(
-                Icons.credit_card,
-                'Payment Methods',
-                subtitle: 'Visa •••• 4242',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
-                  );
-                },
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildSettingItem(
-                Icons.location_on_outlined,
-                'Saved Addresses',
-                subtitle: 'Home, Office',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AddressManagementScreen()),
-                  );
-                },
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildSettingItem(
-                Icons.language,
-                'Language',
-                subtitle: _selectedLanguage,
-                onTap: _showLanguageDialog,
-              ),
-            ]),
+      body: StreamBuilder<UserModel>(
+        stream: _firestoreService.getUserStream(_userId!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(child: Text("Error loading settings"));
+          }
 
-            const SizedBox(height: 32),
+          final user = snapshot.data!;
 
-            // Notifications Section
-            _buildSectionHeader('Notifications'),
-            _buildSettingsCard([
-              _buildToggleItem(
-                Icons.notifications_none,
-                'Push Notifications',
-                _pushNotifications,
-                (val) => setState(() => _pushNotifications = val),
-              ),
-              const Divider(height: 1, indent: 56),
-              _buildToggleItem(
-                Icons.email_outlined,
-                'Email Updates',
-                _emailUpdates,
-                (val) => setState(() => _emailUpdates = val),
-              ),
-            ]),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Account Section
+                _buildSectionHeader('Account'),
+                _buildSettingsCard([
+                  _buildSettingItem(
+                    Icons.credit_card,
+                    'Payment Methods',
+                    subtitle: 'Manage your cards',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildSettingItem(
+                    Icons.location_on_outlined,
+                    'Saved Addresses',
+                    subtitle: user.address ?? 'Add your address',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AddressManagementScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildSettingItem(
+                    Icons.language,
+                    'Language',
+                    subtitle: user.language,
+                    onTap: () => _showLanguageDialog(user.language),
+                  ),
+                ]),
 
-            const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-            // Appearance Section
-            _buildSectionHeader('Appearance'),
-            _buildSettingsCard([
-              _buildToggleItem(
-                Icons.dark_mode_outlined,
-                'Dark Mode',
-                _darkMode,
-                (val) => setState(() => _darkMode = val),
-              ),
-            ]),
+                // Notifications Section
+                _buildSectionHeader('Notifications'),
+                _buildSettingsCard([
+                  _buildToggleItem(
+                    Icons.notifications_none,
+                    'Push Notifications',
+                    user.pushNotifications,
+                    (val) => _updateSetting('pushNotifications', val),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildToggleItem(
+                    Icons.email_outlined,
+                    'Email Updates',
+                    user.emailUpdates,
+                    (val) => _updateSetting('emailUpdates', val),
+                  ),
+                ]),
 
-            const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-            // Support & About Section
-            _buildSectionHeader('Support'),
-            _buildSettingsCard([
-              _buildSettingItem(Icons.help_outline, 'Help Center'),
-              const Divider(height: 1, indent: 56),
-              _buildSettingItem(Icons.policy_outlined, 'Privacy Policy'),
-              const Divider(height: 1, indent: 56),
-              _buildSettingItem(Icons.info_outline, 'About PawWalk'),
-            ]),
+                // Appearance Section
+                _buildSectionHeader('Appearance'),
+                _buildSettingsCard([
+                  _buildToggleItem(
+                    Icons.dark_mode_outlined,
+                    'Dark Mode',
+                    user.darkMode,
+                    (val) => _updateSetting('darkMode', val),
+                  ),
+                ]),
 
-            const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
-            Center(
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-              ),
+                // Support & About Section
+                _buildSectionHeader('Support'),
+                _buildSettingsCard([
+                  _buildSettingItem(Icons.help_outline, 'Help Center'),
+                  const Divider(height: 1, indent: 56),
+                  _buildSettingItem(Icons.policy_outlined, 'Privacy Policy'),
+                  const Divider(height: 1, indent: 56),
+                  _buildSettingItem(Icons.info_outline, 'About PawWalk'),
+                ]),
+
+                const SizedBox(height: 40),
+
+                Center(
+                  child: Text(
+                    'Version 1.0.0',
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

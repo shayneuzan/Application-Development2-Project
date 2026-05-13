@@ -20,6 +20,7 @@ dependencies:
   # Maps & Location
   google_maps_flutter: ^2.10.0
   geolocator: ^13.0.1
+  geocoding: ^3.0.0
   permission_handler: ^11.3.1
 
   # Local Storage
@@ -44,6 +45,10 @@ dependencies:
   syncfusion_flutter_charts: ^27.1.53
 
   cupertino_icons: ^1.0.8
+
+  # Networking & Utils
+  http: ^1.2.1
+  uuid: ^4.4.0
 
 dev_dependencies:
   flutter_test:

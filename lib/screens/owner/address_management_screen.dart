@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geocoding/geocoding.dart';
 import 'edit_address_screen.dart';
 import '../../services/firestore_service.dart';
+import '../../services/location_service.dart';
 import '../../models/user_model.dart';
 
 class AddressManagementScreen extends StatefulWidget {
@@ -13,12 +16,21 @@ class AddressManagementScreen extends StatefulWidget {
 
 class _AddressManagementScreenState extends State<AddressManagementScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final LocationService _locationService = LocationService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
+  
+  bool _isVerifying = false;
+  bool _isSearching = false;
+  String? _searchError;
   
   final TextEditingController _labelController = TextEditingController();
   final TextEditingController _streetController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _postalController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  List<Map<String, dynamic>> _predictions = [];
+  Timer? _debounce;
 
   @override
   void dispose() {
@@ -26,7 +38,69 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
     _streetController.dispose();
     _cityController.dispose();
     _postalController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  Future<void> _onSearchChanged(String query, StateSetter setModalState) async {
+    if (query.isEmpty) {
+      setModalState(() {
+        _predictions = [];
+        _isSearching = false;
+        _searchError = null;
+      });
+      return;
+    }
+
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    
+    setModalState(() {
+      _isSearching = true;
+      _searchError = null;
+    });
+
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final predictions = await _locationService.getAutocomplete(query);
+        if (mounted) {
+          setModalState(() {
+            _predictions = predictions;
+            _isSearching = false;
+            if (predictions.isEmpty && query.length > 2) {
+              _searchError = "No addresses found";
+            }
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setModalState(() {
+            _isSearching = false;
+            _searchError = e.toString().replaceFirst("Exception: ", "");
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _selectPrediction(Map<String, dynamic> prediction, StateSetter setModalState) async {
+    final placeId = prediction['place_id'];
+    
+    setModalState(() => _isSearching = true);
+    final details = await _locationService.getPlaceDetails(placeId);
+
+    if (mounted) {
+      setModalState(() {
+        if (details.isNotEmpty) {
+          _streetController.text = details['street'] ?? "";
+          _cityController.text = details['city'] ?? "";
+          _postalController.text = details['postalCode'] ?? "";
+        }
+        _predictions = [];
+        _isSearching = false;
+        _searchController.clear();
+      });
+    }
   }
 
   Future<void> _setDefaultAddress(List<Map<String, dynamic>> addresses, int index) async {
@@ -79,26 +153,45 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
     final String fullAddress = "$street, $city, $postal";
     
-    List<Map<String, dynamic>> updatedAddresses = List.from(addresses);
-    updatedAddresses.add({
-      'label': label,
-      'address': fullAddress,
-      'isDefault': updatedAddresses.isEmpty,
-    });
+    setState(() => _isVerifying = true);
 
-    Map<String, dynamic> updateData = {'savedAddresses': updatedAddresses};
-    if (updatedAddresses.length == 1) {
-      updateData['address'] = fullAddress;
+    try {
+      List<Location> locations = await locationFromAddress(fullAddress);
+      
+      if (locations.isNotEmpty) {
+        List<Map<String, dynamic>> updatedAddresses = List.from(addresses);
+        updatedAddresses.add({
+          'label': label,
+          'address': fullAddress,
+          'isDefault': updatedAddresses.isEmpty,
+        });
+
+        Map<String, dynamic> updateData = {'savedAddresses': updatedAddresses};
+        if (updatedAddresses.length == 1) {
+          updateData['address'] = fullAddress;
+        }
+
+        await _firestoreService.updateUser(_userId!, updateData);
+        
+        _labelController.clear();
+        _streetController.clear();
+        _cityController.clear();
+        _postalController.clear();
+        
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not verify address. Please check your entry.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isVerifying = false);
     }
-
-    await _firestoreService.updateUser(_userId!, updateData);
-    
-    _labelController.clear();
-    _streetController.clear();
-    _cityController.clear();
-    _postalController.clear();
-    
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -202,7 +295,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -288,66 +381,199 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
   }
 
   void _showAddAddressBottomSheet(BuildContext context, List<Map<String, dynamic>> currentAddresses) {
+    _searchController.clear();
+    _predictions = [];
+    _searchError = null;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 24,
-          left: 24,
-          right: 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add New Address',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 24,
+              left: 24,
+              right: 24,
             ),
-            const SizedBox(height: 24),
-            _buildTextField(_labelController, 'Address Label (e.g. Home, Work)'),
-            const SizedBox(height: 16),
-            _buildTextField(_streetController, 'Street Address', prefix: Icons.location_on_outlined),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildTextField(_cityController, 'City')),
-                const SizedBox(width: 16),
-                Expanded(child: _buildTextField(_postalController, 'Postal Code')),
-              ],
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () => _addNewAddress(currentAddresses),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('Save Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Add New Address',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Search Bar
+                  _buildTextField(
+                    _searchController, 
+                    'Start typing your address...', 
+                    prefix: Icons.search,
+                    suffix: _isSearching 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                        : _searchController.text.isNotEmpty 
+                          ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged("", setModalState);
+                            }) 
+                          : null,
+                    onChanged: (val) => _onSearchChanged(val, setModalState),
+                  ),
+
+                  // Predictions List or Error Message
+                  if (_searchError != null)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(12),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _searchError!, 
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13)
+                      ),
+                    ),
+
+                  if (_predictions.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                          )
+                        ],
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _predictions.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final p = _predictions[index];
+                          final mainText = p['structured_formatting']?['main_text'] ?? p['description'];
+                          final secondaryText = p['structured_formatting']?['secondary_text'] ?? "";
+                          
+                          return ListTile(
+                            leading: const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF64748B)),
+                            title: Text(mainText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            subtitle: secondaryText.isNotEmpty ? Text(secondaryText, style: const TextStyle(fontSize: 12)) : null,
+                            onTap: () => _selectPrediction(p, setModalState),
+                          );
+                        },
+                      ),
+                    ),
+
+                  const SizedBox(height: 32),
+                  _buildLabel('Address Label'),
+                  const SizedBox(height: 8),
+                  _buildTextField(_labelController, 'e.g. Home, Work'),
+                  
+                  const SizedBox(height: 24),
+                  _buildLabel('Manual Entry Details'),
+                  const SizedBox(height: 8),
+                  _buildTextField(_streetController, 'Street Address', prefix: Icons.location_on_outlined),
+                  
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('City'),
+                            const SizedBox(height: 8),
+                            _buildTextField(_cityController, 'City'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('Postal Code'),
+                            const SizedBox(height: 8),
+                            _buildTextField(_postalController, 'Postal Code'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isVerifying 
+                        ? null 
+                        : () async {
+                            setModalState(() => _isVerifying = true);
+                            await _addNewAddress(currentAddresses);
+                            if (mounted) setModalState(() => _isVerifying = false);
+                          },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: _isVerifying 
+                        ? const SizedBox(
+                            height: 20, 
+                            width: 20, 
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                          )
+                        : const Text('Verify & Save Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          );
+        }
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {IconData? prefix}) {
+  Widget _buildLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hint, {IconData? prefix, Widget? suffix, Function(String)? onChanged}) {
     return TextField(
       controller: controller,
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: prefix != null ? Icon(prefix, size: 20, color: const Color(0xFF64748B)) : null,
+        suffixIcon: suffix,
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
         border: OutlineInputBorder(
@@ -356,7 +582,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

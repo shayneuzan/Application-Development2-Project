@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
+import '../../models/user_model.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String walkerId;
@@ -29,6 +30,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime? _selectedDay;
   String? _selectedTimeSlot;
   bool _isLoading = false;
+  String? _ownerName;
 
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
@@ -43,6 +45,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _fetchOwnerData();
+  }
+
+  Future<void> _fetchOwnerData() async {
+    if (_userId == null) return;
+    try {
+      final userData = await _firestoreService.getUserById(_userId!);
+      if (mounted) {
+        setState(() {
+          _ownerName = userData.name;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching owner data: $e");
+    }
   }
 
   Future<void> _confirmBooking() async {
@@ -59,14 +76,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     try {
       final double totalPrice = (widget.hourlyRate / 60) * widget.selectedDuration;
       
+      // bookingData aligned with WalkerHomeScreen requirements
       final bookingData = {
         'ownerId': _userId,
-        'walkerId': widget.walkerId,
+        'ownerName': _ownerName ?? "Unknown Owner",
+        'petOwner': _ownerName ?? "Unknown Owner", // Used in Walker dashboard cards
+        'walkerID': widget.walkerId, // Walker dashboard uses uppercase 'ID'
         'walkerName': widget.walkerName,
         'petName': widget.selectedPet,
         'duration': widget.selectedDuration,
         'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),
         'time': _selectedTimeSlot,
+        'payment': totalPrice, // Matches 'payment' field in Walker UI
         'totalPrice': totalPrice,
         'status': 'pending',
       };

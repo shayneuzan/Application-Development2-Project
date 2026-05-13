@@ -8,13 +8,40 @@ class FirestoreService {
 
   // --- Walker Operations ---
   Stream<List<WalkerModel>> getWalkers() {
-    return _db.collection('walkers').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => WalkerModel.fromFirestore(doc)).toList());
+    // Fetches users with role 'walker' to display in the browse list
+    return _db
+        .collection('users')
+        .where('role', isEqualTo: 'walker')
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => WalkerModel.fromFirestore(doc)).toList());
   }
 
   Future<WalkerModel> getWalkerById(String id) async {
-    var doc = await _db.collection('walkers').doc(id).get();
+    var doc = await _db.collection('users').doc(id).get();
     return WalkerModel.fromFirestore(doc);
+  }
+
+  // --- User Operations ---
+  Future<UserModel> getUserById(String id) async {
+    var doc = await _db.collection('users').doc(id).get();
+    return UserModel.fromFirestore(doc);
+  }
+
+  Stream<UserModel> getUserStream(String userId) {
+    return _db.collection('users').doc(userId).snapshots().map((doc) => UserModel.fromFirestore(doc));
+  }
+
+  Future<void> createUser(UserModel user) {
+    return _db.collection('users').doc(user.id).set(user.toMap());
+  }
+
+  Future<void> updateUser(String userId, Map<String, dynamic> data) {
+    return _db.collection('users').doc(userId).update(data);
+  }
+
+  Future<void> deleteUser(String userId) {
+    return _db.collection('users').doc(userId).delete();
   }
 
   // --- Pet Operations ---
@@ -39,40 +66,10 @@ class FirestoreService {
     return _db.collection('pets').doc(petId).delete();
   }
 
-  // --- User Operations ---
-  Future<UserModel> getUserById(String id) async {
-    var doc = await _db.collection('users').doc(id).get();
-    return UserModel.fromFirestore(doc);
-  }
-
-  Future<void> createUser(UserModel user) {
-    return _db.collection('users').doc(user.id).set(user.toMap());
-  }
-
-  Future<void> updateUser(String userId, Map<String, dynamic> data) {
-    return _db.collection('users').doc(userId).update(data);
-  }
-
-  Future<void> deleteUser(String userId) {
-    return _db.collection('users').doc(userId).delete();
-  }
-
-  // --- Favorite Operations ---
-  Future<void> toggleFavorite(String userId, String walkerId, bool isFavorite) {
-    return _db.collection('users').doc(userId).update({
-      'favoriteWalkers': isFavorite
-          ? FieldValue.arrayUnion([walkerId])
-          : FieldValue.arrayRemove([walkerId])
-    });
-  }
-
-  Stream<UserModel> getUserStream(String userId) {
-    return _db.collection('users').doc(userId).snapshots().map((doc) => UserModel.fromFirestore(doc));
-  }
-
-  // --- Booking Operations ---
+  // --- Booking/Request Operations ---
   Future<void> createBooking(Map<String, dynamic> bookingData) {
-    return _db.collection('bookings').add({
+    // Saves to 'requests' so walkers can see and accept bookings
+    return _db.collection('requests').add({
       ...bookingData,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -80,7 +77,7 @@ class FirestoreService {
 
   Stream<List<Map<String, dynamic>>> getBookingsByOwner(String ownerId) {
     return _db
-        .collection('bookings')
+        .collection('requests')
         .where('ownerId', isEqualTo: ownerId)
         .orderBy('date', descending: true)
         .snapshots()
@@ -90,10 +87,22 @@ class FirestoreService {
   }
 
   Future<void> updateBookingStatus(String bookingId, String status) {
-    return _db.collection('bookings').doc(bookingId).update({'status': status});
+    return _db.collection('requests').doc(bookingId).update({'status': status});
   }
 
-  // --- Review Operations ---
+  Future<void> markBookingAsReviewed(String bookingId) {
+    return _db.collection('requests').doc(bookingId).update({'isReviewed': true});
+  }
+
+  // --- Review & Social Operations ---
+  Future<void> toggleFavorite(String userId, String walkerId, bool isFavorite) {
+    return _db.collection('users').doc(userId).update({
+      'favoriteWalkers': isFavorite
+          ? FieldValue.arrayUnion([walkerId])
+          : FieldValue.arrayRemove([walkerId])
+    });
+  }
+
   Stream<List<Map<String, dynamic>>> getReviewsByWalker(String walkerId) {
     return _db
         .collection('reviews')

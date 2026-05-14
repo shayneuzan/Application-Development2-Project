@@ -14,6 +14,8 @@ class AdminBookingsTab extends StatelessWidget {
     {'id': 'b3', 'owner': 'Emily Chen',  'walker': 'Jodel Santos',  'date': '2026-04-01', 'time': '09:00', 'duration': '45 min', 'price': '\$20', 'status': 'pending'},
   ];
 
+  AdminBookingsTab({super.key});
+
   @override
   Widget build(BuildContext context) {
 

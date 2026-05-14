@@ -20,11 +20,7 @@ class ChatListScreen extends StatelessWidget {
       final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && context.mounted) {
         String role = doc.data()?['role'] ?? 'owner';
-        
-        Widget homeScreen = (role == 'walker') 
-            ? const WalkerHomeScreen() 
-            : const OwnerHomeScreen();
-
+        Widget homeScreen = (role == 'walker') ? const WalkerHomeScreen() : const OwnerHomeScreen();
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => homeScreen),
@@ -131,7 +127,6 @@ class ChatListScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (petName.isNotEmpty) Text("Pet: $petName", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: status == 'active' ? Colors.blueAccent : Colors.grey)),
-
           Text(lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: status == 'active' ? Colors.black87 : Colors.grey),),
         ],
       ),
@@ -144,6 +139,10 @@ class ChatListScreen extends StatelessWidget {
               chatRoomID: chatRoomID,
               receiverID: otherUserID,
               receiverName: otherUserName,
+              totalPrice: data['totalPrice'] ?? 0.0,
+              petName: petName,
+              duration: data['duration'] ?? 0,
+              bookingId: data['bookingId'] ?? '',
             ),
           ),
         );

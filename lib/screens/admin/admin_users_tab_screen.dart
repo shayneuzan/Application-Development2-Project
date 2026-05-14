@@ -8,6 +8,8 @@ import '../../i18n/app_localizations.dart';
 // ─────────────────────────────────────────────────────────
 
 class AdminUsersTab extends StatefulWidget {
+  const AdminUsersTab({super.key});
+
   @override
   State<AdminUsersTab> createState() => _AdminUsersTabState();
 }
@@ -219,10 +221,10 @@ class _ActionButton extends StatelessWidget {
     if ((user['role'] ?? 'owner') == 'walker' && (user['status'] ?? 'active') == 'pending') {
       return ElevatedButton(
         onPressed: () async {
-          await _ref.update({'isApproved': true, 'status': 'active'});
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${user['name'] ?? 'No name'} approved!'), backgroundColor: Color(0xFF10B981)),
           );
+          await _ref.update({'isApproved': true, 'status': 'active'});
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF10B981), foregroundColor: Colors.white,
@@ -237,10 +239,10 @@ class _ActionButton extends StatelessWidget {
     if ((user['status'] ?? 'active') == 'active') {
       return OutlinedButton(
         onPressed: () async {
-          await _ref.update({'status': 'suspended'});
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${user['name'] ?? 'No name'} suspended.'), backgroundColor: Color(0xFFEF4444)),
           );
+          await _ref.update({'status': 'suspended'});
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: Color(0xFFEF4444), side: BorderSide(color: Color(0xFFEF4444)),
@@ -255,10 +257,10 @@ class _ActionButton extends StatelessWidget {
     if ((user['status'] ?? 'active') == 'suspended') {
       return OutlinedButton(
         onPressed: () async {
-          await _ref.update({'status': 'active'});
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${user['name'] ?? 'No name'} restored.'), backgroundColor: Color(0xFF10B981)),
           );
+          await _ref.update({'status': 'active'});
         },
         style: OutlinedButton.styleFrom(
           foregroundColor: Color(0xFF10B981), side: BorderSide(color: Color(0xFF10B981)),

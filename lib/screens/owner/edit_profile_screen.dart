@@ -54,7 +54,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _firestoreService.updateUser(_user!.uid, {
+      await _firestoreService.updateUser(_user.uid, {
         'name': _nameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
         'address': _addressController.text.trim(),

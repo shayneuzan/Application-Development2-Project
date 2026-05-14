@@ -2,10 +2,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pawwalk/screens/widgets/walker_notification_icon.dart';
+import '../shared/notification_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
@@ -84,31 +87,32 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: Stack(
+          //     children: [
+          //       const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+          //       Positioned(
+          //         right: 4,
+          //         top: 4,
+          //         child: Container(
+          //           width: 8,
+          //           height: 8,
+          //           decoration: const BoxDecoration(
+          //             color: Colors.red,
+          //             shape: BoxShape.circle,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
+          //     );
+          //   },
+          // ),
+          WalkerNotificationIcon(),
           const SizedBox(width: 8),
         ],
       ),
@@ -151,7 +155,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
             // Upcoming Walk Card - Ideally fetch the next booking
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final booking = snapshot.data!.first; // Simplification: take the most recent one
@@ -314,7 +318,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             ),
             const SizedBox(height: 16),
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -378,7 +382,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                 MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
               );
             } else if (index == 3) {
-              // Map screen (Placeholder)
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+              );
             } else if (index == 4) {
               Navigator.push(
                 context,

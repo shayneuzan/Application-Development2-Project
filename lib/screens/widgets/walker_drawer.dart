@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
-import 'package:pawwalk/screens/walker/notification_screen.dart';
 import 'package:pawwalk/screens/walker/request_screen.dart';
 import 'package:pawwalk/screens/walker/schedule_screen.dart';
 import 'package:pawwalk/screens/walker/walker_home_screen.dart';
@@ -9,6 +8,7 @@ import 'package:pawwalk/screens/walker/walker_profile_edit_screen.dart';
 import '../chat/chat_list_screen.dart';
 
 import '../auth/login_screen.dart';
+import '../shared/notification_screen.dart';
 
 class WalkerDrawer extends StatelessWidget {
   final String name;

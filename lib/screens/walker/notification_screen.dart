@@ -103,6 +103,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     ),
                     onDismissed: (_) async {
                       await docs[index].reference.delete();
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Notification dismissed"),

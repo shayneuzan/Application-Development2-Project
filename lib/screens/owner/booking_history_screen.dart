@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../shared/notification_screen.dart';
+import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
 import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
@@ -7,6 +9,7 @@ import 'notifications_screen.dart';
 import 'schedule_screen.dart';
 import 'review_screen.dart';
 import 'booking_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
 
@@ -74,15 +77,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
+          //     );
+          //   },
+          // ),
+          WalkerNotificationIcon(), // Custom notification icon
           const SizedBox(width: 8),
         ],
       ),
@@ -90,7 +94,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       body: _userId == null 
         ? const Center(child: Text('Please log in to see your bookings'))
         : StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _firestoreService.getBookingsByOwner(_userId!),
+            stream: _firestoreService.getBookingsByOwner(_userId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -125,7 +129,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   color: isUpcomingSelected ? Colors.white : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: isUpcomingSelected
-                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                       : [],
                                 ),
                                 margin: const EdgeInsets.all(4),
@@ -148,7 +152,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                   color: !isUpcomingSelected ? Colors.white : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: !isUpcomingSelected
-                                      ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))]
+                                      ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
                                       : [],
                                 ),
                                 margin: const EdgeInsets.all(4),
@@ -182,12 +186,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             },
           ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
-              offset: Offset(0, -5),
+              offset: const Offset(0, -5),
             ),
           ],
         ),
@@ -202,6 +206,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
             } else if (index == 1) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
+            } else if (index == 3) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
@@ -314,11 +320,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 15,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),

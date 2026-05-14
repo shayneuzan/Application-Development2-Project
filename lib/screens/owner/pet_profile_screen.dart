@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../shared/notification_screen.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -7,6 +8,7 @@ import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'add_pet_screen.dart';
 import 'edit_pet_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/pet_model.dart';
 import '../widgets/owner_drawer.dart';
@@ -38,18 +40,16 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             onPressed: () async {
               try {
                 await _firestoreService.deletePet(pet.id);
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${pet.name} deleted successfully')),
-                  );
-                }
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${pet.name} deleted successfully')),
+                );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error deleting pet: $e')),
-                  );
-                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting pet: $e')),
+                );
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -89,7 +89,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
               );
             },
           ),
@@ -100,7 +100,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
       body: _userId == null 
         ? const Center(child: Text('Please log in to see your pets'))
         : StreamBuilder<List<PetModel>>(
-            stream: _firestoreService.getPetsByOwner(_userId!),
+            stream: _firestoreService.getPetsByOwner(_userId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -178,11 +178,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 4,
+          currentIndex: 4, // Profile/Settings related
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          backgroundColor: const Color(0xFF2563EB),
+          selectedItemColor: primaryBlue,
+          unselectedItemColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.white,
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
@@ -190,6 +190,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
             } else if (index == 2) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
+            } else if (index == 3) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
             } else if (index == 4) {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
@@ -230,16 +232,14 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                pet.imageUrl.isNotEmpty 
-                  ? CircleAvatar(radius: 30, backgroundImage: NetworkImage(pet.imageUrl))
-                  : Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.pets, color: Color(0xFF2563EB), size: 28),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7ED),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.pets, color: Colors.orange, size: 28),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(

@@ -12,7 +12,7 @@ class WalkerProfileScreen extends StatefulWidget {
   final String initials;
   final double rating;
   final int walksCount;
-  final int price;
+  final double hourlyRate;
   final WalkerModel? walker; // Optional full model
 
   const WalkerProfileScreen({
@@ -22,7 +22,7 @@ class WalkerProfileScreen extends StatefulWidget {
     required this.initials,
     required this.rating,
     required this.walksCount,
-    required this.price,
+    required this.hourlyRate,
     this.walker,
   });
 
@@ -37,7 +37,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
 
   void _toggleFavorite(bool isCurrentlyFavorite) {
     if (_userId == null) return;
-    _firestoreService.toggleFavorite(_userId!, widget.id, !isCurrentlyFavorite);
+    _firestoreService.toggleFavorite(_userId, widget.id, !isCurrentlyFavorite);
   }
 
   @override
@@ -50,7 +50,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
     return Scaffold(
       backgroundColor: backgroundGray,
       body: StreamBuilder<UserModel>(
-        stream: _userId != null ? _firestoreService.getUserStream(_userId!) : const Stream.empty(),
+        stream: _userId != null ? _firestoreService.getUserStream(_userId) : const Stream.empty(),
         builder: (context, userSnapshot) {
           final isFavorite = userSnapshot.data?.favoriteWalkers.contains(widget.id) ?? false;
 
@@ -132,7 +132,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                             ],
                           ),
                           Text(
-                            '\$${widget.price}/hr',
+                            '\$ ${widget.hourlyRate % 1 == 0 ? widget.hourlyRate.toInt() : widget.hourlyRate.toStringAsFixed(2)}/hr',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -148,7 +148,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatColumn('Rating', widget.rating.toString(), Icons.star, Colors.orange),
+                          _buildStatColumn('Rating', widget.rating.toStringAsFixed(2), Icons.star, Colors.orange),
                           _buildStatColumn('Walks', widget.walksCount.toString(), Icons.pets, primaryBlue),
                           _buildStatColumn('Experience', '${widget.walker?.experienceYears ?? 3} years', Icons.timer, Colors.green),
                         ],
@@ -254,7 +254,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                   builder: (context) => BookingScreen(
                     walkerId: widget.id,
                     walkerName: widget.name,
-                    hourlyRate: widget.price.toDouble(),
+                    hourlyRate: widget.hourlyRate,
                   ),
                 ),
               );

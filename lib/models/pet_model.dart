@@ -9,7 +9,6 @@ class PetModel {
   final String gender;
   final double weight;
   final String description;
-  final String imageUrl;
 
   PetModel({
     required this.id,
@@ -20,7 +19,6 @@ class PetModel {
     required this.gender,
     required this.weight,
     required this.description,
-    required this.imageUrl,
   });
 
   factory PetModel.fromFirestore(DocumentSnapshot doc) {
@@ -34,7 +32,6 @@ class PetModel {
       gender: data['gender'] ?? '',
       weight: (data['weight'] ?? 0.0).toDouble(),
       description: data['description'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
     );
   }
 
@@ -47,7 +44,6 @@ class PetModel {
       'gender': gender,
       'weight': weight,
       'description': description,
-      'imageUrl': imageUrl,
     };
   }
 }

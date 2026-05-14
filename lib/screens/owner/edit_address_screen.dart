@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/firestore_service.dart';
+import '../../models/user_model.dart';
 
 class EditAddressScreen extends StatefulWidget {
-  final Map<String, String> address;
+  final Map<String, dynamic> address;
+  final int index;
 
-  const EditAddressScreen({super.key, required this.address});
+  const EditAddressScreen({super.key, required this.address, required this.index});
 
   @override
   State<EditAddressScreen> createState() => _EditAddressScreenState();
 }
 
 class _EditAddressScreenState extends State<EditAddressScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+  final String? _userId = FirebaseAuth.instance.currentUser?.uid;
+
   late TextEditingController _labelController;
   late TextEditingController _streetController;
   late TextEditingController _cityController;
@@ -20,16 +27,11 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     super.initState();
     _labelController = TextEditingController(text: widget.address['label']);
     
-    // Attempt to split the address for placeholder fields
-    // Assuming format: "Street, City, State PostalCode"
+    // Split the address: "Street, City, PostalCode"
     List<String> parts = widget.address['address']?.split(', ') ?? [];
     _streetController = TextEditingController(text: parts.isNotEmpty ? parts[0] : '');
     _cityController = TextEditingController(text: parts.length > 1 ? parts[1] : '');
-    
-    // Extract postal code (assuming it's at the end)
-    String lastPart = parts.length > 2 ? parts.last : '';
-    List<String> lastParts = lastPart.split(' ');
-    _postalController = TextEditingController(text: lastParts.last);
+    _postalController = TextEditingController(text: parts.length > 2 ? parts[2] : '');
   }
 
   @override
@@ -39,6 +41,60 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     _cityController.dispose();
     _postalController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveChanges() async {
+    if (_userId == null) return;
+
+    final String label = _labelController.text.trim();
+    final String street = _streetController.text.trim();
+    final String city = _cityController.text.trim();
+    final String postal = _postalController.text.trim();
+
+    if (label.isEmpty || street.isEmpty || city.isEmpty || postal.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    final String fullAddress = "$street, $city, $postal";
+
+    try {
+      // Get current user data to update the specific address in the list
+      UserModel user = await _firestoreService.getUserById(_userId);
+      List<Map<String, dynamic>> updatedAddresses = List.from(user.savedAddresses);
+      
+      bool wasDefault = updatedAddresses[widget.index]['isDefault'] == true;
+
+      updatedAddresses[widget.index] = {
+        'label': label,
+        'address': fullAddress,
+        'isDefault': wasDefault,
+      };
+
+      Map<String, dynamic> updateData = {'savedAddresses': updatedAddresses};
+      
+      // If this was the default address, update the main address field too
+      if (wasDefault) {
+        updateData['address'] = fullAddress;
+      }
+
+      await _firestoreService.updateUser(_userId, updateData);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Address updated successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating address: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -69,15 +125,11 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
             _buildLabel('Address Label'),
             const SizedBox(height: 8),
             _buildTextField(_labelController, 'e.g. Home, Office'),
-            
             const SizedBox(height: 24),
-            
             _buildLabel('Street Address'),
             const SizedBox(height: 8),
             _buildTextField(_streetController, 'Enter street name and number'),
-            
             const SizedBox(height: 24),
-
             Row(
               children: [
                 Expanded(
@@ -103,32 +155,19 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                 ),
               ],
             ),
-            
             const SizedBox(height: 40),
-            
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  // Placeholder for update logic
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Address updated successfully!')),
-                  );
-                },
+                onPressed: _saveChanges,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                child: const Text('Save Changes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -138,10 +177,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   }
 
   Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14),
-    );
+    return Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14));
   }
 
   Widget _buildTextField(TextEditingController controller, String hint) {
@@ -153,18 +189,9 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
       ),
     );
   }

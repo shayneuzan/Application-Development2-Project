@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../walker/notification_screen.dart';
+import '../shared/notification_screen.dart';
 
 class WalkerNotificationIcon extends StatelessWidget {
   const WalkerNotificationIcon({super.key});

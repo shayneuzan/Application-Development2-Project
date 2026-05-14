@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
+import 'owner_home_screen.dart';
+import '../../models/user_model.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String walkerId;
@@ -30,6 +31,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime? _selectedDay;
   String? _selectedTimeSlot;
   bool _isLoading = false;
+  String? _ownerName;
 
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
@@ -44,6 +46,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _fetchOwnerData();
+  }
+
+  Future<void> _fetchOwnerData() async {
+    if (_userId == null) return;
+    try {
+      final userData = await _firestoreService.getUserById(_userId);
+      if (mounted) {
+        setState(() {
+          _ownerName = userData.name;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching owner data: $e");
+    }
   }
 
   Future<void> _confirmBooking() async {
@@ -58,44 +75,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Fetch the owner's display name so the walker can see who made the request
-      String ownerName = 'Pet Owner';
-      try {
-        final ownerDoc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
-        if (ownerDoc.exists) {
-          ownerName = (ownerDoc.data() as Map<String, dynamic>)['name'] ?? 'Pet Owner';
-        }
-      } catch (_) {}
-
       final double totalPrice = (widget.hourlyRate / 60) * widget.selectedDuration;
-
-      // Field names must match exactly what RequestScreen and BookingHistoryScreen read
+      
+      // bookingData aligned with WalkerHomeScreen requirements
       final bookingData = {
-        'ownerID': _userId,           // matches RequestScreen ownerID query
-        'walkerID': widget.walkerId,  // matches RequestScreen where('walkerID') query
+        'ownerId': _userId,
+        'ownerName': _ownerName ?? "Unknown Owner",
+        'petOwner': _ownerName ?? "Unknown Owner", // Used in Walker dashboard cards
+        'walkerID': widget.walkerId, // Walker dashboard uses uppercase 'ID'
         'walkerName': widget.walkerName,
-        'petOwner': ownerName,        // walker sees this as the requester's name
         'petName': widget.selectedPet,
-        'duration': widget.selectedDuration.toString(),
+        'duration': widget.selectedDuration,
         'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),
         'time': _selectedTimeSlot,
-        'payment': totalPrice.toStringAsFixed(2),  // matches RequestScreen payment field
+        'payment': totalPrice, // Matches 'payment' field in Walker UI
+        'totalPrice': totalPrice,
         'status': 'pending',
       };
 
       await _firestoreService.createBooking(bookingData);
-
-      // Send a notification to the walker so they know there's a new request
-      try {
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'receiverID': widget.walkerId,
-          'title': 'New Walk Request',
-          'message': '$ownerName wants to book a walk for ${widget.selectedPet} on ${DateFormat('MMM d').format(_selectedDay!)}.',
-          'type': 'walk_request_pending',
-          'timestamp': FieldValue.serverTimestamp(),
-          'isRead': false,
-        });
-      } catch (_) {}
 
       if (mounted) {
         _showSuccessDialog(context);
@@ -283,7 +281,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_isLoading || _selectedDay == null || _selectedTimeSlot == null)
+            onPressed: (_selectedDay == null || _selectedTimeSlot == null)
                 ? null
                 : _confirmBooking,
             style: ElevatedButton.styleFrom(
@@ -343,7 +341,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // Go back to Home
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const OwnerHomeScreen(),
+                    ),
+                        (route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),

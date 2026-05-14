@@ -8,7 +8,17 @@ class UserModel {
   final String? profileImageUrl;
   final String? phoneNumber;
   final String? address;
-  final List<String> favoriteWalkers; // Added favoriteWalkers
+  final List<String> favoriteWalkers;
+  
+  // Settings fields
+  final bool pushNotifications;
+  final bool emailUpdates;
+  final bool darkMode;
+  final String language;
+
+  // New fields for multiple addresses and payment methods
+  final List<Map<String, dynamic>> savedAddresses;
+  final List<Map<String, dynamic>> paymentMethods;
 
   UserModel({
     required this.id,
@@ -19,6 +29,12 @@ class UserModel {
     this.phoneNumber,
     this.address,
     this.favoriteWalkers = const [],
+    this.pushNotifications = true,
+    this.emailUpdates = false,
+    this.darkMode = false,
+    this.language = 'English (US)',
+    this.savedAddresses = const [],
+    this.paymentMethods = const [],
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -32,6 +48,12 @@ class UserModel {
       phoneNumber: data['phoneNumber'],
       address: data['address'],
       favoriteWalkers: List<String>.from(data['favoriteWalkers'] ?? []),
+      pushNotifications: data['pushNotifications'] ?? true,
+      emailUpdates: data['emailUpdates'] ?? false,
+      darkMode: data['darkMode'] ?? false,
+      language: data['language'] ?? 'English (US)',
+      savedAddresses: List<Map<String, dynamic>>.from(data['savedAddresses'] ?? []),
+      paymentMethods: List<Map<String, dynamic>>.from(data['paymentMethods'] ?? []),
     );
   }
 
@@ -44,6 +66,12 @@ class UserModel {
       'phoneNumber': phoneNumber,
       'address': address,
       'favoriteWalkers': favoriteWalkers,
+      'pushNotifications': pushNotifications,
+      'emailUpdates': emailUpdates,
+      'darkMode': darkMode,
+      'language': language,
+      'savedAddresses': savedAddresses,
+      'paymentMethods': paymentMethods,
     };
   }
 }

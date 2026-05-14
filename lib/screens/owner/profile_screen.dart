@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/login_screen.dart';
+import '../shared/notification_screen.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'pet_profile_screen.dart';
 import 'notifications_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'edit_profile_screen.dart';
+import 'explore_map_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
@@ -59,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       drawer: const OwnerDrawer(currentPage: 'Profile'),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_currentUser!.uid),
+        stream: _firestoreService.getUserStream(_currentUser.uid),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -280,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                            MaterialPageRoute(builder: (context) => const NotificationScreen()),
                           );
                         },
                       ),
@@ -364,7 +366,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
               );
             } else if (index == 3) {
-              // TODO: Navigate to Map Screen when built
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
+              );
             }
           },
           items: const [

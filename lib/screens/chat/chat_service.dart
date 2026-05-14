@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/message_model.dart';
+
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -21,7 +23,7 @@ class ChatService {
   }
 
   // Create or re-open a chat room
-  Future<void> createChatRoom(String receiverID, String receiverName, String petName) async {
+  Future<void> createChatRoom(String receiverID, String receiverName, String petName, double totalPrice, int duration, String bookingId) async {
     final String currentUserID = _auth.currentUser!.uid;
 
     // Fetch current user details for metadata and role-based messaging
@@ -49,6 +51,11 @@ class ChatService {
         receiverID: {'name': receiverName},
       },
       'petName': petName,
+      'totalPrice': totalPrice, // Store the price for potential refunds
+      'duration': duration,
+      'bookingId': bookingId,
+      'walkerID': role == 'walker' ? currentUserID : receiverID,
+      'ownerID': role == 'owner' ? currentUserID : receiverID,
     }, SetOptions(merge: true));
 
     // Send the initial preset message
@@ -84,7 +91,7 @@ class ChatService {
     }
 
     // Create a new message
-    Message newMessage = Message(
+    MessageModel newMessage = MessageModel(
       senderID: currentUserID,
       receiverID: receiverID,
       message: message,
@@ -116,29 +123,5 @@ class ChatService {
         .collection('messages')
         .orderBy("timestamp", descending: false)
         .snapshots();
-  }
-}
-
-// Message Model
-class Message {
-  final String senderID;
-  final String receiverID;
-  final String message;
-  final Timestamp timestamp;
-
-  Message({
-    required this.senderID,
-    required this.receiverID,
-    required this.message,
-    required this.timestamp,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'senderID': senderID,
-      'receiverID': receiverID,
-      'message': message,
-      'timestamp': timestamp
-    };
   }
 }

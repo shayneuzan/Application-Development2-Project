@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pawwalk/models/booking_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-
+import '../../services/firestore_service.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import '../widgets/walker_notification_icon.dart';
@@ -16,6 +17,7 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -64,11 +66,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     },
                     calendarStyle: const CalendarStyle(
                       selectedDecoration: BoxDecoration(
-                        color: const Color(0xFF2563EB),
+                        color: Color(0xFF2563EB),
                         shape: BoxShape.circle,
                       ),
                       todayDecoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: Color(0xFFEFF6FF),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -91,20 +93,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('requests')
-                            .where('walkerID', isEqualTo: uid)
-                            .where('status', isEqualTo: 'accepted')
-                            .where(
-                          'date',
-                          isEqualTo:
-                          DateFormat('yyyy-MM-dd').format(_selectedDay!),
-                        )
-                            .snapshots(),
+                      StreamBuilder<List<BookingModel>>(
+                        stream: _firestoreService.getUpcomingWalksByDay(uid!, _selectedDay!),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData ||
-                              snapshot.data!.docs.isEmpty) {
+                              snapshot.data!.isEmpty) {
                             return Center(
                               child: Padding(
                                 padding: const EdgeInsets.all(40.0),
@@ -123,13 +116,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               ),
                             );
                           }
-                          final docs = snapshot.data!.docs;
+                          final docs = snapshot.data!;
                           return ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.docs.length,
+                            itemCount: snapshot.data!.length,
                             itemBuilder: (context, index) {
-                              final data = docs[index].data() as Map<String, dynamic>;
+                              final booking = docs[index];
                               return Container(
                                 width: double.infinity,
                                 margin: const EdgeInsets.only(bottom: 16),
@@ -162,11 +155,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               Row(
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
-                                                  Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                                  Text("\$${data['payment'] ?? '0'}", style: const TextStyle(fontSize: 18, color: Color(0xFF2563EB), fontWeight: FontWeight.bold,)),
+                                                  Text(booking.petName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                                                  Text("\$${booking.totalPrice}", style: const TextStyle(fontSize: 18, color: Color(0xFF2563EB), fontWeight: FontWeight.bold,)),
                                                 ],
                                               ),
-                                              Text("${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14),),
+                                              Text(booking.ownerName, style: const TextStyle(color: Colors.grey, fontSize: 14),),
                                             ],
                                           ),
                                         ),
@@ -177,7 +170,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       children: [
                                         const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text("${data['time'] ?? '00:00'}    ${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
+                                        Text("${booking.time}    ${booking.duration} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
                                       ],
                                     ),
                                   ],

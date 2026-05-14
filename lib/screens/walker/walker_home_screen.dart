@@ -3,13 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
-import 'package:pawwalk/screens/walker/notification_screen.dart';
+import '../../models/booking_model.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
 import '../chat/chat_service.dart';
 import '../auth/login_screen.dart';
 import '../widgets/walker_notification_icon.dart';
+import '/services/firestore_service.dart';
 
 class WalkerHomeScreen extends StatefulWidget {
   const WalkerHomeScreen({super.key});
@@ -20,54 +21,12 @@ class WalkerHomeScreen extends StatefulWidget {
 
 class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
-  final DateTime _presentDay = DateTime.now();
-  late final DateTime _weekFromNow = _presentDay.add(const Duration(days: 7));
-  late final String _endDateStr = DateFormat('yyyy-MM-dd').format(_weekFromNow);
-  bool _isTimedOut = false;
   final ChatService _chatService = ChatService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  final DateTime _presentDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  bool _isTimedOut = false;
   StreamSubscription? _statusSub;
-
-  Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
-    if (uid == null) return;
-    DateTime now = DateTime.now();
-    DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
-    DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
-    DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
-
-    Map<String, dynamic> updates = {};
-    if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
-      updates['todayEarnings'] = 0.0;
-      updates['lastResetDaily'] = FieldValue.serverTimestamp();
-    }
-    if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
-      updates['weeklyEarnings'] = 0.0;
-      updates['lastResetWeekly'] = FieldValue.serverTimestamp();
-    }
-    if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
-      updates['monthEarnings'] = 0.0;
-      updates['lastResetMonthly'] = FieldValue.serverTimestamp();
-    }
-    if (updates.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
-    }
-  }
-
-  // Helper method to send notifications to Firestore
-  Future<void> _sendNotification({
-    required String receiverID,
-    required String title,
-    required String message,
-    required String type,
-  }) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'receiverID': receiverID,
-      'title': title,
-      'message': message,
-      'type': type,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
-  }
 
   @override
   void initState() {
@@ -75,23 +34,24 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) setState(() => _isTimedOut = true);
     });
+    if (uid != null) {
+      _firestoreService.initResetFields(uid!);
+    }
+
 
     // Listen to the user's document and sign them out if they get suspended
     if (uid != null) {
       _statusSub = FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .snapshots()
-          .listen((doc) {
-        if (!doc.exists || !mounted) return;
-        final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
-        if (status == 'suspended') {
-          FirebaseAuth.instance.signOut();
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
-        }
+          .collection('users').doc(uid).snapshots().listen((doc) {
+          if (!doc.exists || !mounted) return;
+          final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'active';
+          if (status == 'suspended') {
+            FirebaseAuth.instance.signOut();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          }
       });
     }
   }
@@ -113,6 +73,10 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           bool isPending = false;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
+            // Check and reset earnings
+            _firestoreService.checkAndResetEarnings(data, uid!);
+
+            // Update earnings and name
             name = data['name'] ?? 'Guest';
             todayEarnings = (data['todayEarnings'] ?? 0).toDouble();
             weeklyEarnings = (data['weeklyEarnings'] ?? 0).toDouble();
@@ -210,8 +174,8 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                       MaterialPageRoute(builder: (context) => const EarningsScreen()),
                                     );
                                   },
-                                  icon: const Icon(Icons.attach_money, color: const Color(0xFF2563EB), size: 18),
-                                  label: const Text("View All Earnings", style: TextStyle(color: const Color(0xFF2563EB), fontWeight: FontWeight.bold),),
+                                  icon: const Icon(Icons.attach_money, color: Color(0xFF2563EB), size: 18),
+                                  label: const Text("View All Earnings", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),),
@@ -224,29 +188,25 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 20,),
                       const Text('Upcoming Walks', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
-                      StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance.collection('requests')
-                          .where('walkerID', isEqualTo: uid)
-                          .where('status', isEqualTo: 'accepted')
-                          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                          .orderBy('date')
-                          .snapshots(),
+                      // Upcoming Walks
+                      StreamBuilder<List<BookingModel>>(
+                      stream: _firestoreService.getUpcomingWalksByWalkerID(uid!, _presentDay),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20.0),
                             child: Center(child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),),
                           );
                         }
-                        final docs = snapshot.data!.docs;
+                        final requests = snapshot.data!;
                         return ListView.builder(
                           padding: EdgeInsets.zero,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: docs.length,
+                          itemCount: requests.length,
                           itemBuilder: (context, index) {
-                            final data = docs[index].data() as Map<String, dynamic>;
+                            final data = requests[index];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               padding: const EdgeInsets.all(16),
@@ -265,16 +225,16 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(data['petName'] ?? "Unknown Pet", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                            Text("Owner: ${data['petOwner'] ?? 'Unknown'}", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                            Text(data.petName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                            Text("Owner: ${data.ownerName}", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                           ],
                                         ),
                                       ),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
-                                          Text(data['time'] ?? "00:00", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                          Text(data['date'] ?? "No Date", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                          Text(data.time, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                          Text(DateFormat('yyyy-MM-dd').format(data.date), style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                         ],
                                       ),
                                     ],
@@ -284,9 +244,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     children: [
                                       const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                       const SizedBox(width: 4),
-                                      Text("${data['duration'] ?? '0'} min", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                      Text("${data.duration} min", style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                       const Spacer(),
-                                      Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: const Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Text("\$${data.totalPrice}", style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 16)),
                                     ],
                                   ),
                                 ],
@@ -299,33 +259,26 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                       const SizedBox(height: 20,),
                       const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('requests')
-                            .where('walkerID', isEqualTo: uid)
-                            .where('status', isEqualTo: 'pending')
-                            .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(_presentDay))
-                            .orderBy('date')
-                            .limit(3)
-                            .snapshots(),
+                      // New Requests
+                      StreamBuilder<List<BookingModel>>(
+                        stream: _firestoreService.getThreePendingRequestsByWalkerID(uid!, _presentDay),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) return const Center(child: CircularProgressIndicator());
-                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text('No Upcoming Requests'));
-                          final docs = snapshot.data!.docs;
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('No Upcoming Requests'));
+                          final requests = snapshot.data!;
                           return ListView.separated(
                             shrinkWrap: true, 
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: docs.length,
+                            itemCount: requests.length,
                             separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
-                              final doc = docs[index];
-                              final data = doc.data() as Map<String, dynamic>;
+                              final data = requests[index];
                               return Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: const Border(left: BorderSide(color: const Color(0xFF2563EB), width: 5)),
+                                  border: const Border(left: BorderSide(color: Color(0xFF2563EB), width: 5)),
                                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                                 ),
                                 child: Column(
@@ -334,17 +287,17 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(data['petOwner'] ?? "Unknown Owner", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                        Text("\$${data['payment'] ?? '0'}", style: const TextStyle(color: const Color(0xFF2563EB), fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text(data.ownerName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                        Text("\$${data.totalPrice}", style: const TextStyle(color: Color(0xFF2563EB), fontSize: 18, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
-                                    Text("${data['petName']} - ${data['duration']} min walk", style: const TextStyle(color: Colors.grey)),
+                                    Text("${data.petName} - ${data.duration} min walk", style: const TextStyle(color: Colors.grey)),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
                                         const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text("${data['date']} at ${data['time']}", style: const TextStyle(color: Colors.grey)),
+                                        Text("${DateFormat('yyyy-MM-dd').format(data.date)} at ${data.time}", style: const TextStyle(color: Colors.grey)),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
@@ -353,20 +306,20 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         Expanded(
                                           child: OutlinedButton(
                                             onPressed: () async {
-                                              String ownerID = data['ownerID'] ?? "";
-                                              String petName = data['petName'] ?? "N/A";
+                                              String ownerID = data.ownerId;
+                                              String petName = data.petName;
 
-                                              await doc.reference.update({'status': 'declined'});
+                                              await _firestoreService.updateBookingStatus(data.id, 'declined');
                                               if (ownerID.isNotEmpty) {
                                                 // Notify Owner
-                                                await _sendNotification(
+                                                _firestoreService.sendNotification(
                                                   receiverID: ownerID,
                                                   title: 'Request Declined',
                                                   message: '$name declined your walk request for $petName.',
                                                   type: 'request_declined',
                                                 );
                                                 // Notify Walker
-                                                await _sendNotification(
+                                                _firestoreService.sendNotification(
                                                   receiverID: uid!,
                                                   title: 'Request Declined',
                                                   message: 'You have declined the walk request for $petName.',
@@ -376,7 +329,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                               if (!context.mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
-                                                  content: Text("Request Declined! Pet: $petName\nOwner: ${data['petOwner']}"),
+                                                  content: Text("Request Declined! Pet: $petName\nOwner: ${data.ownerName}"),
                                                   backgroundColor: Colors.red,
                                                   duration: const Duration(seconds: 3),
                                                 ),
@@ -390,24 +343,25 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                         Expanded(
                                           child: ElevatedButton(
                                             onPressed: () async {
-                                              String ownerID = data['ownerID'] ?? "";
-                                              String ownerName = data['petOwner'] ?? "Owner";
-                                              String petName = data['petName'] ?? "Pet";
-                                              
-                                              await doc.reference.update({'status': 'accepted'});
+                                              String ownerID = data.ownerId;
+                                              String petName = data.petName;
+                                              String ownerName = data.ownerName;
+
+                                              await _firestoreService.updateBookingStatus(data.id, 'accepted');
+                                              _firestoreService.addEarnings(uid!, data.totalPrice);
                                               if (ownerID.isNotEmpty) {
                                                 // Create Chat Room
-                                                await _chatService.createChatRoom(ownerID, ownerName, petName);
+                                                await _chatService.createChatRoom(ownerID, ownerName, petName, data.totalPrice, data.duration, data.id);
 
                                                 // Notify Owner
-                                                await _sendNotification(
+                                                _firestoreService.sendNotification(
                                                   receiverID: ownerID,
                                                   title: 'Walk Request Accepted!',
                                                   message: '$name is ready to walk $petName! Go to "Messages" in your drawer to coordinate details.',
                                                   type: 'request_accepted',
                                                 );
                                                 // Notify Walker
-                                                await _sendNotification(
+                                                _firestoreService.sendNotification(
                                                   receiverID: uid!,
                                                   title: 'Walk Request Accepted!',
                                                   message: 'You have accepted the walk request for $petName. Open "View Chat" to discuss location with $ownerName.',

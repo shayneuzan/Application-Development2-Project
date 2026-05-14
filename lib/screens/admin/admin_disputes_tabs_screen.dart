@@ -14,6 +14,8 @@ class AdminDisputesTab extends StatelessWidget {
     {'reportedBy': 'Sarah Leblanc', 'against': 'Jodel Santos',  'reason': 'Walker cancelled last minute',     'date': 'Apr 5, 2026',  'status': 'resolved'},
   ];
 
+  AdminDisputesTab({super.key});
+
   @override
   Widget build(BuildContext context) {
 

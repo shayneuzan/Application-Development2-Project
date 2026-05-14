@@ -2,14 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../services/firestore_service.dart';
 import 'chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String receiverID;
   final String receiverName;
   final String chatRoomID;
+  final double totalPrice;
+  final String petName;
+  final int duration;
+  final String bookingId;
 
-  const ChatScreen({super.key, required this.chatRoomID, required this.receiverID, required this.receiverName,});
+  const ChatScreen({super.key, required this.chatRoomID, required this.receiverID, required this.receiverName, required this.totalPrice, required this.petName, required this.duration, required this.bookingId,});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -20,47 +25,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  final FirestoreService _firestoreService = FirestoreService();
 
-  // Helper method to send notifications to Firestore
-  Future<void> _sendNotification({
-    required String receiverID,
-    required String title,
-    required String message,
-    required String type,
-  }) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'receiverID': receiverID,
-      'title': title,
-      'message': message,
-      'type': type,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-    });
-  }
-
-  // void sendMessage() async {
-  //   String messageText = _messageController.text.trim();
-  //   if (messageText.isEmpty) return;
-  //
-  //   final String lowerMessage = messageText.toLowerCase();
-  //
-  //   // "the deed is done" -> Completion
-  //   bool isCompletion = lowerMessage.contains("the deed is done") || lowerMessage.contains("completed");
-  //
-  //   // "deal is off", "unable to do the walk", etc -> Cancellation
-  //   bool isCancellation = lowerMessage.contains("deal is off") ||
-  //       lowerMessage.contains("unable to do the walk") ||
-  //       lowerMessage.contains("cancel") ||
-  //       lowerMessage.contains("emergency");
-  //
-  //   if (isCompletion || isCancellation) {
-  //     _showEndSessionConfirmation(messageText, isCompletion);
-  //   } else {
-  //     await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, messageText);
-  //     _messageController.clear();
-  //     _scrollToBottom();
-  //   }
-  // }
 
   void sendMessage() async {
     String messageText = _messageController.text.trim();
@@ -71,6 +37,19 @@ class _ChatScreenState extends State<ChatScreen> {
       widget.chatRoomID,
       widget.receiverID,
       messageText,
+    );
+
+    // Get current user name to show in notification
+    final uid = _auth.currentUser!.uid;
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    final name = userDoc.data()?['name'] ?? 'User';
+
+    // Notify the receiver
+    _firestoreService.sendNotification(
+      receiverID: widget.receiverID,
+      title: "New Message from $name",
+      message: messageText,
+      type: 'chat',
     );
 
     _messageController.clear();
@@ -97,7 +76,13 @@ class _ChatScreenState extends State<ChatScreen> {
               // Close the Dialog
               navigator.pop();
               try {
-                // Send the final trigger message (e.g., "The deed is done")
+                // Fetch Chat Room Data for refund logic
+                final chatRoomDoc = await FirebaseFirestore.instance.collection('chat_rooms').doc(widget.chatRoomID).get();
+                final chatRoomData = chatRoomDoc.data() ?? {};
+                final double totalPrice = (chatRoomData['totalPrice'] ?? 0.0).toDouble();
+                final String walkerID = chatRoomData['walkerID'] ?? '';
+
+                // Send the final trigger message
                 await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, message,);
                 _messageController.clear();
 
@@ -109,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 String closingReason = isCompletion ? "Finished: Walk marked complete by $role ($name)" : "Ended: $role ($name) requested to cancel/stop coordination";
 
                 // Notify the other user
-                await _sendNotification(
+                _firestoreService.sendNotification(
                   receiverID: widget.receiverID,
                   title: isCompletion ? "Walk Completed!" : "Walk Ended Early",
                   message: closingReason,
@@ -119,10 +104,34 @@ class _ChatScreenState extends State<ChatScreen> {
                 // Update status to 'closed' in Firestore
                 await _chatService.closeChatRoom(widget.chatRoomID, closingReason,);
 
+                // Handle Post-Session Logic
+                if (isCompletion) {
+                  // Increment walk count for the walker
+                  await FirebaseFirestore.instance.collection('users').doc(walkerID).update({
+                    'walksCount': FieldValue.increment(1),
+                  });
+                  await _firestoreService.addEarnings(uid, widget.totalPrice);
+                  await _firestoreService.addEarningsRecord(uid, widget.petName, widget.duration, widget.totalPrice,);
+
+                } else {
+                  // REFUND LOGIC: If a walker ends the session unexpectedly
+                  if (role == 'walker' && totalPrice > 0) {
+                    await _firestoreService.refundEarnings(walkerID, totalPrice);
+                    
+                    // Notify Owner about refund
+                    _firestoreService.sendNotification(
+                      receiverID: widget.receiverID,
+                      title: "Refund Processed",
+                      message: "The walker ended the session unexpectedly. Your payment of \$$totalPrice has been refunded.",
+                      type: 'refund_issued',
+                    );
+                  }
+                }
+
                 if (!mounted) return;
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(isCompletion ? "Session Completed" : "Session Cancelled"),
+                    content: Text(isCompletion ? "Session Completed" : (role == 'walker' ? "Session Ended & Refunded" : "Session Cancelled")),
                     backgroundColor: isCompletion ? Colors.green : Colors.red,
                   ),
                 );
@@ -177,22 +186,15 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(widget.receiverName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),),
                 StreamBuilder<DocumentSnapshot>(
-                // Now chatRoomID is defined and accessible
                   stream: FirebaseFirestore.instance
                       .collection('chat_rooms')
                       .doc(widget.chatRoomID)
                       .snapshots(),
                   builder: (context, snapshot) {
-                    bool isClosed = snapshot.hasData &&
-                        snapshot.data?.exists == true &&
-                        snapshot.data?.get('status') == 'closed';
-
+                    bool isClosed = snapshot.hasData && snapshot.data?.exists == true && snapshot.data?.get('status') == 'closed';
                     return Text(
                       isClosed ? "Session Closed" : "Active Coordination",
-                      style: TextStyle(
-                          color: isClosed ? Colors.redAccent[100] : Colors.white70,
-                          fontSize: 12,
-                          fontWeight: isClosed ? FontWeight.bold : FontWeight.normal),
+                      style: TextStyle(color: isClosed ? Colors.redAccent[100] : Colors.white70, fontSize: 12, fontWeight: isClosed ? FontWeight.bold : FontWeight.normal),
                     );
                   }),
               ],
@@ -203,7 +205,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
-          _buildMessageInput(), // This also uses logic to check the same ID
+          _buildMessageInput(),
         ],
       ),
     );
@@ -272,14 +274,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
-    // We need to listen to the chat room document to check its status
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('chat_rooms')
           .doc(widget.chatRoomID)
           .snapshots(),
       builder: (context, snapshot) {
-        // Default to "not closed" while loading
         bool isClosed = false;
         bool isWalker = false;
 
@@ -292,7 +292,6 @@ class _ChatScreenState extends State<ChatScreen> {
           isWalker = currentRole == 'walker';
         }
 
-        // If closed, show a "Chat Ended" banner instead of the text field
         if (isClosed) {
           return Container(
             width: double.infinity,
@@ -309,7 +308,6 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
 
-        // OTHERWISE: Show the normal input field
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -320,18 +318,13 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // The buttons to end the session
                 Row(
                   children: [
-                    // WALKER ONLY
                     if (isWalker)
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            _showEndSessionConfirmation(
-                              "Walk completed successfully.",
-                              true,
-                            );
+                            _showEndSessionConfirmation("Walk completed successfully.", true,);
                           },
                           icon: const Icon(Icons.check_circle),
                           label: const Text("Complete Walk"),
@@ -343,19 +336,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
 
                     if (isWalker) const SizedBox(width: 10),
-                    // EVERYONE CAN END EARLY
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          _showEndSessionConfirmation(
-                            "Walk ended early.",
-                            false,
-                          );
+                          _showEndSessionConfirmation("Walk ended early.", false,);
                         },
                         icon: const Icon(Icons.warning_amber),
-                        label: Text(
-                          isWalker ? "End Early" : "Cancel Walk",
-                        ),
+                        label: Text(isWalker ? "End Early" : "Cancel Walk"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
@@ -364,10 +351,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
-
-                // The message input field
                 Row(
                   children: [
                     Expanded(

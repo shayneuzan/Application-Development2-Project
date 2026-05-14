@@ -1,0 +1,90 @@
+{
+  "@@locale": "en",
+
+  "dashboard": "Dashboard",
+  "@dashboard": { "description": "Admin dashboard tab label" },
+
+  "users": "Users",
+  "@users": { "description": "Users tab label" },
+
+  "bookings": "Bookings",
+  "@bookings": { "description": "Bookings tab label" },
+
+  "disputes": "Disputes",
+  "@disputes": { "description": "Disputes tab label" },
+
+  "more": "More",
+  "@more": { "description": "More tab label" },
+
+  "userManagement": "User Management",
+  "@userManagement": { "description": "User management section title" },
+
+  "platformSettings": "Platform Settings",
+  "@platformSettings": { "description": "Platform settings menu item" },
+
+  "sendAnnouncement": "Send Announcement",
+  "@sendAnnouncement": { "description": "Send announcement menu item" },
+
+  "viewReports": "View Reports",
+  "@viewReports": { "description": "View reports menu item" },
+
+  "helpAndSupport": "Help & Support",
+  "@helpAndSupport": { "description": "Help and support menu item" },
+
+  "signOut": "Sign Out",
+  "@signOut": { "description": "Sign out button label" },
+
+  "approve": "Approve",
+  "@approve": { "description": "Approve action button" },
+
+  "suspend": "Suspend",
+  "@suspend": { "description": "Suspend action button" },
+
+  "restore": "Restore",
+  "@restore": { "description": "Restore action button" },
+
+  "darkMode": "Dark Mode",
+  "@darkMode": { "description": "Dark mode toggle label" },
+
+  "language": "Language",
+  "@language": { "description": "Language setting label" },
+
+  "english": "English",
+  "@english": { "description": "English language option" },
+
+  "french": "French",
+  "@french": { "description": "French language option" },
+
+  "quickActions": "Quick Actions",
+  "@quickActions": { "description": "Quick actions section title" },
+
+  "administrator": "Administrator",
+  "@administrator": { "description": "Admin role label" },
+
+  "admin": "Admin",
+  "@admin": { "description": "Admin badge label" },
+
+  "appVersion": "App Version",
+  "@appVersion": { "description": "App version setting label" },
+
+  "maintenanceMode": "Maintenance Mode",
+  "@maintenanceMode": { "description": "Maintenance mode toggle label" },
+
+  "contactEmail": "Contact Email",
+  "@contactEmail": { "description": "Contact email setting label" },
+
+  "saveEmail": "Save Email",
+  "@saveEmail": { "description": "Save email button" },
+
+  "general": "General",
+  "@general": { "description": "General settings section" },
+
+  "appearance": "Appearance",
+  "@appearance": { "description": "Appearance settings section" },
+
+  "system": "System",
+  "@system": { "description": "System settings section" },
+
+  "support": "Support",
+  "@support": { "description": "Support settings section" }
+}

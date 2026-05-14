@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'admin_settings_screen.dart';
+import '../../i18n/app_localizations.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN MORE TAB
@@ -8,61 +10,75 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminMoreTab extends StatelessWidget {
 
-  // Logout callback from parent
   final VoidCallback onLogout;
-  const AdminMoreTab({required this.onLogout});
+  final Locale locale;
+  final bool isDarkMode;
+  final void Function(Locale) onLocaleChanged;
+  final void Function(bool) onThemeChanged;
+
+  const AdminMoreTab({
+    required this.onLogout,
+    required this.locale,
+    required this.isDarkMode,
+    required this.onLocaleChanged,
+    required this.onThemeChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
 
-    //Get current admin user email
     final user = FirebaseAuth.instance.currentUser;
 
+    AppLocalizations loc = AppLocalizations.of(context)!;
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
+    Color cardColor   = Theme.of(context).cardColor;
+    Color divider     = Theme.of(context).dividerColor;
+
     final List<Map<String, dynamic>> _menuItems = [
-      {'label': 'Send Announcement', 'icon': Icons.campaign_outlined,  'color': Color(0xFF2563EB)},
-      {'label': 'Platform Settings', 'icon': Icons.settings_outlined,   'color': Color(0xFF3B82F6)},
-      {'label': 'View Reports',      'icon': Icons.bar_chart_outlined,  'color': Color(0xFF8B5CF6)},
-      {'label': 'Help & Support',    'icon': Icons.help_outline,        'color': Color(0xFF10B981)},
+      {'id': 'announcement', 'label': loc.sendAnnouncement, 'icon': Icons.campaign_outlined,  'color': const Color(0xFF2563EB)},
+      {'id': 'settings',     'label': loc.platformSettings, 'icon': Icons.settings_outlined,   'color': const Color(0xFF3B82F6)},
+      {'id': 'reports',      'label': loc.viewReports,      'icon': Icons.bar_chart_outlined,  'color': const Color(0xFF8B5CF6)},
+      {'id': 'help',         'label': loc.helpAndSupport,   'icon': Icons.help_outline,        'color': const Color(0xFF10B981)},
     ];
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-            Text('More', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-            SizedBox(height: 20),
+            Text(loc.more, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
+            const SizedBox(height: 20),
 
-            //Admin profile card
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
               ),
               child: Row(
                 children: [
                   Container(
                     width: 52, height: 52,
-                    decoration: BoxDecoration(color: Color(0xFF2563EB), borderRadius: BorderRadius.circular(14)),
-                    child: Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                    decoration: BoxDecoration(color: const Color(0xFF2563EB), borderRadius: BorderRadius.circular(14)),
+                    child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
                   ),
-                  SizedBox(width: 14),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Administrator', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
-                      Text(user?.email ?? 'admin@pawwalk.com', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                      SizedBox(height: 4),
+                      Text(loc.administrator, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textPrimary)),
+                      Text(user?.email ?? 'admin@pawwalk.com', style: TextStyle(fontSize: 12, color: textMuted)),
+                      const SizedBox(height: 4),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Color(0xFF2563EB).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                        child: Text('Admin', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: const Color(0xFF2563EB).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                        child: Text(loc.admin, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
                       ),
                     ],
                   ),
@@ -70,23 +86,22 @@ class AdminMoreTab extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-            Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
-            SizedBox(height: 12),
+            Text(loc.quickActions, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary)),
+            const SizedBox(height: 12),
 
-            //Menu items list
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
               ),
               child: ListView.separated(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: _menuItems.length,
-                separatorBuilder: (context, index) => Divider(height: 1, color: Color(0xFFF5F5F4)),
+                separatorBuilder: (context, index) => Divider(height: 1, color: divider),
                 itemBuilder: (context, index) {
                   final item = _menuItems[index];
                   return ListTile(
@@ -98,10 +113,23 @@ class AdminMoreTab extends StatelessWidget {
                       ),
                       child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 20),
                     ),
-                    title: Text(item['label'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1E293B))),
-                    trailing: Icon(Icons.chevron_right, color: Color(0xFF64748B), size: 20),
+                    title: Text(item['label'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textPrimary)),
+                    trailing: Icon(Icons.chevron_right, color: textMuted, size: 20),
                     onTap: () {
-                      // TODO: implement each action
+                      if (item['id'] == 'settings') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AdminSettingsScreen(
+                              isDarkMode: isDarkMode,
+                              locale: locale,
+                              onThemeChanged: onThemeChanged,
+                              onLocaleChanged: onLocaleChanged,
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('${item['label']} coming soon')),
                       );
@@ -111,18 +139,17 @@ class AdminMoreTab extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-            //Signout button
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
                 onPressed: onLogout,
-                icon: Icon(Icons.logout, size: 18),
-                label: Text('Sign Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                icon: const Icon(Icons.logout, size: 18),
+                label: Text(loc.signOut, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2563EB),
+                  backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,

@@ -7,8 +7,7 @@ import 'package:flutter/material.dart';
 
 class AdminDisputesTab extends StatelessWidget {
 
-  // Dummy disputes,replace with real Firestore values later
-  // Structure matches what will be saved when owner reports a dispute
+  // Dummy disputes, replace with real Firestore values later
   final List<Map<String, dynamic>> _disputes = [
     {'reportedBy': 'Shayne Uzan',   'against': 'Jodel Santos',  'reason': 'Walker was late by 30 minutes',   'date': 'Apr 9, 2026',  'status': 'open'},
     {'reportedBy': 'Emily Chen',    'against': 'John Pasiolan', 'reason': 'Dog returned home wet and muddy',  'date': 'Apr 8, 2026',  'status': 'open'},
@@ -17,6 +16,9 @@ class AdminDisputesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
 
     final open     = _disputes.where((d) => d['status'] == 'open').toList();
     final resolved = _disputes.where((d) => d['status'] == 'resolved').toList();
@@ -31,8 +33,8 @@ class AdminDisputesTab extends StatelessWidget {
             SizedBox(height: 24),
 
             // Header
-            Text('Dispute Resolution', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-            Text('${open.length} open disputes', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            Text('Dispute Resolution', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
+            Text('${open.length} open disputes', style: TextStyle(fontSize: 13, color: textMuted)),
 
             SizedBox(height: 20),
 
@@ -72,12 +74,19 @@ class _DisputeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    Color textPrimary  = Theme.of(context).colorScheme.onSurface;
+    Color textMuted    = Theme.of(context).textTheme.bodySmall!.color!;
+    Color cardColor    = Theme.of(context).cardColor;
+    // Slightly tinted surface for the reason box — one step darker than card
+    Color reasonBg     = Theme.of(context).colorScheme.surface;
+
     final isOpen = dispute['status'] == 'open';
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         border: isOpen ? Border.all(color: Color(0xFFEF4444).withOpacity(0.3)) : null,
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
@@ -93,7 +102,7 @@ class _DisputeCard extends StatelessWidget {
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                    style: TextStyle(fontSize: 13, color: textPrimary),
                     children: [
                       TextSpan(text: dispute['reportedBy'], style: TextStyle(fontWeight: FontWeight.w700)),
                       TextSpan(text: ' reported '),
@@ -102,20 +111,20 @@ class _DisputeCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(dispute['date'], style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+              Text(dispute['date'], style: TextStyle(fontSize: 11, color: textMuted)),
             ],
           ),
 
           SizedBox(height: 8),
 
-          //Reason text
+          //Reason text in a tinted box
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: reasonBg, borderRadius: BorderRadius.circular(8)),
             child: Text(
               dispute['reason'],
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+              style: TextStyle(fontSize: 12, color: textMuted, fontStyle: FontStyle.italic),
             ),
           ),
 
@@ -151,7 +160,8 @@ class _DisputeCard extends StatelessWidget {
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Color(0xFF64748B), side: BorderSide(color: Color(0xFFE7E5E4)),
+                      foregroundColor: textMuted,
+                      side: BorderSide(color: Theme.of(context).dividerColor),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text('Dismiss', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),

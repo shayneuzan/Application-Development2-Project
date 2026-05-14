@@ -254,7 +254,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                   builder: (context) => BookingScreen(
                     walkerId: widget.id,
                     walkerName: widget.name,
-                    hourlyRate: widget.price,
+                    hourlyRate: widget.price.toDouble(),
                   ),
                 ),
               );

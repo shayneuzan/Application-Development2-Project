@@ -48,7 +48,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             email = data['email'] ?? 'No Email';
             bio = data['bio'] ?? 'No Bio';
             hourlyRate = (data['hourlyRate'] ?? '').toString();
-            experience = data['experience'] ?? '';
+            experience = (data['experience'] ?? '').toString();
 
             // 3. Set initial text only if the user hasn't started typing yet
             if (_nameController.text.isEmpty) _nameController.text = name;

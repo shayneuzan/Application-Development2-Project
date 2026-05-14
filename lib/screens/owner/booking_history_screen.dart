@@ -95,7 +95,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
+              if (snapshot.hasError) {
+                return Center(child: Text('Error loading bookings: ${snapshot.error}'));
+              }
+
               final allBookings = snapshot.data ?? [];
               final upcomingBookings = allBookings.where((b) => b['status'] != 'completed').toList();
               final pastBookings = allBookings.where((b) => b['status'] == 'completed').toList();
@@ -450,7 +454,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                               builder: (context) => BookingScreen(
                                 walkerId: walkerId,
                                 walkerName: walkerName,
-                                hourlyRate: 30, // Placeholder
+                                hourlyRate: 30.0, // Placeholder
                               ),
                             ),
                           );

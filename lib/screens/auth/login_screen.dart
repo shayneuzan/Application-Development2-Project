@@ -44,40 +44,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Show spinner, clear error
     setState(() {
-      _isSigningIn    = true;
+      _isSigningIn  = true;
       _errorMessage = '';
     });
 
     try {
 
-      //Sign in with Firebase Auth
+      // Sign in with Firebase Auth
       final result = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Get the user's role from Firestore that saved in the cloud
+      // Force a token refresh so emailVerified reflects the true current state.
+      // Without this, a user who just verified their email still shows as unverified.
+      await result.user!.reload();
+      final freshUser = FirebaseAuth.instance.currentUser!;
+
+      // Get the user's role and status from Firestore
       final doc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(result.user!.uid)
+          .doc(freshUser.uid)
           .get();
 
-
-      //Read the role from the document if it exists.
-      String role = 'owner'; //owner set as default
-      if (doc.data() != null && doc.data()!['role'] != null) {
-        role = doc.data()!['role'];
+      String role   = 'owner';  // default
+      String status = 'active'; // default
+      if (doc.data() != null) {
+        role   = doc.data()!['role']   ?? 'owner';
+        status = doc.data()!['status'] ?? 'active';
       }
 
-      //Read the status from the document if it exists.
-      String status = 'active'; //active set as default
-      if (doc.data() != null && doc.data()!['status'] != null) {
-        status = doc.data()!['status'];
-      }
-
-      // If the account is suspended sign them out immediately and show an error applies to all roles
+      // If the account is suspended sign them out immediately
       if (status == 'suspended') {
         await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
         setState(() {
           _errorMessage = 'Your account has been suspended. Contact support.';
           _isSigningIn  = false;
@@ -85,21 +85,19 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      //Go to the right screen based on role
+      if (!mounted) return;
+
+      // Route to the right screen based on role
       switch (role) {
         case 'walker':
-
-          // Already verified so skip the verification screen and go straight to the portal
-          if (result.user!.emailVerified) {
+          if (freshUser.emailVerified) {
             _goTo(WalkerHomeScreen());
           } else {
-            // Not verified yet so send them the link and take them to the verification screen
+            // Only send verification email if not already sent recently — avoids rate limit errors
             try {
-              await result.user!.sendEmailVerification();
-              print('VERIFICATION EMAIL SENT SUCCESSFULLY');
-            } catch (e) {
-              print('VERIFICATION EMAIL ERROR: $e');
-            }
+              await freshUser.sendEmailVerification();
+            } catch (_) {}
+            if (!mounted) return;
             _goTo(EmailVerificationScreen(destination: WalkerHomeScreen()));
           }
           break;
@@ -108,26 +106,48 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
         default:
           // Pet owner
-          // Already verified so skip the verification screen and go straight to the portal
-          if (result.user!.emailVerified) {
+          if (freshUser.emailVerified) {
             _goTo(OwnerHomeScreen());
           } else {
-            // Not verified yet so send them the link and take them to the verification screen
             try {
-              await result.user!.sendEmailVerification();
-              print('VERIFICATION EMAIL SENT SUCCESSFULLY');
-            } catch (e) {
-              print('VERIFICATION EMAIL ERROR: $e');
-            }
+              await freshUser.sendEmailVerification();
+            } catch (_) {}
+            if (!mounted) return;
             _goTo(EmailVerificationScreen(destination: OwnerHomeScreen()));
           }
       }
 
-    } catch (e) {
-      //Show error if login fails
+    } on FirebaseAuthException catch (e) {
+      // Show a specific message based on the Firebase error code
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          message = 'Incorrect email or password. Please try again.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Please wait a moment and try again.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled. Contact support.';
+          break;
+        case 'network-request-failed':
+          message = 'No internet connection. Please check your network.';
+          break;
+        default:
+          message = 'Sign in failed: ${e.message}';
+      }
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Incorrect email or password. Please try again.';
-        _isSigningIn    = false;
+        _errorMessage = message;
+        _isSigningIn  = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Something went wrong. Please try again.';
+        _isSigningIn  = false;
       });
     }
   }

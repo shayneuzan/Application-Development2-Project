@@ -8,7 +8,7 @@ import '../../models/pet_model.dart';
 class BookingScreen extends StatefulWidget {
   final String walkerId;
   final String walkerName;
-  final int hourlyRate;
+  final double hourlyRate;
 
   const BookingScreen({
     super.key,

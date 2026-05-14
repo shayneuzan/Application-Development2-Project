@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../i18n/app_localizations.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN USERS TAB
@@ -17,6 +18,11 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
   @override
   Widget build(BuildContext context) {
+
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
+    Color cardColor   = Theme.of(context).cardColor;
+
     return SafeArea(
       // Wrap everything in a StreamBuilder so the list updates live
       child: StreamBuilder<QuerySnapshot>(
@@ -44,11 +50,11 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
               // Header
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-                child: Text('User Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+                child: Text(AppLocalizations.of(context)!.userManagement, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: textMuted)),
               ),
 
               // Search bar
@@ -56,14 +62,15 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
+                  style: TextStyle(color: textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Search by name or email...',
-                    hintStyle: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                    hintStyle: TextStyle(color: textMuted, fontSize: 14),
+                    prefixIcon: Icon(Icons.search, color: textMuted, size: 20),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: cardColor,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                   ),
                 ),
@@ -77,7 +84,7 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
               // Show message if no users match the search
               else if (filtered.isEmpty)
-                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: Color(0xFF64748B)))))
+                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: textMuted))))
 
               // User list
               else
@@ -108,6 +115,10 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
+    Color cardColor   = Theme.of(context).cardColor;
+
     //Pick status badge color
     Color statusColor;
     switch (user['status'] ?? 'active') {
@@ -120,7 +131,7 @@ class _UserCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
       ),
@@ -146,9 +157,9 @@ class _UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
+                Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary)),
                 SizedBox(height: 2),
-                Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: textMuted)),
                 SizedBox(height: 6),
                 Row(
                   children: [
@@ -218,7 +229,7 @@ class _ActionButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0,
         ),
-        child: Text('Approve', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.approve, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 
@@ -236,7 +247,7 @@ class _ActionButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text('Suspend', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.suspend, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 
@@ -254,7 +265,7 @@ class _ActionButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text('Restore', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.restore, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 

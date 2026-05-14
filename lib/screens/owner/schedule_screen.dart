@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String walkerId;
   final String walkerName;
-  final int hourlyRate;
+  final double hourlyRate;
   final String selectedPet;
   final int selectedDuration;
 
@@ -57,21 +58,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Fetch the owner's display name so the walker can see who made the request
+      String ownerName = 'Pet Owner';
+      try {
+        final ownerDoc = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
+        if (ownerDoc.exists) {
+          ownerName = (ownerDoc.data() as Map<String, dynamic>)['name'] ?? 'Pet Owner';
+        }
+      } catch (_) {}
+
       final double totalPrice = (widget.hourlyRate / 60) * widget.selectedDuration;
-      
+
+      // Field names must match exactly what RequestScreen and BookingHistoryScreen read
       final bookingData = {
-        'ownerId': _userId,
-        'walkerId': widget.walkerId,
+        'ownerID': _userId,           // matches RequestScreen ownerID query
+        'walkerID': widget.walkerId,  // matches RequestScreen where('walkerID') query
         'walkerName': widget.walkerName,
+        'petOwner': ownerName,        // walker sees this as the requester's name
         'petName': widget.selectedPet,
-        'duration': widget.selectedDuration,
+        'duration': widget.selectedDuration.toString(),
         'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),
         'time': _selectedTimeSlot,
-        'totalPrice': totalPrice,
+        'payment': totalPrice.toStringAsFixed(2),  // matches RequestScreen payment field
         'status': 'pending',
       };
 
       await _firestoreService.createBooking(bookingData);
+
+      // Send a notification to the walker so they know there's a new request
+      try {
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'receiverID': widget.walkerId,
+          'title': 'New Walk Request',
+          'message': '$ownerName wants to book a walk for ${widget.selectedPet} on ${DateFormat('MMM d').format(_selectedDay!)}.',
+          'type': 'walk_request_pending',
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        });
+      } catch (_) {}
 
       if (mounted) {
         _showSuccessDialog(context);
@@ -259,7 +283,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_selectedDay == null || _selectedTimeSlot == null)
+            onPressed: (_isLoading || _selectedDay == null || _selectedTimeSlot == null)
                 ? null
                 : _confirmBooking,
             style: ElevatedButton.styleFrom(

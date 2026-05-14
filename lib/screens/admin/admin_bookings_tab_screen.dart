@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 class AdminBookingsTab extends StatelessWidget {
 
   //Dummy bookings, replace with real Firestore values later
-  // Structure matches what booking_screen.dart will save to Firestore
   final List<Map<String, dynamic>> _bookings = [
     {'id': 'b1', 'owner': 'John Smith',  'walker': 'Sarah Johnson', 'date': '2026-03-25', 'time': '10:00', 'duration': '60 min', 'price': '\$25', 'status': 'confirmed'},
     {'id': 'b2', 'owner': 'John Smith',  'walker': 'Mike Chen',     'date': '2026-03-20', 'time': '14:00', 'duration': '30 min', 'price': '\$15', 'status': 'completed'},
@@ -17,6 +16,8 @@ class AdminBookingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
 
     //Count bookings per status
     final total     = _bookings.length;
@@ -32,7 +33,7 @@ class AdminBookingsTab extends StatelessWidget {
           //Header
           Padding(
             padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-            child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+            child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
           ),
 
           Expanded(
@@ -45,7 +46,7 @@ class AdminBookingsTab extends StatelessWidget {
                   //Status summary cards
                   Row(
                     children: [
-                      _StatCard(label: 'Total', value: total.toString(), color: Color(0xFF1E293B)),
+                      _StatCard(label: 'Total', value: total.toString(), color: Theme.of(context).colorScheme.onSurface),
                       SizedBox(width: 10),
                       _StatCard(label: 'Pending', value: pending.toString(), color: Color(0xFFF59E0B)),
                       SizedBox(width: 10),
@@ -85,6 +86,8 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Color textMuted = Theme.of(context).textTheme.bodySmall!.color!;
+
     return Expanded(
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -96,7 +99,7 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
             SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+            Text(label, style: TextStyle(fontSize: 10, color: textMuted)),
           ],
         ),
       ),
@@ -112,20 +115,24 @@ class _BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
+    Color cardColor   = Theme.of(context).cardColor;
+
     //Status badge color
     Color statusColor;
     switch (booking['status']) {
-      case 'completed':  statusColor = Color(0xFF10B981); break; //green
-      case 'confirmed':  statusColor = Color(0xFF2563EB); break; //orange
-      case 'pending':    statusColor = Color(0xFFF59E0B); break; //yellow
-      case 'active':     statusColor = Color(0xFF3B82F6); break; //blue
-      default:           statusColor = Color(0xFF64748B); //grey
+      case 'completed':  statusColor = Color(0xFF10B981); break;
+      case 'confirmed':  statusColor = Color(0xFF2563EB); break;
+      case 'pending':    statusColor = Color(0xFFF59E0B); break;
+      case 'active':     statusColor = Color(0xFF3B82F6); break;
+      default:           statusColor = Color(0xFF64748B);
     }
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
       ),
@@ -158,16 +165,16 @@ class _BookingCard extends StatelessWidget {
           SizedBox(height: 12),
 
           //Booking ID
-          Text('ID: ${booking['id']}', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          Text('ID: ${booking['id']}', style: TextStyle(fontSize: 12, color: textMuted)),
 
           SizedBox(height: 10),
 
           //Owner row
           Row(
             children: [
-              Icon(Icons.person_outline, size: 16, color: Color(0xFF64748B)),
+              Icon(Icons.person_outline, size: 16, color: textMuted),
               SizedBox(width: 6),
-              Text('Owner: ${booking['owner']}', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+              Text('Owner: ${booking['owner']}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
@@ -176,9 +183,9 @@ class _BookingCard extends StatelessWidget {
           //Walker row
           Row(
             children: [
-              Icon(Icons.directions_walk, size: 16, color: Color(0xFF64748B)),
+              Icon(Icons.directions_walk, size: 16, color: textMuted),
               SizedBox(width: 6),
-              Text('Walker: ${booking['walker']}', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+              Text('Walker: ${booking['walker']}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
@@ -187,15 +194,15 @@ class _BookingCard extends StatelessWidget {
           //Date, time, duration row
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF64748B)),
+              Icon(Icons.calendar_today_outlined, size: 14, color: textMuted),
               SizedBox(width: 4),
-              Text(booking['date'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(booking['date'], style: TextStyle(fontSize: 12, color: textMuted)),
               SizedBox(width: 12),
-              Icon(Icons.access_time, size: 14, color: Color(0xFF64748B)),
+              Icon(Icons.access_time, size: 14, color: textMuted),
               SizedBox(width: 4),
-              Text(booking['time'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(booking['time'], style: TextStyle(fontSize: 12, color: textMuted)),
               SizedBox(width: 6),
-              Text(booking['duration'], style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(booking['duration'], style: TextStyle(fontSize: 12, color: textMuted)),
             ],
           ),
 
@@ -215,7 +222,7 @@ class _BookingCard extends StatelessWidget {
               label: Text('View Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Color(0xFF2563EB),
-                side: BorderSide(color: Color(0xFFE2E8F0)),
+                side: BorderSide(color: Theme.of(context).dividerColor),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 padding: EdgeInsets.symmetric(vertical: 12),
               ),

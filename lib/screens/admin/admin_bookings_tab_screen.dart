@@ -1,31 +1,27 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../models/booking_model.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN BOOKINGS TAB
 // List of all bookings with status cards at top
 // ─────────────────────────────────────────────────────────
 
-class AdminBookingsTab extends StatelessWidget {
+class AdminBookingsTab extends StatefulWidget {
+  const AdminBookingsTab({super.key});
 
-  //Dummy bookings, replace with real Firestore values later
-  final List<Map<String, dynamic>> _bookings = [
-    {'id': 'b1', 'owner': 'John Smith',  'walker': 'Sarah Johnson', 'date': '2026-03-25', 'time': '10:00', 'duration': '60 min', 'price': '\$25', 'status': 'confirmed'},
-    {'id': 'b2', 'owner': 'John Smith',  'walker': 'Mike Chen',     'date': '2026-03-20', 'time': '14:00', 'duration': '30 min', 'price': '\$15', 'status': 'completed'},
-    {'id': 'b3', 'owner': 'Emily Chen',  'walker': 'Jodel Santos',  'date': '2026-04-01', 'time': '09:00', 'duration': '45 min', 'price': '\$20', 'status': 'pending'},
-  ];
+  @override
+  State<AdminBookingsTab> createState() => _AdminBookingsTabState();
+}
 
-  AdminBookingsTab({super.key});
+class _AdminBookingsTabState extends State<AdminBookingsTab> {
+  final Stream<QuerySnapshot> _stream =
+      FirebaseFirestore.instance.collection('requests').snapshots();
 
   @override
   Widget build(BuildContext context) {
-
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
-
-    //Count bookings per status
-    final total     = _bookings.length;
-    final pending   = _bookings.where((b) => b['status'] == 'pending').length;
-    final confirmed = _bookings.where((b) => b['status'] == 'confirmed').length;
-    final completed = _bookings.where((b) => b['status'] == 'completed').length;
 
     return SafeArea(
       child: Column(
@@ -34,43 +30,83 @@ class AdminBookingsTab extends StatelessWidget {
 
           //Header
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
             child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)));
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error loading bookings: ${snapshot.error}'));
+                }
 
-                  //Status summary cards
-                  Row(
+                final bookings = (snapshot.data?.docs ?? [])
+                    .map((doc) {
+                      try {
+                        return BookingModel.fromFirestore(doc);
+                      } catch (_) {
+                        return null;
+                      }
+                    })
+                    .whereType<BookingModel>()
+                    .toList();
+
+                //Count bookings per status
+                final total     = bookings.length;
+                final pending   = bookings.where((b) => b.status == 'pending').length;
+                final confirmed = bookings.where((b) => b.status == 'accepted' || b.status == 'confirmed').length;
+                final completed = bookings.where((b) => b.status == 'completed').length;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _StatCard(label: 'Total', value: total.toString(), color: Theme.of(context).colorScheme.onSurface),
-                      SizedBox(width: 10),
-                      _StatCard(label: 'Pending', value: pending.toString(), color: Color(0xFFF59E0B)),
-                      SizedBox(width: 10),
-                      _StatCard(label: 'Confirmed', value: confirmed.toString(), color: Color(0xFF2563EB)),
-                      SizedBox(width: 10),
-                      _StatCard(label: 'Completed', value: completed.toString(), color: Color(0xFF10B981)),
+
+                      //Status summary cards
+                      Row(
+                        children: [
+                          _StatCard(label: 'Total',     value: total.toString(),     color: Theme.of(context).colorScheme.onSurface),
+                          const SizedBox(width: 10),
+                          _StatCard(label: 'Pending',   value: pending.toString(),   color: const Color(0xFFF59E0B)),
+                          const SizedBox(width: 10),
+                          _StatCard(label: 'Confirmed', value: confirmed.toString(), color: const Color(0xFF2563EB)),
+                          const SizedBox(width: 10),
+                          _StatCard(label: 'Completed', value: completed.toString(), color: const Color(0xFF10B981)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      if (bookings.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: Text(
+                              'No bookings yet.',
+                              style: TextStyle(color: Theme.of(context).textTheme.bodySmall!.color, fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                        )
+                      else
+                        // Booking cards list
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: bookings.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) => _BookingCard(booking: bookings[index]),
+                        ),
+
                     ],
                   ),
-
-                  SizedBox(height: 20),
-
-                  // Booking cards list
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: _bookings.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 12),
-                    itemBuilder: (context, index) => _BookingCard(booking: _bookings[index]),
-                  ),
-
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -92,7 +128,7 @@ class _StatCard extends StatelessWidget {
 
     return Expanded(
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
@@ -100,7 +136,7 @@ class _StatCard extends StatelessWidget {
         child: Column(
           children: [
             Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(label, style: TextStyle(fontSize: 10, color: textMuted)),
           ],
         ),
@@ -109,34 +145,39 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-//Booking card
+// ── Booking card ───────────────────────────────────────
 class _BookingCard extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final BookingModel booking;
   const _BookingCard({required this.booking});
 
   @override
   Widget build(BuildContext context) {
-
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
     Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
     Color cardColor   = Theme.of(context).cardColor;
 
     //Status badge color
     Color statusColor;
-    switch (booking['status']) {
-      case 'completed':  statusColor = Color(0xFF10B981); break;
-      case 'confirmed':  statusColor = Color(0xFF2563EB); break;
-      case 'pending':    statusColor = Color(0xFFF59E0B); break;
-      case 'active':     statusColor = Color(0xFF3B82F6); break;
-      default:           statusColor = Color(0xFF64748B);
+    switch (booking.status) {
+      case 'completed':  statusColor = const Color(0xFF10B981); break;
+      case 'accepted':
+      case 'confirmed':  statusColor = const Color(0xFF2563EB); break;
+      case 'pending':    statusColor = const Color(0xFFF59E0B); break;
+      case 'declined':   statusColor = const Color(0xFFEF4444); break;
+      case 'active':     statusColor = const Color(0xFF3B82F6); break;
+      default:           statusColor = const Color(0xFF64748B);
     }
 
+    final statusLabel = booking.status.isNotEmpty
+        ? booking.status[0].toUpperCase() + booking.status.substring(1)
+        : '';
+
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,92 +188,195 @@ class _BookingCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  booking['status'].toString()[0].toUpperCase() + booking['status'].toString().substring(1),
+                  statusLabel,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
                 ),
               ),
               Text(
-                booking['price'],
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
+                '\$${booking.totalPrice.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
               ),
             ],
           ),
 
-          SizedBox(height: 12),
-
-          //Booking ID
-          Text('ID: ${booking['id']}', style: TextStyle(fontSize: 12, color: textMuted)),
-
-          SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           //Owner row
           Row(
             children: [
               Icon(Icons.person_outline, size: 16, color: textMuted),
-              SizedBox(width: 6),
-              Text('Owner: ${booking['owner']}', style: TextStyle(fontSize: 13, color: textPrimary)),
+              const SizedBox(width: 6),
+              Text('Owner: ${booking.ownerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
 
           //Walker row
           Row(
             children: [
               Icon(Icons.directions_walk, size: 16, color: textMuted),
-              SizedBox(width: 6),
-              Text('Walker: ${booking['walker']}', style: TextStyle(fontSize: 13, color: textPrimary)),
+              const SizedBox(width: 6),
+              Text('Walker: ${booking.walkerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
 
           //Date, time, duration row
           Row(
             children: [
               Icon(Icons.calendar_today_outlined, size: 14, color: textMuted),
-              SizedBox(width: 4),
-              Text(booking['date'], style: TextStyle(fontSize: 12, color: textMuted)),
-              SizedBox(width: 12),
+              const SizedBox(width: 4),
+              Text(DateFormat('yyyy-MM-dd').format(booking.date), style: TextStyle(fontSize: 12, color: textMuted)),
+              const SizedBox(width: 12),
               Icon(Icons.access_time, size: 14, color: textMuted),
-              SizedBox(width: 4),
-              Text(booking['time'], style: TextStyle(fontSize: 12, color: textMuted)),
-              SizedBox(width: 6),
-              Text(booking['duration'], style: TextStyle(fontSize: 12, color: textMuted)),
+              const SizedBox(width: 4),
+              Text(booking.time, style: TextStyle(fontSize: 12, color: textMuted)),
+              const SizedBox(width: 6),
+              Text('${booking.duration} min', style: TextStyle(fontSize: 12, color: textMuted)),
             ],
           ),
 
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
 
           //View details button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: show booking detail bottom popup
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Booking ${booking['id']} details coming soon')),
-                );
-              },
-              icon: Icon(Icons.remove_red_eye_outlined, size: 16),
-              label: Text('View Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              onPressed: () => _showDetails(context),
+              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+              label: const Text('View Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Color(0xFF2563EB),
+                foregroundColor: const Color(0xFF2563EB),
                 side: BorderSide(color: Theme.of(context).dividerColor),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
 
         ],
       ),
+    );
+  }
+
+  void _showDetails(BuildContext context) {
+    final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+    final Color cardBg     = Theme.of(context).cardColor;
+    final Color textPrimary = Theme.of(context).colorScheme.onSurface;
+
+    Color statusColor;
+    switch (booking.status) {
+      case 'completed':  statusColor = const Color(0xFF10B981); break;
+      case 'accepted':
+      case 'confirmed':  statusColor = const Color(0xFF2563EB); break;
+      case 'pending':    statusColor = const Color(0xFFF59E0B); break;
+      case 'declined':   statusColor = const Color(0xFFEF4444); break;
+      default:           statusColor = const Color(0xFF64748B);
+    }
+
+    final statusLabel = booking.status.isNotEmpty
+        ? booking.status[0].toUpperCase() + booking.status.substring(1)
+        : '';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: scaffoldBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            //Drag handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            //Title + status badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Booking Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textPrimary)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(statusLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 4),
+
+            Text('ID: ${booking.id}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+
+            const SizedBox(height: 16),
+
+            //Details list
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  _detailRow(context, Icons.person_outline,         'Owner',       booking.ownerName),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.directions_walk,        'Walker',      booking.walkerName),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.pets,                   'Pet',         booking.petName),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.calendar_today_outlined,'Date',        DateFormat('yyyy-MM-dd').format(booking.date)),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.access_time,            'Time',        booking.time),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.timer_outlined,         'Duration',    '${booking.duration} min'),
+                  const Divider(height: 20),
+                  _detailRow(context, Icons.attach_money,           'Total Price', '\$${booking.totalPrice.toStringAsFixed(2)}'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(BuildContext context, IconData icon, String label, String value) {
+    Color textPrimary = Theme.of(context).colorScheme.onSurface;
+    Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
+
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF2563EB)),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(fontSize: 13, color: textMuted, fontWeight: FontWeight.w500)),
+        const Spacer(),
+        Text(value, style: TextStyle(fontSize: 13, color: textPrimary, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }

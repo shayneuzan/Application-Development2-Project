@@ -34,6 +34,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       FirebaseFirestore.instance.collection('settings').doc('platform');
 
   late String _language;
+  late bool _isDarkMode;
   bool _maintenanceMode = false;
   String _supportEmail = '';
   bool _loading = true;
@@ -44,6 +45,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   void initState() {
     super.initState();
     _language = widget.locale.languageCode == 'fr' ? 'French' : 'English';
+    _isDarkMode = widget.isDarkMode;
     _loadSettings();
   }
 
@@ -114,7 +116,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: _makeTheme(widget.isDarkMode),
+      data: _makeTheme(_isDarkMode),
       child: Localizations.override(
         context: context,
         locale: widget.locale,
@@ -212,11 +214,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         icon: Icons.dark_mode_outlined,
                         iconColor: const Color(0xFF8B5CF6),
                         title: loc.darkMode,
-                        subtitle: widget.isDarkMode ? 'On' : 'Off',
+                        subtitle: _isDarkMode ? 'On' : 'Off',
                         trailing: Switch(
-                          value: widget.isDarkMode,
+                          value: _isDarkMode,
                           activeColor: const Color(0xFF2563EB),
                           onChanged: (value) async {
+                            setState(() => _isDarkMode = value);
                             widget.onThemeChanged(value);
                             try {
                               await _settingsDoc.set({'darkMode': value}, SetOptions(merge: true));

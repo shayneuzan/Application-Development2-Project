@@ -130,7 +130,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     switch (_currentIndex) {
       case 0: return AdminHomeTab();
       case 1: return AdminUsersTab();
-      case 2: return AdminBookingsTab();
+      case 2: return const AdminBookingsTab();
       case 3: return AdminDisputesTab();
       case 4: return AdminMoreTab(
         onLogout: _logout,

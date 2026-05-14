@@ -28,41 +28,16 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   bool _isTimedOut = false;
   StreamSubscription? _statusSub;
 
-  Future<void> checkAndResetEarnings(Map<String, dynamic> data) async {
-    if (uid == null) return;
-    DateTime now = DateTime.now();
-    DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
-    DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
-    DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
-
-    Map<String, dynamic> updates = {};
-    // Daily reset
-    if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
-      updates['todayEarnings'] = 0.0;
-      updates['lastResetDaily'] = FieldValue.serverTimestamp();
-    }
-    // Weekly reset (7 days passed)
-    if (now.difference(lastWeekly).inDays >= 7) {
-      updates['weeklyEarnings'] = 0.0;
-      updates['lastResetWeekly'] = FieldValue.serverTimestamp();
-    }
-    // Monthly reset
-    if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
-      updates['monthEarnings'] = 0.0;
-      updates['lastResetMonthly'] = FieldValue.serverTimestamp();
-    }
-    // Apply updates
-    if (updates.isNotEmpty) {
-      await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) setState(() => _isTimedOut = true);
     });
+    if (uid != null) {
+      _firestoreService.initResetFields(uid!);
+    }
+
 
     // Listen to the user's document and sign them out if they get suspended
     if (uid != null) {
@@ -99,7 +74,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
             // Check and reset earnings
-            checkAndResetEarnings(data);
+            _firestoreService.checkAndResetEarnings(data, uid!);
 
             // Update earnings and name
             name = data['name'] ?? 'Guest';
@@ -373,9 +348,10 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
                                               String ownerName = data.ownerName;
 
                                               await _firestoreService.updateBookingStatus(data.id, 'accepted');
+                                              _firestoreService.addEarnings(uid!, data.totalPrice);
                                               if (ownerID.isNotEmpty) {
                                                 // Create Chat Room
-                                                await _chatService.createChatRoom(ownerID, ownerName, petName);
+                                                await _chatService.createChatRoom(ownerID, ownerName, petName, data.totalPrice, data.duration, data.id);
 
                                                 // Notify Owner
                                                 _firestoreService.sendNotification(

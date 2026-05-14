@@ -198,9 +198,9 @@ class _RequestScreenState extends State<RequestScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
                                     _firestoreService.updateBookingStatus(booking.id, 'accepted');
-                                    if (booking.ownerId.isNotEmpty) {
+                                    _firestoreService.addEarnings(uid!, booking.totalPrice);                                    if (booking.ownerId.isNotEmpty) {
                                       // Create a chat room between the walker and the owner
-                                      await _chatService.createChatRoom(booking.ownerId, booking.ownerName, booking.petName);
+                                      await _chatService.createChatRoom(booking.ownerId, booking.ownerName, booking.petName, booking.totalPrice, booking.duration, booking.id);
 
                                       _firestoreService.sendNotification(
                                         receiverID: booking.ownerId,

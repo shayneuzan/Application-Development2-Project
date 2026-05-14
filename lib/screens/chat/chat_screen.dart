@@ -9,8 +9,12 @@ class ChatScreen extends StatefulWidget {
   final String receiverID;
   final String receiverName;
   final String chatRoomID;
+  final double totalPrice;
+  final String petName;
+  final int duration;
+  final String bookingId;
 
-  const ChatScreen({super.key, required this.chatRoomID, required this.receiverID, required this.receiverName,});
+  const ChatScreen({super.key, required this.chatRoomID, required this.receiverID, required this.receiverName, required this.totalPrice, required this.petName, required this.duration, required this.bookingId,});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -72,7 +76,13 @@ class _ChatScreenState extends State<ChatScreen> {
               // Close the Dialog
               navigator.pop();
               try {
-                // Send the final trigger message (e.g., "The deed is done")
+                // Fetch Chat Room Data for refund logic
+                final chatRoomDoc = await FirebaseFirestore.instance.collection('chat_rooms').doc(widget.chatRoomID).get();
+                final chatRoomData = chatRoomDoc.data() ?? {};
+                final double totalPrice = (chatRoomData['totalPrice'] ?? 0.0).toDouble();
+                final String walkerID = chatRoomData['walkerID'] ?? '';
+
+                // Send the final trigger message
                 await _chatService.sendMessage(widget.chatRoomID, widget.receiverID, message,);
                 _messageController.clear();
 
@@ -94,17 +104,34 @@ class _ChatScreenState extends State<ChatScreen> {
                 // Update status to 'closed' in Firestore
                 await _chatService.closeChatRoom(widget.chatRoomID, closingReason,);
 
-                // Increment walk count for the walker
+                // Handle Post-Session Logic
                 if (isCompletion) {
-                  await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                  // Increment walk count for the walker
+                  await FirebaseFirestore.instance.collection('users').doc(walkerID).update({
                     'walksCount': FieldValue.increment(1),
                   });
+                  await _firestoreService.addEarnings(uid, widget.totalPrice);
+                  await _firestoreService.addEarningsRecord(uid, widget.petName, widget.duration, widget.totalPrice,);
+
+                } else {
+                  // REFUND LOGIC: If a walker ends the session unexpectedly
+                  if (role == 'walker' && totalPrice > 0) {
+                    await _firestoreService.refundEarnings(walkerID, totalPrice);
+                    
+                    // Notify Owner about refund
+                    _firestoreService.sendNotification(
+                      receiverID: widget.receiverID,
+                      title: "Refund Processed",
+                      message: "The walker ended the session unexpectedly. Your payment of \$$totalPrice has been refunded.",
+                      type: 'refund_issued',
+                    );
+                  }
                 }
 
                 if (!mounted) return;
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(isCompletion ? "Session Completed" : "Session Cancelled"),
+                    content: Text(isCompletion ? "Session Completed" : (role == 'walker' ? "Session Ended & Refunded" : "Session Cancelled")),
                     backgroundColor: isCompletion ? Colors.green : Colors.red,
                   ),
                 );
@@ -159,7 +186,6 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(widget.receiverName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),),
                 StreamBuilder<DocumentSnapshot>(
-                // Now chatRoomID is defined and accessible
                   stream: FirebaseFirestore.instance
                       .collection('chat_rooms')
                       .doc(widget.chatRoomID)
@@ -179,7 +205,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
-          _buildMessageInput(), // This also uses logic to check the same ID
+          _buildMessageInput(),
         ],
       ),
     );
@@ -248,14 +274,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageInput() {
-    // We need to listen to the chat room document to check its status
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('chat_rooms')
           .doc(widget.chatRoomID)
           .snapshots(),
       builder: (context, snapshot) {
-        // Default to "not closed" while loading
         bool isClosed = false;
         bool isWalker = false;
 
@@ -268,7 +292,6 @@ class _ChatScreenState extends State<ChatScreen> {
           isWalker = currentRole == 'walker';
         }
 
-        // If closed, show a "Chat Ended" banner instead of the text field
         if (isClosed) {
           return Container(
             width: double.infinity,
@@ -285,7 +308,6 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
 
-        // OTHERWISE: Show the normal input field
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -296,10 +318,8 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // The buttons to end the session
                 Row(
                   children: [
-                    // WALKER ONLY
                     if (isWalker)
                       Expanded(
                         child: ElevatedButton.icon(
@@ -316,7 +336,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
 
                     if (isWalker) const SizedBox(width: 10),
-                    // EVERYONE CAN END EARLY
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
@@ -333,7 +352,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // The message input field
                 Row(
                   children: [
                     Expanded(

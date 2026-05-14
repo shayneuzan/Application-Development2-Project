@@ -6,8 +6,6 @@ import '../models/user_model.dart';
 import '../models/booking_model.dart';
 import '../models/notification_model.dart';
 
-
-
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -83,7 +81,7 @@ class FirestoreService {
 
   // --- Booking Operations ---
   Future<void> createBooking(Map<String, dynamic> bookingData) {
-    return _db.collection('bookings').add({
+    return _db.collection('requests').add({
       ...bookingData,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -91,7 +89,7 @@ class FirestoreService {
 
   Stream<List<Map<String, dynamic>>> getBookingsByOwner(String ownerId) {
     return _db
-        .collection('bookings')
+        .collection('requests')
         .where('ownerId', isEqualTo: ownerId)
         .orderBy('date', descending: true)
         .snapshots()
@@ -109,8 +107,8 @@ class FirestoreService {
   }
 
   Stream<List<BookingModel>> getAllBookingsByWalkerID(String walkerID) {
-    return _db.collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
+    return _db.collection('requests')
+        .where('walkerID', isEqualTo: walkerID)
         .where('status', isEqualTo: 'pending')
         .snapshots().map((snapshot) => snapshot.docs
         .map((doc) => BookingModel.fromFirestore(doc)).toList());
@@ -119,8 +117,8 @@ class FirestoreService {
   // Home screen - 3 pending from today
   Stream<List<BookingModel>> getThreePendingRequestsByWalkerID(String walkerID, DateTime presentDay) {
     return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
+        .collection('requests')
+        .where('walkerID', isEqualTo: walkerID)
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -133,8 +131,8 @@ class FirestoreService {
   // Home screen - accepted from today
   Stream<List<BookingModel>> getUpcomingWalksByWalkerID(String walkerID, DateTime presentDay) {
     return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
+        .collection('requests')
+        .where('walkerID', isEqualTo: walkerID)
         .where('status', isEqualTo: 'accepted')
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -145,8 +143,8 @@ class FirestoreService {
 
   Stream<List<BookingModel>> getUpcomingWalksByDay(String walkerID, DateTime selectedDay) {
     return _db
-        .collection('bookings')
-        .where('walkerId', isEqualTo: walkerID)
+        .collection('requests')
+        .where('walkerID', isEqualTo: walkerID)
         .where('status', isEqualTo: 'accepted')
         .where('date', isEqualTo: DateFormat('yyyy-MM-dd').format(selectedDay))
         .snapshots()
@@ -158,7 +156,7 @@ class FirestoreService {
   Stream<List<Map<String, dynamic>>> getReviewsByWalker(String walkerId) {
     return _db
         .collection('reviews')
-        .where('walkerId', isEqualTo: walkerId)
+        .where('walkerID', isEqualTo: walkerId)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -177,7 +175,6 @@ class FirestoreService {
   }
 
   // --- Notification Operations ---
-  // Helper method to send notifications to Firestore
   Future<void> sendNotification({required String receiverID, required String title, required String message, required String type,}) async {
     await FirebaseFirestore.instance.collection('notifications').add({
       'receiverID': receiverID,
@@ -231,30 +228,24 @@ class FirestoreService {
     await batch.commit();
   }
 
-
   Future<void> checkAndResetEarnings(Map<String, dynamic> data, String uid) async {
     DateTime now = DateTime.now();
-
-    // Get last reset dates from Firestore (or use current time if they don't exist)
     DateTime lastDaily = (data['lastResetDaily'] as Timestamp?)?.toDate() ?? now;
     DateTime lastWeekly = (data['lastResetWeekly'] as Timestamp?)?.toDate() ?? now;
     DateTime lastMonthly = (data['lastResetMonthly'] as Timestamp?)?.toDate() ?? now;
 
     Map<String, dynamic> updates = {};
 
-    // RESET DAILY: If calendar day changed
     if (now.day != lastDaily.day || now.month != lastDaily.month || now.year != lastDaily.year) {
       updates['todayEarnings'] = 0.0;
       updates['lastResetDaily'] = FieldValue.serverTimestamp();
     }
 
-    // RESET WEEKLY: If today is Monday and we haven't reset yet today
     if (now.weekday == DateTime.monday && now.day != lastWeekly.day) {
       updates['weeklyEarnings'] = 0.0;
       updates['lastResetWeekly'] = FieldValue.serverTimestamp();
     }
 
-    // RESET MONTHLY: If month changed
     if (now.month != lastMonthly.month || now.year != lastMonthly.year) {
       updates['monthEarnings'] = 0.0;
       updates['lastResetMonthly'] = FieldValue.serverTimestamp();
@@ -271,5 +262,61 @@ class FirestoreService {
 
   Future<void> deleteNotification(String notificationId) async {
     await _db.collection('notifications').doc(notificationId).delete();
+  }
+
+  // --- Earnings & Refund Operations ---
+  Future<void> addEarnings(String walkerId, double amount) async {
+    await _db.collection('users').doc(walkerId).update({
+      'todayEarnings': FieldValue.increment(amount),
+      'weeklyEarnings': FieldValue.increment(amount),
+      'monthEarnings': FieldValue.increment(amount),
+    });
+  }
+
+  Future<void> refundEarnings(String walkerId, double amount) async {
+    await _db.collection('users').doc(walkerId).update({
+      'todayEarnings': FieldValue.increment(-amount),
+      'weeklyEarnings': FieldValue.increment(-amount),
+      'monthEarnings': FieldValue.increment(-amount),
+    });
+  }
+
+  Future<void> addEarningsRecord(String walkerID, String petName, int duration, double amount) async {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final dayOfWeek = days[DateTime.now().weekday - 1];
+
+    await _db
+        .collection('users')
+        .doc(walkerID)
+        .collection('earnings')
+        .add({
+      'amount': amount,
+      'date': FieldValue.serverTimestamp(),
+      'dayOfWeek': dayOfWeek,
+      'walkTitle': '$petName - $duration min walk',
+    });
+  }
+
+  // --- Reset Fields Operations ---
+  // this is for existing Walker users who have not reset their fields,
+  Future<void> initResetFields(String uid) async {
+    final doc = await _db.collection('users').doc(uid).get();
+    final data = doc.data() as Map<String, dynamic>;
+
+    Map<String, dynamic> updates = {};
+
+    if (data['lastResetDaily'] == null)   updates['lastResetDaily']   = FieldValue.serverTimestamp();
+    if (data['lastResetWeekly'] == null)  updates['lastResetWeekly']  = FieldValue.serverTimestamp();
+    if (data['lastResetMonthly'] == null) updates['lastResetMonthly'] = FieldValue.serverTimestamp();
+
+    // Also initialize earnings fields if missing
+    if (data['todayEarnings'] == null)    updates['todayEarnings']    = 0.0;
+    if (data['weeklyEarnings'] == null)   updates['weeklyEarnings']   = 0.0;
+    if (data['monthEarnings'] == null)    updates['monthEarnings']    = 0.0;
+    if (data['walksCount'] == null)       updates['walksCount']       = 0;
+
+    if (updates.isNotEmpty) {
+      await _db.collection('users').doc(uid).update(updates);
+    }
   }
 }

@@ -23,7 +23,7 @@ class ChatService {
   }
 
   // Create or re-open a chat room
-  Future<void> createChatRoom(String receiverID, String receiverName, String petName) async {
+  Future<void> createChatRoom(String receiverID, String receiverName, String petName, double totalPrice, int duration, String bookingId) async {
     final String currentUserID = _auth.currentUser!.uid;
 
     // Fetch current user details for metadata and role-based messaging
@@ -51,6 +51,11 @@ class ChatService {
         receiverID: {'name': receiverName},
       },
       'petName': petName,
+      'totalPrice': totalPrice, // Store the price for potential refunds
+      'duration': duration,
+      'bookingId': bookingId,
+      'walkerID': role == 'walker' ? currentUserID : receiverID,
+      'ownerID': role == 'owner' ? currentUserID : receiverID,
     }, SetOptions(merge: true));
 
     // Send the initial preset message

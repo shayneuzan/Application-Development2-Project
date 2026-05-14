@@ -18,6 +18,20 @@ class EarningsScreen extends StatefulWidget {
 class _EarningsScreenState extends State<EarningsScreen> {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final FirestoreService _firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    if (uid != null) {
+      FirebaseFirestore.instance.collection('users').doc(uid).get().then((doc) {
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          _firestoreService.checkAndResetEarnings(data, uid!);
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final double containerHeightForTop = 120;
@@ -28,7 +42,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
         builder: (context, snapshot) {
           final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
           // Background check: This resets the numbers if the date has changed
-          _firestoreService.checkAndResetEarnings(userData, uid!);
           num today = userData['todayEarnings'] ?? 0.0;
           num week = userData['weeklyEarnings'] ?? 0.0;
           num month = userData['monthEarnings'] ?? 0.0;

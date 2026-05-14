@@ -139,6 +139,10 @@ class ChatListScreen extends StatelessWidget {
               chatRoomID: chatRoomID,
               receiverID: otherUserID,
               receiverName: otherUserName,
+              totalPrice: data['totalPrice'] ?? 0.0,
+              petName: petName,
+              duration: data['duration'] ?? 0,
+              bookingId: data['bookingId'] ?? '',
             ),
           ),
         );

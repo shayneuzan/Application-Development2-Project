@@ -119,18 +119,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (_selectedRole == 'walker') {
         await FirebaseFirestore.instance
-            .collection('users')
-            .doc(result.user!.uid)
+            .collection('users').doc(result.user!.uid)
             .collection('earnings')
             .add({
           'amount': 0.0,
           'date': FieldValue.serverTimestamp(),
           'dayOfWeek': _getDayName(DateTime.now().weekday),
           'experience': 'N/A',
-          'hourlyRate': '12',
+          'hourlyRate': 12.0,
+          'walksCount': 0,
           'todayEarnings': 0.0,
           'weeklyEarnings': 0.0,
           'monthEarnings': 0.0,
+          'lastResetDaily': FieldValue.serverTimestamp(),
+          'lastResetWeekly': FieldValue.serverTimestamp(),
+          'lastResetMonthly': FieldValue.serverTimestamp(),
         });
       }
       // Go directly to Verification Screen instead of forcing them to log in again

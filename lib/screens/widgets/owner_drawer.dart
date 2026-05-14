@@ -10,6 +10,7 @@ import '../owner/settings_screen.dart';
 import '../auth/login_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class OwnerDrawer extends StatelessWidget {
   final String currentPage;
@@ -18,6 +19,7 @@ class OwnerDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final FirestoreService firestoreService = FirestoreService();
     final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -29,13 +31,13 @@ class OwnerDrawer extends StatelessWidget {
               ? Container(
                   padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
                   color: const Color(0xFF1E3A5F),
-                  child: const Center(child: Text('Not Logged In', style: TextStyle(color: Colors.white))),
+                  child: Center(child: Text(l10n.notLoggedIn, style: const TextStyle(color: Colors.white))),
                 )
               : StreamBuilder<UserModel>(
                   stream: firestoreService.getUserStream(currentUser.uid),
                   builder: (context, snapshot) {
                     final user = snapshot.data;
-                    final String name = user?.name ?? 'Loading...';
+                    final String name = user?.name ?? l10n.loading;
                     final String role = user?.role ?? 'Owner';
                     final String? profilePic = user?.profileImageUrl;
 
@@ -96,56 +98,56 @@ class OwnerDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.home_outlined,
-                  title: 'Home',
+                  title: l10n.home,
                   isSelected: currentPage == 'Home',
                   onTap: () => _navigateTo(context, const OwnerHomeScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.search,
-                  title: 'Browse Walkers',
+                  title: l10n.browseWalkers,
                   isSelected: currentPage == 'Walkers',
                   onTap: () => _navigateTo(context, const BrowseWalkersListScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.calendar_month_outlined,
-                  title: 'My Bookings',
+                  title: l10n.myBookings,
                   isSelected: currentPage == 'Bookings',
                   onTap: () => _navigateTo(context, const BookingHistoryScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.location_on_outlined,
-                  title: 'Track Walk',
+                  title: l10n.trackWalk,
                   isSelected: currentPage == 'Track',
                   onTap: () {}, // TODO: Map screen
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.pets_outlined,
-                  title: 'My Pets',
+                  title: l10n.myPets,
                   isSelected: currentPage == 'Pets',
                   onTap: () => _navigateTo(context, const PetProfileScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.notifications_none,
-                  title: 'Notifications',
+                  title: l10n.notifications,
                   isSelected: currentPage == 'Notifications',
                   onTap: () => _navigateTo(context, const NotificationsScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.person_outline,
-                  title: 'Profile',
+                  title: l10n.profile,
                   isSelected: currentPage == 'Profile',
                   onTap: () => _navigateTo(context, const ProfileScreen()),
                 ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.settings_outlined,
-                  title: 'Settings',
+                  title: l10n.settings,
                   isSelected: currentPage == 'Settings',
                   onTap: () {
                     Navigator.pop(context);
@@ -163,9 +165,9 @@ class OwnerDrawer extends StatelessWidget {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'Logout',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            title: Text(
+              l10n.logOut,
+              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
             onTap: () async {
               await FirebaseAuth.instance.signOut();

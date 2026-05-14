@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'owner_home_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'booking_history_screen.dart';
@@ -104,6 +105,8 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -139,13 +142,13 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                     ),
                   ],
                 ),
-                child: const TextField(
+                child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Search for walkers nearby',
-                    hintStyle: TextStyle(color: textLight, fontSize: 15),
-                    prefixIcon: Icon(Icons.search, color: primaryBlue),
+                    hintText: l10n.searchHint,
+                    hintStyle: const TextStyle(color: textLight, fontSize: 15),
+                    prefixIcon: const Icon(Icons.search, color: primaryBlue),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
@@ -191,19 +194,19 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
-                              'Walkers Nearby',
-                              style: TextStyle(
+                              l10n.walkersNearby,
+                              style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 color: textDark,
                               ),
                             ),
-                            SizedBox(height: 6),
+                            const SizedBox(height: 6),
                             Text(
-                              'Discover active walkers ready to help',
-                              style: TextStyle(color: textLight, fontSize: 14),
+                              l10n.discoverWalkers,
+                              style: const TextStyle(color: textLight, fontSize: 14),
                             ),
                           ],
                         ),
@@ -222,20 +225,19 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
-                        child: const Text('View List', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(l10n.viewList, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  // Updated order to match main application navigation
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildBottomNavIcon(Icons.home_filled, 'Home', 0),
-                      _buildBottomNavIcon(Icons.search, 'Walkers', 1),
-                      _buildBottomNavIcon(Icons.calendar_today, 'Bookings', 2),
-                      _buildBottomNavIcon(Icons.location_on, 'Map', 3, isActive: true),
-                      _buildBottomNavIcon(Icons.person, 'Profile', 4),
+                      _buildBottomNavIcon(Icons.home_filled, l10n.home, 0),
+                      _buildBottomNavIcon(Icons.search, l10n.walkers, 1),
+                      _buildBottomNavIcon(Icons.calendar_today, l10n.bookings, 2),
+                      _buildBottomNavIcon(Icons.location_on, l10n.map, 3, isActive: true),
+                      _buildBottomNavIcon(Icons.person, l10n.profile, 4),
                     ],
                   ),
                 ],

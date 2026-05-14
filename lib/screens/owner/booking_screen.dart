@@ -4,6 +4,7 @@ import 'schedule_screen.dart';
 import 'add_pet_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/pet_model.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class BookingScreen extends StatefulWidget {
   final String walkerId;
@@ -31,6 +32,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
@@ -47,9 +49,9 @@ class _BookingScreenState extends State<BookingScreen> {
           icon: const Icon(Icons.arrow_back, color: textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Book a Walk',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.bookAWalk,
+          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -96,9 +98,9 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 32),
 
             // Select Pet Section
-            const Text(
-              'Select Pet',
-              style: TextStyle(
+            Text(
+              l10n.selectPet,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: textDark,
@@ -106,7 +108,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
             const SizedBox(height: 16),
             _userId == null 
-              ? const Text('Please login to select a pet')
+              ? Text(l10n.pleaseLogin)
               : StreamBuilder<List<PetModel>>(
                   stream: _firestoreService.getPetsByOwner(_userId!),
                   builder: (context, snapshot) {
@@ -126,11 +128,11 @@ class _BookingScreenState extends State<BookingScreen> {
                         itemCount: pets.length + 1,
                         itemBuilder: (context, index) {
                           if (index == pets.length) {
-                            return _buildAddPetCard(context);
+                            return _buildAddPetCard(context, l10n);
                           }
                           final pet = pets[index];
                           bool isSelected = _selectedPetId == pet.id;
-                          return _buildPetCard(pet, isSelected);
+                          return _buildPetCard(pet, isSelected, l10n);
                         },
                       ),
                     );
@@ -140,9 +142,9 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 32),
 
             // Duration Section
-            const Text(
-              'Walk Duration',
-              style: TextStyle(
+            Text(
+              l10n.walkDuration,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: textDark,
@@ -151,11 +153,11 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                _buildDurationOption(30),
+                _buildDurationOption(30, l10n),
                 const SizedBox(width: 12),
-                _buildDurationOption(60),
+                _buildDurationOption(60, l10n),
                 const SizedBox(width: 12),
-                _buildDurationOption(90),
+                _buildDurationOption(90, l10n),
               ],
             ),
 
@@ -171,12 +173,12 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               child: Column(
                 children: [
-                  _buildSummaryRow('Base Rate', '\$${widget.hourlyRate}/hr'),
+                  _buildSummaryRow(l10n.baseRate, '\$${widget.hourlyRate}/hr'),
                   const SizedBox(height: 12),
-                  _buildSummaryRow('Duration', '$_selectedDuration min'),
+                  _buildSummaryRow(l10n.duration, l10n.durationMinutes(_selectedDuration)),
                   const Divider(height: 24),
                   _buildSummaryRow(
-                    'Total Price',
+                    l10n.totalPrice,
                     '\$${totalPrice.toStringAsFixed(2)}',
                     isTotal: true,
                   ),
@@ -217,9 +219,9 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Select Date & Time',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.selectDateTime,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -227,7 +229,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildPetCard(PetModel pet, bool isSelected) {
+  Widget _buildPetCard(PetModel pet, bool isSelected, AppLocalizations l10n) {
     const primaryBlue = Color(0xFF2563EB);
     return GestureDetector(
       onTap: () => setState(() {
@@ -273,7 +275,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildAddPetCard(BuildContext context) {
+  Widget _buildAddPetCard(BuildContext context, AppLocalizations l10n) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -288,14 +290,14 @@ class _BookingScreenState extends State<BookingScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_circle_outline, color: Color(0xFF64748B)),
-            SizedBox(height: 4),
+            const Icon(Icons.add_circle_outline, color: Color(0xFF64748B)),
+            const SizedBox(height: 4),
             Text(
-              'Add Pet',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              l10n.addPet,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],
         ),
@@ -303,7 +305,7 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildDurationOption(int minutes) {
+  Widget _buildDurationOption(int minutes, AppLocalizations l10n) {
     bool isSelected = _selectedDuration == minutes;
     const primaryBlue = Color(0xFF2563EB);
 
@@ -321,7 +323,7 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           child: Center(
             child: Text(
-              '$minutes min',
+              l10n.durationMinutes(minutes),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isSelected ? Colors.white : const Color(0xFF1E293B),

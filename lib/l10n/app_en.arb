@@ -1,0 +1,204 @@
+{
+  "searchHint": "Search for walkers nearby",
+  "walkersNearby": "Walkers Nearby",
+  "discoverWalkers": "Discover active walkers ready to help",
+  "viewList": "View List",
+  "home": "Home",
+  "walkers": "Walkers",
+  "bookings": "Bookings",
+  "map": "Map",
+  "profile": "Profile",
+  "welcomeBack": "Welcome back, {userName}!",
+  "@welcomeBack": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "furryFriendWaiting": "Your furry friend is waiting for a walk",
+  "latestBooking": "Latest Booking",
+  "withPet": "with {petName}",
+  "@withPet": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "browseWalkers": "Browse Walkers",
+  "myBookings": "My Bookings",
+  "recentActivity": "Recent Activity",
+  "noRecentActivity": "No recent activity",
+  "petWalk": "{petName} walk",
+  "@petWalk": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "byWalker": "by {walkerName}",
+  "@byWalker": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      }
+    }
+  },
+  "favoriteWalkers": "Favorite Walkers",
+  "findWalkers": "Find Walkers",
+  "countWalkersNearby": "{count} walkers nearby",
+  "@countWalkersNearby": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "availableWalkers": "Available Walkers",
+  "showAll": "Show All",
+  "showFavorites": "Show Favorites",
+  "noFavoritesYet": "No favorites yet!",
+  "noWalkersAvailable": "No walkers available.",
+  "walksCompletedCount": "{count} walks completed",
+  "@walksCompletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookNow": "Book Now",
+  "professionalWalker": "Professional Dog Walker",
+  "rating": "Rating",
+  "walks": "Walks",
+  "experience": "Experience",
+  "yearsCount": "{count} years",
+  "@yearsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "about": "About",
+  "reviews": "Reviews",
+  "servicesIncluded": "Services Included",
+  "recentReviews": "Recent Reviews",
+  "seeAll": "See All",
+  "noReviewsYet": "No reviews yet.",
+  "selectPet": "Select Pet",
+  "walkDuration": "Walk Duration",
+  "baseRate": "Base Rate",
+  "duration": "Duration",
+  "totalPrice": "Total Price",
+  "selectDateTime": "Select Date & Time",
+  "confirmBooking": "Confirm Booking",
+  "pleaseLogin": "Please log in",
+  "availableTimeSlots": "Available Time Slots",
+  "pet": "Pet",
+  "date": "Date",
+  "bookingSuccessful": "Booking Successful!",
+  "walkRequested": "Your walk with {walkerName} has been requested.",
+  "@walkRequested": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      }
+    }
+  },
+  "backToHome": "Back to Home",
+  "durationMinutes": "{minutes} minutes",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settings": "Settings",
+  "account": "Account",
+  "paymentMethods": "Payment Methods",
+  "savedAddresses": "Saved Addresses",
+  "language": "Language",
+  "notifications": "Notifications",
+  "pushNotifications": "Push Notifications",
+  "emailUpdates": "Email Updates",
+  "appearance": "Appearance",
+  "darkMode": "Dark Mode",
+  "support": "Support",
+  "helpCenter": "Help Center",
+  "privacyPolicy": "Privacy Policy",
+  "aboutPawWalk": "About PawWalk",
+  "dangerZone": "Danger Zone",
+  "deleteAccount": "Delete Account",
+  "logOut": "Log Out",
+  "version": "Version",
+  "selectLanguage": "Select Language",
+  "cancel": "Cancel",
+  "confirmLogOut": "Are you sure you want to log out?",
+  "deleteAccountConfirmation": "This action is permanent and cannot be undone. All your data, including saved addresses and payment methods, will be deleted.",
+  "accountDeleted": "Account successfully deleted",
+  "delete": "Delete",
+  "english": "English (US)",
+  "french": "French (FR)",
+  "addPet": "Add Pet",
+  "editProfile": "Edit Profile",
+  "totalWalks": "Total Walks",
+  "pets": "Pets",
+  "favorites": "Favorites",
+  "myPets": "My Pets",
+  "privacySecurity": "Privacy & Security",
+  "contactSupport": "Contact Support",
+  "addNewPet": "Add New Pet",
+  "noPetsFound": "No pets found. Add your first pet above!",
+  "deletePet": "Delete Pet",
+  "deletePetConfirmation": "Are you sure you want to delete {petName}?",
+  "@deletePetConfirmation": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "specialInstructions": "Special instructions",
+  "yearsOld": "{count} years old",
+  "@yearsOld": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notLoggedIn": "Not Logged In",
+  "loading": "Loading...",
+  "trackWalk": "Track Walk",
+  "bookAWalk": "Book a Walk",
+  "cancelBooking": "Cancel Booking",
+  "cancelBookingConfirmation": "Are you sure you want to cancel this booking? This action cannot be undone.",
+  "noKeepIt": "No, Keep It",
+  "yesCancel": "Yes, Cancel",
+  "cancellationFeatureSoon": "Cancellation feature coming soon",
+  "upcomingCount": "Upcoming ({count})",
+  "@upcomingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pastCount": "Past ({count})",
+  "@pastCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noUpcomingWalks": "No upcoming walks scheduled.",
+  "noPastWalks": "No past walks yet.",
+  "rebook": "Re-book",
+  "edit": "Edit",
+  "review": "Review"
+}

@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Firebase
   firebase_core: ^3.6.0
@@ -41,8 +43,8 @@ dependencies:
 
   # Calendar
   table_calendar: ^3.1.2
-  intl: ^0.19.0
-  syncfusion_flutter_charts: ^27.1.53
+  intl: ^0.20.2
+  syncfusion_flutter_charts: ^28.1.38
 
   cupertino_icons: ^1.0.8
 
@@ -57,3 +59,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true

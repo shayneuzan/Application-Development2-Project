@@ -13,6 +13,7 @@ import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../models/pet_model.dart';
 import '../widgets/owner_drawer.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
@@ -36,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     if (_currentUser == null) {
-      return const Scaffold(body: Center(child: Text("Please log in")));
+      return Scaffold(body: Center(child: Text(l10n.pleaseLogin)));
     }
 
     return Scaffold(
@@ -49,9 +51,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.menu, color: Colors.white),
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          l10n.profile,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -191,9 +193,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                         ),
-                        child: const Text(
-                          'Edit Profile',
-                          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+                        child: Text(
+                          l10n.editProfile,
+                          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -209,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       stream: _firestoreService.getBookingsByOwner(user.id),
                       builder: (context, snapshot) {
                         final count = snapshot.hasData ? snapshot.data!.length : 0;
-                        return _buildStatCard(count.toString(), 'Total Walks', primaryBlue);
+                        return _buildStatCard(count.toString(), l10n.totalWalks, primaryBlue);
                       }
                     ),
                     const SizedBox(width: 12),
@@ -219,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final count = snapshot.hasData ? snapshot.data!.length : 0;
                         return _buildStatCard(
                           count.toString(),
-                          'Pets',
+                          l10n.pets,
                           primaryBlue,
                           onTap: () {
                             Navigator.push(
@@ -233,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(width: 12),
                     _buildStatCard(
                       user.favoriteWalkers.length.toString(),
-                      'Favorites',
+                      l10n.favorites,
                       primaryBlue,
                       onTap: () {
                         Navigator.push(
@@ -266,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildSettingItem(
                         Icons.pets,
-                        'My Pets',
+                        l10n.myPets,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -277,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const Divider(height: 1, indent: 56),
                       _buildSettingItem(
                         Icons.notifications_none,
-                        'Notifications',
+                        l10n.notifications,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -286,9 +288,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         },
                       ),
                       const Divider(height: 1, indent: 56),
-                      _buildSettingItem(Icons.security, 'Privacy & Security'),
+                      _buildSettingItem(Icons.security, l10n.privacySecurity),
                       const Divider(height: 1, indent: 56),
-                      _buildSettingItem(Icons.support_agent, 'Contact Support'),
+                      _buildSettingItem(Icons.support_agent, l10n.contactSupport),
                     ],
                   ),
                 ),
@@ -310,9 +312,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     },
                     icon: const Icon(Icons.logout),
-                    label: const Text(
-                      'Logout',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    label: Text(
+                      l10n.logOut,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -371,12 +373,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Walkers'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
+            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
           ],
         ),
       ),

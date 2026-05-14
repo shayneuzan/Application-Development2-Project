@@ -10,6 +10,7 @@ import 'booking_screen.dart';
 import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -24,26 +25,26 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
-  void _showCancelDialog(String bookingId) {
+  void _showCancelDialog(String bookingId, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking? This action cannot be undone.'),
+        title: Text(l10n.cancelBooking),
+        content: Text(l10n.cancelBookingConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No, Keep It'),
+            child: Text(l10n.noKeepIt),
           ),
           TextButton(
             onPressed: () async {
               // TODO: Implement cancel/delete in FirestoreService
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cancellation feature coming soon')),
+                SnackBar(content: Text(l10n.cancellationFeatureSoon)),
               );
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.yesCancel, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -52,6 +53,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textLight = Color(0xFF64748B);
@@ -66,9 +68,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           icon: const Icon(Icons.menu, color: Colors.white),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          'My Bookings',
-          style: TextStyle(
+        title: Text(
+          l10n.myBookings,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -89,7 +91,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       ),
       drawer: const OwnerDrawer(currentPage: 'Bookings'),
       body: _userId == null 
-        ? const Center(child: Text('Please log in to see your bookings'))
+        ? Center(child: Text(l10n.pleaseLogin))
         : StreamBuilder<List<Map<String, dynamic>>>(
             stream: _firestoreService.getBookingsByOwner(_userId!),
             builder: (context, snapshot) {
@@ -128,7 +130,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 margin: const EdgeInsets.all(4),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Upcoming (${upcomingBookings.length})',
+                                  l10n.upcomingCount(upcomingBookings.length),
                                   style: TextStyle(
                                     color: isUpcomingSelected ? primaryBlue : textLight,
                                     fontWeight: FontWeight.bold,
@@ -151,7 +153,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 margin: const EdgeInsets.all(4),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Past (${pastBookings.length})',
+                                  l10n.pastCount(pastBookings.length),
                                   style: TextStyle(
                                     color: !isUpcomingSelected ? primaryBlue : textLight,
                                     fontWeight: FontWeight.bold,
@@ -170,8 +172,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: isUpcomingSelected 
-                        ? _buildList(upcomingBookings, true) 
-                        : _buildList(pastBookings, false),
+                        ? _buildList(upcomingBookings, true, l10n) 
+                        : _buildList(pastBookings, false, l10n),
                     ),
                   ),
                 ],
@@ -205,23 +207,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Walkers'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
+            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> bookings, bool isUpcoming) {
+  Widget _buildList(List<Map<String, dynamic>> bookings, bool isUpcoming, AppLocalizations l10n) {
     if (bookings.isEmpty) {
       return _buildEmptyState(
-        isUpcoming ? 'No upcoming walks scheduled.' : 'No past walks yet.',
-        isUpcoming ? Icons.calendar_today_outlined : Icons.history
+        isUpcoming ? l10n.noUpcomingWalks : l10n.noPastWalks,
+        isUpcoming ? Icons.calendar_today_outlined : Icons.history,
+        l10n
       );
     }
 
@@ -238,17 +241,18 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           dogs: b['petName'] ?? 'Pet',
           date: b['date'] ?? '',
           time: b['time'] ?? '',
-          duration: '${b['duration']} min',
+          duration: l10n.durationMinutes(b['duration'] ?? 0),
           price: '\$${b['totalPrice']}',
           status: b['status'] ?? 'pending',
           isUpcoming: isUpcoming,
           rating: b['rating']?.toDouble(),
+          l10n: l10n,
         );
       },
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
+  Widget _buildEmptyState(String message, IconData icon, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -268,7 +272,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               backgroundColor: const Color(0xFF2563EB),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Book a Walk', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.bookAWalk, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -286,6 +290,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     required String price,
     required String status,
     required bool isUpcoming,
+    required AppLocalizations l10n,
     double? rating,
   }) {
     const textDark = Color(0xFF1E293B);
@@ -331,7 +336,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   radius: 24,
                   backgroundColor: const Color(0xFFF1F5F9),
                   child: Text(
-                    walkerName[0],
+                    walkerName.isNotEmpty ? walkerName[0] : 'W',
                     style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -345,7 +350,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark),
                       ),
                       Text(
-                        'with $dogs',
+                        l10n.withPet(dogs),
                         style: const TextStyle(color: textLight, fontSize: 13),
                       ),
                       if (!isUpcoming && rating != null)
@@ -407,16 +412,16 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         onPressed: () {
                           // TODO: Navigate to Schedule Screen to edit
                         },
-                        child: const Text(
-                          'Edit',
-                          style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                        child: Text(
+                          l10n.edit,
+                          style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
-                        onPressed: () => _showCancelDialog(bookingId),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        onPressed: () => _showCancelDialog(bookingId, l10n),
+                        child: Text(
+                          l10n.cancel,
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -442,7 +447,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Review', style: TextStyle(color: textLight, fontSize: 12)),
+                        child: Text(l10n.review, style: const TextStyle(color: textLight, fontSize: 12)),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -464,7 +469,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Re-book', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.rebook, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

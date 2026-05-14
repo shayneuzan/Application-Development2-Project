@@ -1,0 +1,204 @@
+{
+  "searchHint": "Rechercher des promeneurs à proximité",
+  "walkersNearby": "Promeneurs à proximité",
+  "discoverWalkers": "Découvrez des promeneurs actifs prêts à aider",
+  "viewList": "Voir la liste",
+  "home": "Accueil",
+  "walkers": "Promeneurs",
+  "bookings": "Réservations",
+  "map": "Carte",
+  "profile": "Profil",
+  "welcomeBack": "Bon retour, {userName} !",
+  "@welcomeBack": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "furryFriendWaiting": "Votre compagnon attend sa promenade",
+  "latestBooking": "Dernière réservation",
+  "withPet": "avec {petName}",
+  "@withPet": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "browseWalkers": "Parcourir les promeneurs",
+  "myBookings": "Mes réservations",
+  "recentActivity": "Activité récente",
+  "noRecentActivity": "Aucune activité récente",
+  "petWalk": "Promenade de {petName}",
+  "@petWalk": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "byWalker": "par {walkerName}",
+  "@byWalker": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      }
+    }
+  },
+  "favoriteWalkers": "Promeneurs favoris",
+  "findWalkers": "Trouver des promeneurs",
+  "countWalkersNearby": "{count} promeneurs à proximité",
+  "@countWalkersNearby": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "availableWalkers": "Promeneurs disponibles",
+  "showAll": "Tout afficher",
+  "showFavorites": "Afficher favoris",
+  "noFavoritesYet": "Pas encore de favoris !",
+  "noWalkersAvailable": "Aucun promeneur disponible.",
+  "walksCompletedCount": "{count} promenades effectuées",
+  "@walksCompletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookNow": "Réserver",
+  "professionalWalker": "Promeneur de chiens professionnel",
+  "rating": "Évaluation",
+  "walks": "Promenades",
+  "experience": "Expérience",
+  "yearsCount": "{count} ans",
+  "@yearsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "about": "À propos",
+  "reviews": "Avis",
+  "servicesIncluded": "Services inclus",
+  "recentReviews": "Avis récents",
+  "seeAll": "Voir tout",
+  "noReviewsYet": "Pas encore d'avis.",
+  "selectPet": "Sélectionner un animal",
+  "walkDuration": "Durée de la promenade",
+  "baseRate": "Tarif de base",
+  "duration": "Durée",
+  "totalPrice": "Prix total",
+  "selectDateTime": "Choisir date et heure",
+  "confirmBooking": "Confirmer la réservation",
+  "pleaseLogin": "Veuillez vous connecter",
+  "availableTimeSlots": "Créneaux horaires disponibles",
+  "pet": "Animal",
+  "date": "Date",
+  "bookingSuccessful": "Réservation réussie !",
+  "walkRequested": "Votre promenade avec {walkerName} a été demandée.",
+  "@walkRequested": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      }
+    }
+  },
+  "backToHome": "Retour à l'accueil",
+  "durationMinutes": "{minutes} minutes",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "settings": "Paramètres",
+  "account": "Compte",
+  "paymentMethods": "Modes de paiement",
+  "savedAddresses": "Adresses enregistrées",
+  "language": "Langue",
+  "notifications": "Notifications",
+  "pushNotifications": "Notifications push",
+  "emailUpdates": "Mises à jour par e-mail",
+  "appearance": "Apparence",
+  "darkMode": "Mode sombre",
+  "support": "Assistance",
+  "helpCenter": "Centre d'aide",
+  "privacyPolicy": "Politique de confidentialité",
+  "aboutPawWalk": "À propos de PawWalk",
+  "dangerZone": "Zone de danger",
+  "deleteAccount": "Supprimer le compte",
+  "logOut": "Déconnexion",
+  "version": "Version",
+  "selectLanguage": "Choisir la langue",
+  "cancel": "Annuler",
+  "confirmLogOut": "Êtes-vous sûr de vouloir vous déconnecter ?",
+  "deleteAccountConfirmation": "Cette action est permanente et ne peut être annulée. Toutes vos données seront supprimées.",
+  "accountDeleted": "Compte supprimé avec succès",
+  "delete": "Supprimer",
+  "english": "Anglais (US)",
+  "french": "Français (FR)",
+  "addPet": "Ajouter un animal",
+  "editProfile": "Modifier le profil",
+  "totalWalks": "Total des promenades",
+  "pets": "Animaux",
+  "favorites": "Favoris",
+  "myPets": "Mes animaux",
+  "privacySecurity": "Confidentialité et sécurité",
+  "contactSupport": "Contacter le support",
+  "addNewPet": "Ajouter un nouvel animal",
+  "noPetsFound": "Aucun animal trouvé. Ajoutez votre premier animal ci-dessus !",
+  "deletePet": "Supprimer l'animal",
+  "deletePetConfirmation": "Êtes-vous sûr de vouloir supprimer {petName} ?",
+  "@deletePetConfirmation": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "specialInstructions": "Instructions spéciales",
+  "yearsOld": "{count} ans",
+  "@yearsOld": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notLoggedIn": "Non connecté",
+  "loading": "Chargement...",
+  "trackWalk": "Suivre la promenade",
+  "bookAWalk": "Réserver une promenade",
+  "cancelBooking": "Annuler la réservation",
+  "cancelBookingConfirmation": "Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible.",
+  "noKeepIt": "Non, la garder",
+  "yesCancel": "Oui, annuler",
+  "cancellationFeatureSoon": "La fonction d'annulation sera bientôt disponible",
+  "upcomingCount": "À venir ({count})",
+  "@upcomingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pastCount": "Passées ({count})",
+  "@pastCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noUpcomingWalks": "Aucune promenade prévue.",
+  "noPastWalks": "Aucune promenade passée pour le moment.",
+  "rebook": "Réserver à nouveau",
+  "edit": "Modifier",
+  "review": "Avis"
+}

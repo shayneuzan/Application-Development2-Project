@@ -11,6 +11,7 @@ import '../chat/chat_service.dart';
 import '../auth/login_screen.dart';
 import '../widgets/walker_notification_icon.dart';
 import '/services/firestore_service.dart';
+import '../shared/notification_screen.dart';
 
 class WalkerHomeScreen extends StatefulWidget {
   const WalkerHomeScreen({super.key});
@@ -19,7 +20,7 @@ class WalkerHomeScreen extends StatefulWidget {
   State<WalkerHomeScreen> createState() => _WalkerHomeScreenState();
 }
 
-class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
+class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerProviderStateMixin {
   final String? uid = FirebaseAuth.instance.currentUser?.uid;
   final ChatService _chatService = ChatService();
   final FirestoreService _firestoreService = FirestoreService();
@@ -27,6 +28,11 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
   final DateTime _presentDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   bool _isTimedOut = false;
   StreamSubscription? _statusSub;
+  StreamSubscription? _notifSub;
+  final Set<String> _seenNotifIds = {};
+  OverlayEntry? _bannerEntry;
+  AnimationController? _slideController;
+  Timer? _autoDismissTimer;
 
   @override
   void initState() {
@@ -54,12 +60,130 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> {
           }
       });
     }
+
+    _initNotifListener();
   }
 
   @override
   void dispose() {
     _statusSub?.cancel();
+    _notifSub?.cancel();
+    _autoDismissTimer?.cancel();
+    _bannerEntry?.remove();
+    _bannerEntry = null;
+    _slideController?.dispose();
     super.dispose();
+  }
+
+  void _initNotifListener() {
+    if (uid == null) return;
+
+    bool isFirstSnapshot = true;
+
+    _notifSub = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('receiverID', isEqualTo: uid)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .listen((snapshot) {
+      if (isFirstSnapshot) {
+        for (final doc in snapshot.docs) {
+          _seenNotifIds.add(doc.id);
+        }
+        isFirstSnapshot = false;
+        return;
+      }
+      for (final change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added &&
+            !_seenNotifIds.contains(change.doc.id)) {
+          _seenNotifIds.add(change.doc.id);
+          final data = change.doc.data() as Map<String, dynamic>;
+          final title = (data['title'] as String?) ?? '';
+          final message = (data['message'] as String?) ?? '';
+          if (mounted) _showBanner(title, message);
+        }
+      }
+    });
+  }
+
+  void _showBanner(String title, String message) {
+    _dismissBanner();
+
+    _slideController?.dispose();
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    final slideAnim = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController!, curve: Curves.easeOut));
+
+    _bannerEntry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        top: MediaQuery.of(ctx).padding.top + 8,
+        left: 16,
+        right: 16,
+        child: SlideTransition(
+          position: slideAnim,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  _dismissBanner();
+                  if (mounted) {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen()));
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 2),
+                            Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _dismissBanner,
+                        child: const Icon(Icons.close, color: Colors.white, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_bannerEntry!);
+    _slideController!.forward();
+    _autoDismissTimer = Timer(const Duration(seconds: 4), _dismissBanner);
+  }
+
+  void _dismissBanner() {
+    _autoDismissTimer?.cancel();
+    _autoDismissTimer = null;
+    _bannerEntry?.remove();
+    _bannerEntry = null;
   }
 
   @override

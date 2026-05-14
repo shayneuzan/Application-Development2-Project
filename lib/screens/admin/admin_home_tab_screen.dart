@@ -27,6 +27,23 @@ class AdminHomeTab extends StatelessWidget {
     return snap.docs.length;
   }
 
+  // Count all documents in requests collection
+  Future<int> _getTotalBookings() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('requests')
+        .get();
+    return snap.docs.length;
+  }
+
+  // Count documents in requests where status == 'active'
+  Future<int> _getActiveWalks() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('requests')
+        .where('status', isEqualTo: 'active')
+        .get();
+    return snap.docs.length;
+  }
+
   //Dummy recent activity — swap with real Firestore values later
   final List<Map<String, dynamic>> _activity = [
     {'message': 'New walker registered: John Pasiolan',  'time': '2 min ago',   'icon': Icons.person_add,   'color': Color(0xFF10B981)},
@@ -104,22 +121,34 @@ class AdminHomeTab extends StatelessWidget {
                   ),
                 ),
 
-                // Active Walks — dummy until walks collection is built
+                // Active Walks — real Firestore count
                 _buildCard(
                   context: context,
                   label: 'Active Walks',
                   icon: Icons.directions_walk,
                   color: Color(0xFF10B981),
-                  valueWidget: Text('8', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textPrimary)),
+                  valueWidget: FutureBuilder<int>(
+                    future: _getActiveWalks(),
+                    builder: (context, snapshot) => Text(
+                      snapshot.hasData ? '${snapshot.data}' : '...',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textPrimary),
+                    ),
+                  ),
                 ),
 
-                // Total Bookings — dummy until bookings collection is built
+                // Total Bookings — real Firestore count
                 _buildCard(
                   context: context,
                   label: 'Total Bookings',
                   icon: Icons.book,
                   color: Color(0xFF3B82F6),
-                  valueWidget: Text('340', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textPrimary)),
+                  valueWidget: FutureBuilder<int>(
+                    future: _getTotalBookings(),
+                    builder: (context, snapshot) => Text(
+                      snapshot.hasData ? '${snapshot.data}' : '...',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: textPrimary),
+                    ),
+                  ),
                 ),
 
                 // Pending Approvals — real Firestore count

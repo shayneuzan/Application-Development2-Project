@@ -8,7 +8,7 @@ import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
-import 'notifications_screen.dart';
+
 import 'walker_profile_screen.dart';
 import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'payment_methods_screen.dart';
-import 'address_management_screen.dart';
+import '../owner/payment_methods_screen.dart';
+import '../owner/address_management_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../auth/login_screen.dart';

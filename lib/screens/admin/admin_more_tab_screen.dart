@@ -88,10 +88,13 @@ class AdminMoreTab extends StatelessWidget {
               ),
             ),
 
+
             const SizedBox(height: 24),
+
 
             Text(loc.quickActions, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary)),
             const SizedBox(height: 12),
+
 
             Container(
               decoration: BoxDecoration(
@@ -145,7 +148,9 @@ class AdminMoreTab extends StatelessWidget {
               ),
             ),
 
+
             const SizedBox(height: 24),
+
 
             SizedBox(
               width: double.infinity,
@@ -191,6 +196,7 @@ class AdminMoreTab extends StatelessWidget {
       builder: (sheetCtx) {
         bool isSending = false;
 
+
         return StatefulBuilder(
           builder: (sheetCtx, setSheetState) {
             return Padding(
@@ -201,12 +207,15 @@ class AdminMoreTab extends StatelessWidget {
                 children: [
 
                   // Drag handle
+
+                  // Drag handle
                   Center(
                     child: Container(
                       width: 40, height: 4,
                       decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                     ),
                   ),
+
 
                   const SizedBox(height: 16),
 
@@ -216,6 +225,8 @@ class AdminMoreTab extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 16),
+
+                  // Title field
 
                   // Title field
                   TextField(
@@ -234,7 +245,10 @@ class AdminMoreTab extends StatelessWidget {
                     ),
                   ),
 
+
                   const SizedBox(height: 12),
+
+                  // Message field
 
                   // Message field
                   TextField(
@@ -254,7 +268,10 @@ class AdminMoreTab extends StatelessWidget {
                     ),
                   ),
 
+
                   const SizedBox(height: 20),
+
+                  // Send button
 
                   // Send button
                   SizedBox(
@@ -267,6 +284,7 @@ class AdminMoreTab extends StatelessWidget {
                               final title   = titleController.text.trim();
                               final message = messageController.text.trim();
 
+
                               if (title.isEmpty || message.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -277,7 +295,9 @@ class AdminMoreTab extends StatelessWidget {
                                 return;
                               }
 
+
                               setSheetState(() => isSending = true);
+
 
                               try {
                                 final ownersSnap = await FirebaseFirestore.instance
@@ -291,6 +311,7 @@ class AdminMoreTab extends StatelessWidget {
 
                                 final allDocs = [...ownersSnap.docs, ...walkersSnap.docs];
 
+
                                 for (final doc in allDocs) {
                                   await firestoreService.sendNotification(
                                     receiverID: doc.id,
@@ -299,6 +320,7 @@ class AdminMoreTab extends StatelessWidget {
                                     type: 'announcement',
                                   );
                                 }
+
 
                                 if (sheetCtx.mounted) Navigator.pop(sheetCtx);
                                 if (context.mounted) {
@@ -335,6 +357,7 @@ class AdminMoreTab extends StatelessWidget {
                           : const Text('Send', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                     ),
                   ),
+
 
                 ],
               ),

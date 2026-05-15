@@ -6,7 +6,7 @@ import '../owner/booking_history_screen.dart';
 import '../owner/profile_screen.dart';
 import '../owner/pet_profile_screen.dart';
 import '../owner/browse_walkers_list_screen.dart';
-import '../owner/settings_screen.dart';
+import '../shared/settings_screen.dart';
 import '../auth/login_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';

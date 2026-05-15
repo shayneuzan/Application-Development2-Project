@@ -6,7 +6,7 @@ import 'package:pawwalk/screens/widgets/walker_notification_icon.dart';
 import '../shared/notification_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
-import 'notifications_screen.dart';
+
 import 'browse_walkers_list_screen.dart';
 import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';

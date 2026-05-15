@@ -4,7 +4,7 @@ import '../shared/notification_screen.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
-import 'notifications_screen.dart';
+
 import 'browse_walkers_list_screen.dart';
 import 'add_pet_screen.dart';
 import 'edit_pet_screen.dart';

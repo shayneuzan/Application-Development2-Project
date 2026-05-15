@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pawwalk/screens/shared/settings_screen.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
 import 'package:pawwalk/screens/walker/request_screen.dart';
 import 'package:pawwalk/screens/walker/schedule_screen.dart';
@@ -36,6 +37,7 @@ class WalkerDrawer extends StatelessWidget {
                 _buildMenuItem(context, Icons.person, 'Edit Profile', ProfileEditScreen()),
                 _buildMenuItem(context, Icons.notifications_none, 'View Notifications', NotificationScreen()),
                 _buildMenuItem(context, Icons.chat_bubble_outline, 'View Chat', ChatListScreen()),
+                _buildMenuItem(context, Icons.settings, 'Settings', SettingsScreen()),
               ],
             ),
           ),
@@ -65,19 +67,23 @@ class WalkerDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, IconData icon, String title, Widget nextScreen) {
+  Widget _buildMenuItem(BuildContext context, IconData icon, String title, Widget nextScreen, {bool replace = true}) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation1, animation2) => nextScreen,
-            transitionDuration: Duration.zero, // Instant transition for smooth nav feel
-            reverseTransitionDuration: Duration.zero,
-          ),
+        final route = PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => nextScreen,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
+
+        if (replace) {
+          Navigator.pushReplacement(context, route);
+        } else {
+          Navigator.pop(context); // close drawer first
+          Navigator.push(context, route);
+        }
       },
     );
   }

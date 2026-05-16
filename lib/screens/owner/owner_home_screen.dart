@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'package:pawwalk/screens/widgets/walker_notification_icon.dart';
 import '../shared/notification_screen.dart';
 import 'booking_history_screen.dart';
@@ -15,6 +16,7 @@ import '../../models/user_model.dart';
 import '../widgets/owner_drawer.dart';
 import '../auth/login_screen.dart';
 
+
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
 
@@ -26,6 +28,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
   final FirestoreService _firestoreService = FirestoreService();
   final AuthService _authService = AuthService();
   final User? _user = FirebaseAuth.instance.currentUser;
+
   StreamSubscription? _statusSub;
   StreamSubscription? _notifSub;
   final Set<String> _seenNotifIds = {};
@@ -185,6 +188,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
@@ -211,32 +215,31 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
           ),
         ),
         actions: [
-          // IconButton(
-          //   icon: Stack(
-          //     children: [
-          //       const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-          //       Positioned(
-          //         right: 4,
-          //         top: 4,
-          //         child: Container(
-          //           width: 8,
-          //           height: 8,
-          //           decoration: const BoxDecoration(
-          //             color: Colors.red,
-          //             shape: BoxShape.circle,
-          //           ),
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
-          //     );
-          //   },
-          // ),
-          WalkerNotificationIcon(),
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+              );
+            },
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -256,7 +259,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome back, $userName!',
+                        l10n.welcomeBack(userName),
                         style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -264,9 +267,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Your furry friend is waiting for a walk',
-                        style: TextStyle(
+                      Text(
+                        l10n.furryFriendWaiting,
+                        style: const TextStyle(
                           fontSize: 16,
                           color: textLight,
                         ),
@@ -279,7 +282,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
 
             // Upcoming Walk Card - Ideally fetch the next booking
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final booking = snapshot.data!.first; // Simplification: take the most recent one
@@ -310,9 +313,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                                     color: const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Text(
-                                    'Latest Booking',
-                                    style: TextStyle(
+                                  child: Text(
+                                    l10n.latestBooking,
+                                    style: const TextStyle(
                                       color: primaryBlue,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
@@ -356,7 +359,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      'with ${booking['petName'] ?? 'Pet'}',
+                                      l10n.withPet(booking['petName'] ?? 'Pet'),
                                       style: const TextStyle(color: textLight, fontSize: 14),
                                     ),
                                   ],
@@ -397,7 +400,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                 children: [
                   Expanded(
                     child: _buildActionButton(
-                      label: 'Browse Walkers',
+                      label: l10n.browseWalkers,
                       icon: Icons.search,
                       isPrimary: true,
                       onPressed: () {
@@ -411,7 +414,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildActionButton(
-                      label: 'My Bookings',
+                      label: l10n.myBookings,
                       icon: Icons.calendar_today,
                       isPrimary: false,
                       onPressed: () {
@@ -431,9 +434,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
             // Recent Activity Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: const Text(
-                'Recent Activity',
-                style: TextStyle(
+              child: Text(
+                l10n.recentActivity,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: textDark,
@@ -442,16 +445,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
             ),
             const SizedBox(height: 16),
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final bookings = snapshot.data ?? [];
                 if (bookings.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Text('No recent activity'),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(l10n.noRecentActivity),
                   );
                 }
                 return ListView.builder(
@@ -462,8 +465,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                   itemBuilder: (context, index) {
                     final b = bookings[index];
                     return _buildActivityCard(
-                      title: '${b['petName']} walk',
-                      subtitle: 'by ${b['walkerName']}',
+                      title: l10n.petWalk(b['petName'] ?? 'Pet'),
+                      subtitle: l10n.byWalker(b['walkerName'] ?? 'Walker'),
                       status: b['status'] ?? 'pending',
                       date: b['date'] ?? '',
                       avatarLetter: (b['walkerName'] as String?)?[0] ?? 'W',
@@ -489,9 +492,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
         child: BottomNavigationBar(
           currentIndex: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          backgroundColor: const Color(0xFF2563EB),
+          selectedItemColor: primaryBlue,
+          unselectedItemColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.white,
           showSelectedLabels: true,
           showUnselectedLabels: true,
           onTap: (index) {
@@ -517,12 +520,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
               );
             }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Walkers'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_filled), label: l10n.home),
+            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
           ],
         ),
       ),

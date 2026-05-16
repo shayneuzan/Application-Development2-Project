@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../shared/notification_screen.dart';
 import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
@@ -12,6 +13,7 @@ import 'booking_screen.dart';
 import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class BookingHistoryScreen extends StatefulWidget {
   const BookingHistoryScreen({super.key});
@@ -26,26 +28,249 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
-  void _showCancelDialog(String bookingId) {
+  TimeOfDay _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.trim().split(RegExp(r'[:\s]'));
+      int hour = int.parse(parts[0]);
+      int minute = int.parse(parts[1]);
+      if (parts.length > 2) {
+        final period = parts[2].toUpperCase();
+        if (period == 'PM' && hour != 12) hour += 12;
+        if (period == 'AM' && hour == 12) hour = 0;
+      }
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (_) {
+      return TimeOfDay.now();
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  void _showEditSheet({
+    required String bookingId,
+    required String walkerId,
+    required String petName,
+    required String currentDate,
+    required String currentTime,
+    required int currentDuration,
+  }) {
+    const durations = [30, 45, 60, 90, 120];
+    DateTime selectedDate = DateTime.tryParse(currentDate) ?? DateTime.now();
+    TimeOfDay selectedTime = _parseTime(currentTime);
+    int selectedDuration = durations.contains(currentDuration) ? currentDuration : 60;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> save() async {
+            setSheetState(() => isSaving = true);
+            try {
+              final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+              final timeStr = _formatTime(selectedTime);
+              await _firestoreService.rescheduleBooking(bookingId, dateStr, timeStr, selectedDuration);
+              await _firestoreService.sendNotification(
+                receiverID: walkerId,
+                title: 'Booking Rescheduled',
+                message: 'A booking with $petName has been rescheduled to $dateStr at $timeStr. Please re-approve.',
+                type: 'reschedule',
+              );
+              if (!mounted) return;
+              Navigator.pop(sheetContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Booking rescheduled successfully')),
+              );
+            } catch (e) {
+              setSheetState(() => isSaving = false);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to reschedule: $e')),
+              );
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              top: 24,
+              left: 24,
+              right: 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Reschedule Booking',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+                const SizedBox(height: 20),
+                // Date
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) setSheetState(() => selectedDate = picked);
+                  },
+                  child: _pickerRow(
+                    Icons.calendar_today_outlined,
+                    DateFormat('EEE, MMM d yyyy').format(selectedDate),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Time
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: ctx,
+                      initialTime: selectedTime,
+                    );
+                    if (picked != null) setSheetState(() => selectedTime = picked);
+                  },
+                  child: _pickerRow(Icons.access_time, _formatTime(selectedTime)),
+                ),
+                const SizedBox(height: 12),
+                // Duration
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 18, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: selectedDuration,
+                            isExpanded: true,
+                            items: durations.map((d) => DropdownMenuItem(
+                              value: d,
+                              child: Text('$d minutes', style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B))),
+                            )).toList(),
+                            onChanged: (v) { if (v != null) setSheetState(() => selectedDuration = v); },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isSaving ? null : save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isSaving
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _pickerRow(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF2563EB)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label, style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B))),
+          ),
+          const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reBook(String walkerId, String walkerName) async {
+    try {
+      final walker = await _firestoreService.getWalkerById(walkerId);
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BookingScreen(
+            walkerId: walkerId,
+            walkerName: walkerName,
+            hourlyRate: walker.hourlyRate,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load walker details: $e')),
+      );
+    }
+  }
+
+  void _showCancelDialog(String bookingId, AppLocalizations l10n) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking? This action cannot be undone.'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.cancelBooking),
+        content: Text(l10n.cancelBookingConfirmation),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('No, Keep It'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.noKeepIt),
           ),
           TextButton(
             onPressed: () async {
-              // TODO: Implement cancel/delete in FirestoreService
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cancellation feature coming soon')),
-              );
+              Navigator.pop(dialogContext);
+              try {
+                await _firestoreService.updateBookingStatus(bookingId, 'cancelled');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.bookingCancelled)),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to cancel booking: $e')),
+                  );
+                }
+              }
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.yesCancel, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -54,6 +279,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textLight = Color(0xFF64748B);
@@ -68,9 +294,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           icon: const Icon(Icons.menu, color: Colors.white),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          'My Bookings',
-          style: TextStyle(
+        title: Text(
+          l10n.myBookings,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -92,7 +318,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       ),
       drawer: const OwnerDrawer(currentPage: 'Bookings'),
       body: _userId == null 
-        ? const Center(child: Text('Please log in to see your bookings'))
+        ? Center(child: Text(l10n.pleaseLogin))
         : StreamBuilder<List<Map<String, dynamic>>>(
             stream: _firestoreService.getBookingsByOwner(_userId),
             builder: (context, snapshot) {
@@ -135,7 +361,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 margin: const EdgeInsets.all(4),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Upcoming (${upcomingBookings.length})',
+                                  l10n.upcomingCount(upcomingBookings.length),
                                   style: TextStyle(
                                     color: isUpcomingSelected ? primaryBlue : textLight,
                                     fontWeight: FontWeight.bold,
@@ -158,7 +384,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 margin: const EdgeInsets.all(4),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Past (${pastBookings.length})',
+                                  l10n.pastCount(pastBookings.length),
                                   style: TextStyle(
                                     color: !isUpcomingSelected ? primaryBlue : textLight,
                                     fontWeight: FontWeight.bold,
@@ -177,8 +403,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: isUpcomingSelected 
-                        ? _buildList(upcomingBookings, true) 
-                        : _buildList(pastBookings, false),
+                        ? _buildList(upcomingBookings, true, l10n) 
+                        : _buildList(pastBookings, false, l10n),
                     ),
                   ),
                 ],
@@ -212,23 +438,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Walkers'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
+            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> bookings, bool isUpcoming) {
+  Widget _buildList(List<Map<String, dynamic>> bookings, bool isUpcoming, AppLocalizations l10n) {
     if (bookings.isEmpty) {
       return _buildEmptyState(
-        isUpcoming ? 'No upcoming walks scheduled.' : 'No past walks yet.',
-        isUpcoming ? Icons.calendar_today_outlined : Icons.history
+        isUpcoming ? l10n.noUpcomingWalks : l10n.noPastWalks,
+        isUpcoming ? Icons.calendar_today_outlined : Icons.history,
+        l10n
       );
     }
 
@@ -245,17 +472,19 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           dogs: b['petName'] ?? 'Pet',
           date: b['date'] ?? '',
           time: b['time'] ?? '',
-          duration: '${b['duration']} min',
+          duration: l10n.durationMinutes(b['duration'] ?? 0),
+          rawDuration: (b['duration'] as int?) ?? 60,
           price: '\$${b['totalPrice']}',
           status: b['status'] ?? 'pending',
           isUpcoming: isUpcoming,
           rating: b['rating']?.toDouble(),
+          l10n: l10n,
         );
       },
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
+  Widget _buildEmptyState(String message, IconData icon, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -275,7 +504,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               backgroundColor: const Color(0xFF2563EB),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Book a Walk', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.bookAWalk, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -290,9 +519,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     required String date,
     required String time,
     required String duration,
+    required int rawDuration,
     required String price,
     required String status,
     required bool isUpcoming,
+    required AppLocalizations l10n,
     double? rating,
   }) {
     const textDark = Color(0xFF1E293B);
@@ -338,7 +569,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   radius: 24,
                   backgroundColor: const Color(0xFFF1F5F9),
                   child: Text(
-                    walkerName[0],
+                    walkerName.isNotEmpty ? walkerName[0] : 'W',
                     style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -352,7 +583,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark),
                       ),
                       Text(
-                        'with $dogs',
+                        l10n.withPet(dogs),
                         style: const TextStyle(color: textLight, fontSize: 13),
                       ),
                       if (!isUpcoming && rating != null)
@@ -411,19 +642,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   Row(
                     children: [
                       TextButton(
-                        onPressed: () {
-                          // TODO: Navigate to Schedule Screen to edit
-                        },
-                        child: const Text(
-                          'Edit',
-                          style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                        onPressed: () => _showEditSheet(
+                          bookingId: bookingId,
+                          walkerId: walkerId,
+                          petName: dogs,
+                          currentDate: date,
+                          currentTime: time,
+                          currentDuration: rawDuration,
+                        ),
+                        child: Text(
+                          l10n.edit,
+                          style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
-                        onPressed: () => _showCancelDialog(bookingId),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        onPressed: () => _showCancelDialog(bookingId, l10n),
+                        child: Text(
+                          l10n.cancel,
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -449,29 +685,18 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Review', style: TextStyle(color: textLight, fontSize: 12)),
+                        child: Text(l10n.review, style: const TextStyle(color: textLight, fontSize: 12)),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BookingScreen(
-                                walkerId: walkerId,
-                                walkerName: walkerName,
-                                hourlyRate: 30.0, // Placeholder
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: () => _reBook(walkerId, walkerName),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Re-book', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.rebook, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

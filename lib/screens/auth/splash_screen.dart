@@ -50,8 +50,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   //All navigation logic lives inside this function
   Future<void> checkUserAndNavigate() async {
-    //get the currently logged in user
-    final user = FirebaseAuth.instance.currentUser;
+    // Wait for Firebase Auth to restore the cached session before reading the user.
+    // currentUser is null at startup until the auth state is rehydrated from disk.
+    final user = await FirebaseAuth.instance.authStateChanges().first;
 
     //if user is not logged in go to login screen
     if (user == null) {

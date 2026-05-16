@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import '../../models/pet_model.dart';
 
@@ -34,10 +35,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Future<void> _savePet() async {
+    final loc = AppLocalizations.of(context)!;
     if (_formKey.currentState!.validate()) {
       if (_userId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to add a pet')),
+          SnackBar(content: Text(loc.pleaseLogInToAddPet)),
         );
         return;
       }
@@ -46,8 +48,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
       try {
         final newPet = PetModel(
-          id: '', // Firestore will generate this real ID
-          ownerId: _userId,
+          id: '', 
+          ownerId: _userId!,
           name: _nameController.text.trim(),
           breed: _breedController.text.trim(),
           age: int.parse(_ageController.text.trim()),
@@ -61,13 +63,13 @@ class _AddPetScreenState extends State<AddPetScreen> {
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pet added successfully!')),
+            SnackBar(content: Text(loc.petAddedSuccessfully)),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding pet: $e')),
+            SnackBar(content: Text(loc.errorAddingPet(e.toString()))),
           );
         }
       } finally {
@@ -78,22 +80,21 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Add New Pet',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.addNewPet,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: _isLoading 
@@ -108,71 +109,71 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   const SizedBox(height: 10),
 
                   // Pet Name
-                  const Text(
-                    'Pet Name',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.petName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameController,
-                    decoration: _inputStyle('e.g. Max'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter a name' : null,
+                    decoration: _inputStyle(loc.nameHint),
+                    validator: (value) => value == null || value.isEmpty ? loc.enterPetName : null,
                   ),
 
                   const SizedBox(height: 20),
 
                   // Breed
-                  const Text(
-                    'Breed',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.breed,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _breedController,
-                    decoration: _inputStyle('e.g. Golden Retriever'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter a breed' : null,
+                    decoration: _inputStyle(loc.breedHint),
+                    validator: (value) => value == null || value.isEmpty ? loc.enterBreed : null,
                   ),
 
                   const SizedBox(height: 20),
 
                   // Age
-                  const Text(
-                    'Age (Years)',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.petAge,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _ageController,
                     keyboardType: TextInputType.number,
-                    decoration: _inputStyle('e.g. 3'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter age' : null,
+                    decoration: _inputStyle(loc.ageHint),
+                    validator: (value) => value == null || value.isEmpty ? loc.enterAge : null,
                   ),
 
                   const SizedBox(height: 24),
 
                   // Size Selector
-                  const Text(
-                    'Pet Size',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.petSize,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _sizes.map((size) => _buildSizeOption(size)).toList(),
+                    children: _sizes.map((size) => _buildSizeOption(size, loc)).toList(),
                   ),
 
                   const SizedBox(height: 24),
 
                   // Special Instructions
-                  const Text(
-                    'Special Instructions',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.specialInstructions,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _instructionController,
                     maxLines: 4,
-                    decoration: _inputStyle('e.g. Allergies, temperament, favorite treats...'),
+                    decoration: _inputStyle(loc.enterSpecialInstructions),
                   ),
 
                   const SizedBox(height: 40),
@@ -191,9 +192,9 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Save Pet',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      child: Text(
+                        loc.savePet,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -207,27 +208,22 @@ class _AddPetScreenState extends State<AddPetScreen> {
   InputDecoration _inputStyle(String hint) {
     return InputDecoration(
       hintText: hint,
-      filled: true,
-      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-      ),
     );
   }
 
-  Widget _buildSizeOption(String size) {
+  Widget _buildSizeOption(String size, AppLocalizations loc) {
+    final theme = Theme.of(context);
     bool isSelected = _selectedSize == size;
     const primaryBlue = Color(0xFF2563EB);
+
+    String sizeLabel;
+    switch (size.toLowerCase()) {
+      case 'small': sizeLabel = loc.small; break;
+      case 'medium': sizeLabel = loc.medium; break;
+      case 'large': sizeLabel = loc.large; break;
+      default: sizeLabel = size;
+    }
 
     return GestureDetector(
       onTap: () => setState(() => _selectedSize = size),
@@ -235,18 +231,18 @@ class _AddPetScreenState extends State<AddPetScreen> {
         width: MediaQuery.of(context).size.width * 0.25,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? primaryBlue : Colors.white,
+          color: isSelected ? primaryBlue : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+            color: isSelected ? primaryBlue : theme.dividerColor,
           ),
         ),
         child: Center(
           child: Text(
-            size,
+            sizeLabel,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : const Color(0xFF1E293B),
+              color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
             ),
           ),
         ),

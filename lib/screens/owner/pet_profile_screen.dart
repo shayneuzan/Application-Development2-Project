@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../shared/notification_screen.dart';
+import '../widgets/owner_bottom_nav_bar.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -44,12 +45,12 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${pet.name} deleted successfully')),
+                  SnackBar(content: Text(l10n.petDeletedSuccessfully(pet.name))),
                 );
               } catch (e) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error deleting pet: $e')),
+                  SnackBar(content: Text(l10n.errorDeletingPet(e.toString()))),
                 );
               }
             },
@@ -63,13 +64,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     const primaryBlue = Color(0xFF2563EB);
-    const backgroundGray = Color(0xFFF8FAFC);
-    const textDark = Color(0xFF1E293B);
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: backgroundGray,
       appBar: AppBar(
         backgroundColor: primaryBlue,
         elevation: 0,
@@ -107,9 +106,9 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(child: Text(l10n.errorWithValue(snapshot.error.toString())));
               }
 
               final pets = snapshot.data ?? [];
@@ -130,18 +129,18 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: theme.dividerColor),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.add, color: textDark, size: 20),
+                            const Icon(Icons.add, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               l10n.addNewPet,
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -153,7 +152,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     if (pets.isEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 40),
-                        child: Text(l10n.noPetsFound),
+                        child: Text(l10n.noPetsFound, style: TextStyle(color: theme.hintColor)),
                       )
                     else
                       ListView.builder(
@@ -169,61 +168,24 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               );
             },
           ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 4, // Profile/Settings related
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            if (index == 0) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
-            } else if (index == 1) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
-            } else if (index == 2) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
-            } else if (index == 3) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
-            } else if (index == 4) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
-            }
-          },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
-            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
-            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
-            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
-            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const OwnerBottomNavBar(currentIndex: 4),
     );
   }
 
   Widget _buildPetCard(PetModel pet, AppLocalizations l10n) {
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.05),
             blurRadius: 15,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -237,7 +199,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
+                    color: isDarkMode ? Colors.white10 : const Color(0xFFFFF7ED),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.pets, color: Colors.orange, size: 28),
@@ -249,15 +211,15 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     children: [
                       Text(
                         pet.name,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         pet.breed,
-                        style: const TextStyle(fontSize: 14, color: textLight),
+                        style: TextStyle(fontSize: 14, color: theme.textTheme.bodySmall?.color),
                       ),
                       Text(
                         l10n.yearsOld(pet.age),
-                        style: const TextStyle(fontSize: 13, color: textLight),
+                        style: TextStyle(fontSize: 13, color: theme.textTheme.bodySmall?.color),
                       ),
                     ],
                   ),
@@ -265,7 +227,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                 Column(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: textLight, size: 20),
+                      icon: Icon(Icons.edit_outlined, color: theme.hintColor, size: 20),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -274,7 +236,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                               'id': pet.id,
                               'name': pet.name,
                               'breed': pet.breed,
-                              'age': '${pet.age} years old',
+                              'age': l10n.yearsOld(pet.age),
                               'instructions': pet.description,
                             }),
                           ),
@@ -290,15 +252,15 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
+          Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
           Padding(
             padding: const EdgeInsets.all(16),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: textDark),
+                style: TextStyle(fontSize: 13, color: theme.textTheme.bodyLarge?.color),
                 children: [
                   TextSpan(text: '${l10n.specialInstructions}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  TextSpan(text: pet.description, style: const TextStyle(color: textLight)),
+                  TextSpan(text: pet.description, style: TextStyle(color: theme.textTheme.bodySmall?.color)),
                 ],
               ),
             ),

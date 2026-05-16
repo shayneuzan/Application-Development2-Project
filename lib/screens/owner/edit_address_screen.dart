@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 
@@ -26,8 +27,6 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   void initState() {
     super.initState();
     _labelController = TextEditingController(text: widget.address['label']);
-    
-    // Split the address: "Street, City, PostalCode"
     List<String> parts = widget.address['address']?.split(', ') ?? [];
     _streetController = TextEditingController(text: parts.isNotEmpty ? parts[0] : '');
     _cityController = TextEditingController(text: parts.length > 1 ? parts[1] : '');
@@ -52,8 +51,9 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     final String postal = _postalController.text.trim();
 
     if (label.isEmpty || street.isEmpty || city.isEmpty || postal.isEmpty) {
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        SnackBar(content: Text(loc.pleaseEnterAllFields)),
       );
       return;
     }
@@ -61,10 +61,8 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
     final String fullAddress = "$street, $city, $postal";
 
     try {
-      // Get current user data to update the specific address in the list
       UserModel user = await _firestoreService.getUserById(_userId);
       List<Map<String, dynamic>> updatedAddresses = List.from(user.savedAddresses);
-      
       bool wasDefault = updatedAddresses[widget.index]['isDefault'] == true;
 
       updatedAddresses[widget.index] = {
@@ -74,8 +72,6 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
       };
 
       Map<String, dynamic> updateData = {'savedAddresses': updatedAddresses};
-      
-      // If this was the default address, update the main address field too
       if (wasDefault) {
         updateData['address'] = fullAddress;
       }
@@ -83,9 +79,10 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
       await _firestoreService.updateUser(_userId, updateData);
 
       if (mounted) {
+        final loc = AppLocalizations.of(context)!;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Address updated successfully!')),
+          SnackBar(content: Text(loc.addressUpdatedSuccessfully)),
         );
       }
     } catch (e) {
@@ -99,22 +96,21 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Edit Address',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.editAddress,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -122,13 +118,13 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel('Address Label'),
+            _buildLabel(loc.addressLabel),
             const SizedBox(height: 8),
-            _buildTextField(_labelController, 'e.g. Home, Office'),
+            _buildTextField(_labelController, loc.addressExample),
             const SizedBox(height: 24),
-            _buildLabel('Street Address'),
+            _buildLabel(loc.streetAddress),
             const SizedBox(height: 8),
-            _buildTextField(_streetController, 'Enter street name and number'),
+            _buildTextField(_streetController, loc.streetAddress),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -136,9 +132,9 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('City'),
+                      _buildLabel(loc.city),
                       const SizedBox(height: 8),
-                      _buildTextField(_cityController, 'City'),
+                      _buildTextField(_cityController, loc.city),
                     ],
                   ),
                 ),
@@ -147,9 +143,9 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildLabel('Postal Code'),
+                      _buildLabel(loc.postalCode),
                       const SizedBox(height: 8),
-                      _buildTextField(_postalController, 'Postal Code'),
+                      _buildTextField(_postalController, loc.postalCode),
                     ],
                   ),
                 ),
@@ -167,7 +163,7 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                child: const Text('Save Changes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(loc.saveChanges, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -177,21 +173,16 @@ class _EditAddressScreenState extends State<EditAddressScreen> {
   }
 
   Widget _buildLabel(String label) {
-    return Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14));
+    return Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
   }
 
   Widget _buildTextField(TextEditingController controller, String hint) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-        filled: true,
-        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
       ),
     );
   }

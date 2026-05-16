@@ -24,7 +24,7 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  int _selectedDuration = 60; // Default 60 minutes
+  int _selectedDuration = 60; 
   String? _selectedPetId;
   String? _selectedPetName;
   String? _ownerName;
@@ -38,7 +38,6 @@ class _BookingScreenState extends State<BookingScreen> {
     _getOwnerName();
   }
 
-  // Fetch the owner's name from Firestore
   Future<void> _getOwnerName() async {
     if (_userId == null) return;
     final ownerData = await FirebaseFirestore.instance.collection('users').doc(_userId).get();
@@ -53,25 +52,23 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     double totalPrice = (widget.hourlyRate / 60) * _selectedDuration;
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.bookAWalk,
-          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -83,15 +80,15 @@ class _BookingScreenState extends State<BookingScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: theme.dividerColor),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFFEFF6FF),
-                    child: Icon(Icons.person, color: primaryBlue),
+                  CircleAvatar(
+                    backgroundColor: isDarkMode ? Colors.white10 : const Color(0xFFEFF6FF),
+                    child: const Icon(Icons.person, color: primaryBlue),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -99,15 +96,11 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       Text(
                         widget.walkerName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: textDark,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
-                        '\$${widget.hourlyRate}/hr',
-                        style: const TextStyle(color: textLight, fontSize: 14),
+                        l10n.hourlyRateValue(widget.hourlyRate.toStringAsFixed(2)),
+                        style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14),
                       ),
                     ],
                   ),
@@ -117,14 +110,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 32),
 
-            // Select Pet Section
             Text(
               l10n.selectPet,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: textDark,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _userId == null 
@@ -161,14 +149,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 32),
 
-            // Duration Section
             Text(
               l10n.walkDuration,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: textDark,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
@@ -187,19 +170,19 @@ class _BookingScreenState extends State<BookingScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: primaryBlue.withOpacity(0.05),
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : primaryBlue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: primaryBlue.withOpacity(0.1)),
+                border: Border.all(color: primaryBlue.withValues(alpha: 0.1)),
               ),
               child: Column(
                 children: [
-                  _buildSummaryRow(l10n.baseRate, '\$${widget.hourlyRate}/hr'),
+                  _buildSummaryRow(l10n.baseRate, l10n.hourlyRateValue(widget.hourlyRate.toStringAsFixed(2))),
                   const SizedBox(height: 12),
                   _buildSummaryRow(l10n.duration, l10n.durationMinutes(_selectedDuration)),
                   const Divider(height: 24),
                   _buildSummaryRow(
                     l10n.totalPrice,
-                    '\$${totalPrice.toStringAsFixed(2)}',
+                    l10n.priceAmount(totalPrice.toStringAsFixed(2)),
                     isTotal: true,
                   ),
                 ],
@@ -233,10 +216,8 @@ class _BookingScreenState extends State<BookingScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryBlue,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFE2E8F0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              disabledBackgroundColor: theme.disabledColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
             child: Text(
@@ -250,6 +231,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildPetCard(PetModel pet, bool isSelected, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     const primaryBlue = Color(0xFF2563EB);
     return GestureDetector(
       onTap: () => setState(() {
@@ -260,33 +242,27 @@ class _BookingScreenState extends State<BookingScreen> {
         width: 120,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: isSelected ? primaryBlue : Colors.white,
+          color: isSelected ? primaryBlue : theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
-          ),
+          border: Border.all(color: isSelected ? primaryBlue : theme.dividerColor),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.pets,
-              color: isSelected ? Colors.white : primaryBlue,
-              size: 30,
-            ),
+            Icon(Icons.pets, color: isSelected ? Colors.white : primaryBlue, size: 30),
             const SizedBox(height: 8),
             Text(
               pet.name,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
               ),
             ),
             Text(
               pet.breed,
               style: TextStyle(
                 fontSize: 10,
-                color: isSelected ? Colors.white70 : const Color(0xFF64748B),
+                color: isSelected ? Colors.white70 : theme.textTheme.bodySmall?.color,
               ),
             ),
           ],
@@ -296,28 +272,26 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildAddPetCard(BuildContext context, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AddPetScreen()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPetScreen()));
       },
       child: Container(
         width: 100,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+          border: Border.all(color: theme.dividerColor, style: BorderStyle.solid),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_circle_outline, color: Color(0xFF64748B)),
+            Icon(Icons.add_circle_outline, color: theme.textTheme.bodySmall?.color),
             const SizedBox(height: 4),
             Text(
               l10n.addPet,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color),
             ),
           ],
         ),
@@ -326,6 +300,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildDurationOption(int minutes, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     bool isSelected = _selectedDuration == minutes;
     const primaryBlue = Color(0xFF2563EB);
 
@@ -335,18 +310,16 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? primaryBlue : Colors.white,
+            color: isSelected ? primaryBlue : theme.cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
-            ),
+            border: Border.all(color: isSelected ? primaryBlue : theme.dividerColor),
           ),
           child: Center(
             child: Text(
               l10n.durationMinutes(minutes),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
               ),
             ),
           ),
@@ -356,6 +329,8 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    final theme = Theme.of(context);
+    const primaryBlue = Color(0xFF2563EB);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -364,7 +339,7 @@ class _BookingScreenState extends State<BookingScreen> {
           style: TextStyle(
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            color: isTotal ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+            color: isTotal ? theme.textTheme.bodyLarge?.color : theme.textTheme.bodySmall?.color,
           ),
         ),
         Text(
@@ -372,7 +347,7 @@ class _BookingScreenState extends State<BookingScreen> {
           style: TextStyle(
             fontSize: isTotal ? 18 : 14,
             fontWeight: FontWeight.bold,
-            color: isTotal ? const Color(0xFF2563EB) : const Color(0xFF1E293B),
+            color: isTotal ? primaryBlue : theme.textTheme.bodyLarge?.color,
           ),
         ),
       ],

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/message_model.dart';
 
 class ChatService {
@@ -23,7 +24,7 @@ class ChatService {
   }
 
   // Create or re-open a chat room
-  Future<void> createChatRoom(String receiverID, String receiverName, String petName, double totalPrice, int duration, String bookingId) async {
+  Future<void> createChatRoom(String receiverID, String receiverName, String petName, double totalPrice, int duration, String bookingId, AppLocalizations l10n) async {
     final String currentUserID = _auth.currentUser!.uid;
 
     // Fetch current user details for metadata and role-based messaging
@@ -59,9 +60,10 @@ class ChatService {
     }, SetOptions(merge: true));
 
     // Send the initial preset message
+    // Localized welcome message
     String welcomeMsg = role == 'walker'
-      ? "👋 $currentUserName has accepted the walk request for $petName. You can now coordinate details here!"
-      : "👋 $currentUserName has started a chat regarding $petName's walk.";
+        ? l10n.walkerWelcomeMessage(currentUserName, petName)
+        : l10n.ownerWelcomeMessage(currentUserName, petName);
 
     await sendMessage(chatRoomID, receiverID, welcomeMsg);
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'edit_address_screen.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
@@ -44,6 +45,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
   }
 
   Future<void> _onSearchChanged(String query, StateSetter setModalState) async {
+    final loc = AppLocalizations.of(context)!;
     if (query.isEmpty) {
       setModalState(() {
         _predictions = [];
@@ -68,7 +70,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
             _predictions = predictions;
             _isSearching = false;
             if (predictions.isEmpty && query.length > 2) {
-              _searchError = "No addresses found";
+              _searchError = loc.noAddressesFound;
             }
           });
         }
@@ -105,6 +107,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
   Future<void> _setDefaultAddress(List<Map<String, dynamic>> addresses, int index) async {
     if (_userId == null) return;
+    final loc = AppLocalizations.of(context)!;
 
     List<Map<String, dynamic>> updatedAddresses = List.from(addresses);
     for (int i = 0; i < updatedAddresses.length; i++) {
@@ -120,7 +123,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${updatedAddresses[index]['label']} set as default address')),
+        SnackBar(content: Text(loc.setAsDefaultSuccess(updatedAddresses[index]['label']))),
       );
     }
   }
@@ -138,6 +141,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
   Future<void> _addNewAddress(List<Map<String, dynamic>> addresses) async {
     if (_userId == null) return;
+    final loc = AppLocalizations.of(context)!;
 
     final String label = _labelController.text.trim();
     final String street = _streetController.text.trim();
@@ -146,7 +150,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
     if (label.isEmpty || street.isEmpty || city.isEmpty || postal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        SnackBar(content: Text(loc.pleaseFillAllFields)),
       );
       return;
     }
@@ -183,8 +187,8 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not verify address. Please check your entry.'),
+          SnackBar(
+            content: Text(loc.verifyAddressError),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -196,26 +200,25 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
 
     if (_userId == null) {
-      return const Scaffold(body: Center(child: Text("Please log in")));
+      return Scaffold(body: Center(child: Text(loc.pleaseLogin)));
     }
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Saved Addresses',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.savedAddresses,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: StreamBuilder<UserModel>(
@@ -225,7 +228,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("Error loading addresses"));
+            return Center(child: Text(loc.errorLoadingData));
           }
 
           final user = snapshot.data!;
@@ -236,16 +239,16 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Your Locations',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                Text(
+                  loc.yourLocation,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 if (addresses.isEmpty)
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Text("No saved addresses yet", style: TextStyle(color: Colors.grey)),
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: Text(loc.noSavedAddresses, style: const TextStyle(color: Colors.grey)),
                     ),
                   )
                 else
@@ -258,18 +261,18 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0), style: BorderStyle.solid),
+                      border: Border.all(color: theme.dividerColor, style: BorderStyle.solid),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_location_alt_outlined, color: primaryBlue),
-                        SizedBox(width: 8),
+                        const Icon(Icons.add_location_alt_outlined, color: primaryBlue),
+                        const SizedBox(width: 8),
                         Text(
-                          'Add New Address',
-                          style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                          loc.addNewAddress,
+                          style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -284,18 +287,20 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
   }
 
   Widget _buildAddressItem(int index, Map<String, dynamic> address, List<Map<String, dynamic>> allAddresses) {
+    final theme = Theme.of(context);
     bool isDefault = address['isDefault'] == true;
     const primaryBlue = Color(0xFF2563EB);
+    final loc = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withAlpha(8),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -307,12 +312,12 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: theme.brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               address['label'] == 'Home' ? Icons.home_outlined : Icons.work_outline,
-              color: const Color(0xFF64748B),
+              color: theme.brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(width: 16),
@@ -323,7 +328,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                 Row(
                   children: [
                     Text(
-                      address['label'] ?? 'Address',
+                      address['label'] ?? loc.addressFallback,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     if (isDefault) ...[
@@ -334,9 +339,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                           color: const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'DEFAULT',
-                          style: TextStyle(color: primaryBlue, fontSize: 10, fontWeight: FontWeight.bold),
+                        child: Text(
+                          loc.defaultTag,
+                          style: const TextStyle(color: primaryBlue, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -345,13 +350,13 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                 const SizedBox(height: 4),
                 Text(
                   address['address'] ?? '',
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13, height: 1.4),
                 ),
               ],
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Color(0xFFCBD5E1)),
+            icon: Icon(Icons.more_vert, color: theme.iconTheme.color?.withAlpha(127)),
             onSelected: (value) {
               if (value == 'default') {
                 _setDefaultAddress(allAddresses, index);
@@ -370,9 +375,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
               }
             },
             itemBuilder: (context) => [
-              if (!isDefault) const PopupMenuItem(value: 'default', child: Text('Set as default')),
-              const PopupMenuItem(value: 'edit', child: Text('Edit address')),
-              const PopupMenuItem(value: 'delete', child: Text('Remove', style: TextStyle(color: Colors.red))),
+              if (!isDefault) PopupMenuItem(value: 'default', child: Text(loc.setAsDefault)),
+              PopupMenuItem(value: 'edit', child: Text(loc.editAddress)),
+              PopupMenuItem(value: 'delete', child: Text(loc.remove, style: const TextStyle(color: Colors.red))),
             ],
           ),
         ],
@@ -381,6 +386,10 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
   }
 
   void _showAddAddressBottomSheet(BuildContext context, List<Map<String, dynamic>> currentAddresses) {
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
+    const primaryBlue = Color(0xFF2563EB);
+
     _searchController.clear();
     _predictions = [];
     _searchError = null;
@@ -388,7 +397,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
@@ -409,9 +418,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Add New Address',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      Text(
+                        loc.addNewAddress,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -424,7 +433,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                   // Search Bar
                   _buildTextField(
                     _searchController, 
-                    'Start typing your address...', 
+                    loc.searchAddressHint,
                     prefix: Icons.search,
                     suffix: _isSearching 
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
@@ -444,7 +453,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                       padding: const EdgeInsets.all(12),
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.05),
+                        color: Colors.red.withAlpha(12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -457,11 +466,11 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                     Container(
                       margin: const EdgeInsets.only(top: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withAlpha(25),
                             blurRadius: 10,
                           )
                         ],
@@ -477,7 +486,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                           final secondaryText = p['structured_formatting']?['secondary_text'] ?? "";
                           
                           return ListTile(
-                            leading: const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF64748B)),
+                            leading: Icon(Icons.location_on_outlined, size: 20, color: theme.brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)),
                             title: Text(mainText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             subtitle: secondaryText.isNotEmpty ? Text(secondaryText, style: const TextStyle(fontSize: 12)) : null,
                             onTap: () => _selectPrediction(p, setModalState),
@@ -487,14 +496,14 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                     ),
 
                   const SizedBox(height: 32),
-                  _buildLabel('Address Label'),
+                  _buildLabel(loc.addressLabel),
                   const SizedBox(height: 8),
-                  _buildTextField(_labelController, 'e.g. Home, Work'),
+                  _buildTextField(_labelController, loc.addressExample),
                   
                   const SizedBox(height: 24),
-                  _buildLabel('Manual Entry Details'),
+                  _buildLabel(loc.manualEntryDetails),
                   const SizedBox(height: 8),
-                  _buildTextField(_streetController, 'Street Address', prefix: Icons.location_on_outlined),
+                  _buildTextField(_streetController, loc.streetAddress, prefix: Icons.location_on_outlined),
                   
                   const SizedBox(height: 16),
                   Row(
@@ -503,9 +512,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('City'),
+                            _buildLabel(loc.city),
                             const SizedBox(height: 8),
-                            _buildTextField(_cityController, 'City'),
+                            _buildTextField(_cityController, loc.city),
                           ],
                         ),
                       ),
@@ -514,9 +523,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('Postal Code'),
+                            _buildLabel(loc.postalCode),
                             const SizedBox(height: 8),
-                            _buildTextField(_postalController, 'Postal Code'),
+                            _buildTextField(_postalController, loc.postalCode),
                           ],
                         ),
                       ),
@@ -535,7 +544,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                             if (mounted) setModalState(() => _isVerifying = false);
                           },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: primaryBlue,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
@@ -546,7 +555,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                             width: 20, 
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                           )
-                        : const Text('Verify & Save Address', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        : Text(loc.verifyAndSaveAddress, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -562,32 +571,19 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
   Widget _buildLabel(String label) {
     return Text(
       label,
-      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontSize: 14),
+      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
     );
   }
 
   Widget _buildTextField(TextEditingController controller, String hint, {IconData? prefix, Widget? suffix, Function(String)? onChanged}) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: prefix != null ? Icon(prefix, size: 20, color: const Color(0xFF64748B)) : null,
+        prefixIcon: prefix != null ? Icon(prefix, size: 20, color: theme.brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)) : null,
         suffixIcon: suffix,
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );

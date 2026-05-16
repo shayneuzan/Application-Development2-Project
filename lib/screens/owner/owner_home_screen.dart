@@ -3,11 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../l10n/generated/app_localizations.dart';
-import 'package:pawwalk/screens/widgets/walker_notification_icon.dart';
 import '../shared/notification_screen.dart';
+import '../widgets/owner_bottom_nav_bar.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
-
 import 'browse_walkers_list_screen.dart';
 import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
@@ -15,7 +14,6 @@ import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../widgets/owner_drawer.dart';
 import '../auth/login_screen.dart';
-
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -40,7 +38,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
   void initState() {
     super.initState();
 
-    // Listen to the user's document and sign them out if they get suspended
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       _statusSub = FirebaseFirestore.instance
@@ -54,7 +51,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
           FirebaseAuth.instance.signOut();
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
           );
         }
       });
@@ -189,16 +186,14 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const backgroundGray = Color(0xFFF8FAFC);
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: backgroundGray,
       appBar: AppBar(
         backgroundColor: primaryBlue,
         elevation: 0,
@@ -206,9 +201,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
           icon: const Icon(Icons.menu, color: Colors.white),
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
-        title: const Text(
-          'PawWalk',
-          style: TextStyle(
+        title: Text(
+          l10n.appName,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -236,7 +231,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
               );
             },
           ),
@@ -244,6 +239,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Home'),
+      bottomNavigationBar: const OwnerBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,15 +259,14 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                         style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: textDark,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         l10n.furryFriendWaiting,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: textLight,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
                     ],
@@ -280,21 +275,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
               }
             ),
 
-            // Upcoming Walk Card - Ideally fetch the next booking
+            // Upcoming Walk Card
             StreamBuilder<List<Map<String, dynamic>>>(
               stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  final booking = snapshot.data!.first; // Simplification: take the most recent one
+                  final booking = snapshot.data!.first;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.04),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -310,7 +305,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
+                                    color: isDarkMode ? Colors.white10 : const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -324,7 +319,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                                 ),
                                 Text(
                                   booking['date'] ?? '',
-                                  style: const TextStyle(color: textLight, fontSize: 13),
+                                  style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13),
                                 ),
                               ],
                             ),
@@ -334,54 +329,39 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  radius: 26,
-                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  radius: 28,
+                                  backgroundColor: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
                                   child: Text(
-                                    (booking['walkerName'] as String?)?[0] ?? 'W',
-                                    style: const TextStyle(
-                                      color: textDark,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                                    booking['walkerName']?[0] ?? 'W',
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryBlue),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      booking['walkerName'] ?? 'Walker',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: textDark,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        booking['walkerName'] ?? 'Walker',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      l10n.withPet(booking['petName'] ?? 'Pet'),
-                                      style: const TextStyle(color: textLight, fontSize: 14),
-                                    ),
-                                  ],
+                                      Text(
+                                        l10n.withPet(booking['petName'] ?? 'your pet'),
+                                        style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingHistoryScreen()));
+                                  },
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.access_time, size: 20, color: textLight),
-                                const SizedBox(width: 6),
-                                Text(booking['time'] ?? '', style: const TextStyle(color: textDark, fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 24),
-                                const Icon(Icons.timer_outlined, size: 20, color: textLight),
-                                const SizedBox(width: 6),
-                                Text('${booking['duration']} min', style: const TextStyle(color: textDark, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),
@@ -391,39 +371,35 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
               }
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-            // Action Buttons
+            // Quick Actions
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                l10n.browseWalkers,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      label: l10n.browseWalkers,
-                      icon: Icons.search,
-                      isPrimary: true,
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()),
-                        );
-                      },
-                    ),
+                  _buildQuickAction(
+                    context,
+                    l10n.findWalkers,
+                    Icons.search,
+                    primaryBlue,
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BrowseWalkersListScreen())),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildActionButton(
-                      label: l10n.myBookings,
-                      icon: Icons.calendar_today,
-                      isPrimary: false,
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
-                        );
-                      },
-                    ),
+                  _buildQuickAction(
+                    context,
+                    l10n.map,
+                    Icons.map_outlined,
+                    Colors.orange,
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreMapScreen())),
                   ),
                 ],
               ),
@@ -431,32 +407,40 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
 
             const SizedBox(height: 32),
 
-            // Recent Activity Section
+            // Recent Activity
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                l10n.recentActivity,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.recentActivity,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookingHistoryScreen())),
+                    child: Text(l10n.seeAll, style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
+            
             StreamBuilder<List<Map<String, dynamic>>>(
               stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
                 }
                 final bookings = snapshot.data ?? [];
                 if (bookings.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(l10n.noRecentActivity),
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Text(l10n.noRecentActivity, style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+                    ),
                   );
                 }
+
                 return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -464,148 +448,75 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
                   itemCount: bookings.length > 3 ? 3 : bookings.length,
                   itemBuilder: (context, index) {
                     final b = bookings[index];
-                    return _buildActivityCard(
-                      title: l10n.petWalk(b['petName'] ?? 'Pet'),
-                      subtitle: l10n.byWalker(b['walkerName'] ?? 'Walker'),
-                      status: b['status'] ?? 'pending',
-                      date: b['date'] ?? '',
-                      avatarLetter: (b['walkerName'] as String?)?[0] ?? 'W',
-                    );
+                    return _buildActivityItem(context, b, l10n);
                   },
                 );
               }
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 0,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          onTap: (index) {
-            if (index == 1) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()),
-              );
-            } else if (index == 2) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BookingHistoryScreen()),
-              );
-            } else if (index == 3) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ExploreMapScreen()),
-              );
-            } else if (index == 4) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            }
-          },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_filled), label: l10n.home),
-            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
-            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
-            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
-            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required bool isPrimary,
-    required VoidCallback onPressed,
-  }) {
-    const primaryBlue = Color(0xFF2563EB);
-
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary ? primaryBlue : Colors.white,
-        foregroundColor: isPrimary ? Colors.white : const Color(0xFF1E293B),
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: isPrimary ? BorderSide.none : const BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 22),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+  Widget _buildQuickAction(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildActivityCard({
-    required String title,
-    required String subtitle,
-    required String status,
-    required String date,
-    required String avatarLetter,
-  }) {
-    Color statusBg;
-    Color statusText;
-
-    switch (status.toLowerCase()) {
-      case 'completed':
-        statusBg = const Color(0xFFDCFCE7);
-        statusText = const Color(0xFF166534);
-        break;
-      case 'pending':
-        statusBg = const Color(0xFFFEF9C3);
-        statusText = const Color(0xFF854D0E);
-        break;
-      default: // confirmed
-        statusBg = const Color(0xFFF1F5F9);
-        statusText = const Color(0xFF475569);
-    }
-
+  Widget _buildActivityItem(BuildContext context, Map<String, dynamic> booking, AppLocalizations l10n) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: const Color(0xFFF8FAFC),
-            child: Text(
-              avatarLetter,
-              style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-            ),
+          const CircleAvatar(
+            backgroundColor: Color(0xFFEFF6FF),
+            child: Icon(Icons.pets, color: Color(0xFF2563EB), size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -613,40 +524,19 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  l10n.petWalk(booking['petName'] ?? 'Pet'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 Text(
-                  subtitle,
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  l10n.byWalker(booking['walkerName'] ?? 'Walker'),
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12),
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusText,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                date,
-                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-              ),
-            ],
+          Text(
+            booking['date'] ?? '',
+            style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 11),
           ),
         ],
       ),

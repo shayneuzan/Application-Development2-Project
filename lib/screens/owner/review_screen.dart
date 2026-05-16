@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 
@@ -52,15 +53,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
         'dogName': widget.dogName,
       });
 
-      // Update booking to mark it as reviewed
       if (widget.bookingId != null) {
         await _firestoreService.markBookingAsReviewed(widget.bookingId!);
       }
 
       if (mounted) {
+        final loc = AppLocalizations.of(context)!;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thank you for your review!')),
+          SnackBar(content: Text(loc.thankYouForReview)),
         );
       }
     } catch (e) {
@@ -76,22 +77,22 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Write a Review',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.writeReview,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: _isLoading 
@@ -102,25 +103,24 @@ class _ReviewScreenState extends State<ReviewScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 40,
-                  backgroundColor: Color(0xFFEFF6FF),
-                  child: Icon(Icons.person, size: 40, color: primaryBlue),
+                  backgroundColor: isDarkMode ? Colors.white10 : const Color(0xFFEFF6FF),
+                  child: const Icon(Icons.person, size: 40, color: primaryBlue),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'How was your walk with ${widget.walkerName}?',
+                  loc.howWasWalk(widget.walkerName),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: textDark,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'For your dog, ${widget.dogName}',
-                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                  loc.forYourDog(widget.dogName),
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 16),
                 ),
                 const SizedBox(height: 32),
                 
@@ -141,11 +141,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 const SizedBox(height: 32),
 
                 // Comment Box
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Tell us more about your experience',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                    loc.tellUsMoreAbout,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -153,17 +153,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   controller: _commentController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'Describe how the walk went...',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
+                    hintText: loc.describeWalk,
+                    contentPadding: const EdgeInsets.all(16),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -177,15 +168,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryBlue,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFE2E8F0),
+                      disabledBackgroundColor: theme.disabledColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Submit Review',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    child: Text(
+                      loc.submitReview,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),

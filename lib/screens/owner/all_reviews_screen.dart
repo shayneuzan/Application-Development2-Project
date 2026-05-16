@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import 'package:intl/intl.dart';
 
@@ -14,22 +15,21 @@ class AllReviewsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     final FirestoreService firestoreService = FirestoreService();
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Reviews for $walkerName',
-          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
+          loc.reviewsFor(walkerName),
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
@@ -40,13 +40,15 @@ class AllReviewsScreen extends StatelessWidget {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Text('${loc.error}: ${snapshot.error}'),
+            );
           }
 
           final reviews = snapshot.data ?? [];
 
           if (reviews.isEmpty) {
-            return const Center(child: Text('No reviews yet.'));
+            return Center(child: Text(loc.noReviewsYet),);
           }
 
           return ListView.builder(
@@ -54,7 +56,7 @@ class AllReviewsScreen extends StatelessWidget {
             itemCount: reviews.length,
             itemBuilder: (context, index) {
               final review = reviews[index];
-              return _buildReviewCard(review);
+              return _buildReviewCard(context, review);
             },
           );
         },
@@ -62,8 +64,10 @@ class AllReviewsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewCard(Map<String, dynamic> review) {
-    String dateStr = 'Recent';
+  Widget _buildReviewCard(BuildContext context, Map<String, dynamic> review) {
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
+    String dateStr = loc.recent;
     if (review['createdAt'] != null) {
       final date = (review['createdAt'] as dynamic).toDate();
       dateStr = DateFormat('MMM dd, yyyy').format(date);
@@ -73,7 +77,7 @@ class AllReviewsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -90,12 +94,12 @@ class AllReviewsScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                review['userName'] ?? 'User',
+                review['userName'] ?? loc.user,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text(
                 dateStr,
-                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12),
               ),
             ],
           ),
@@ -112,7 +116,7 @@ class AllReviewsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             review['comment'] ?? '',
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.5),
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 14, height: 1.5),
           ),
         ],
       ),

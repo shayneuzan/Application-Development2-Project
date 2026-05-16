@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_charts/charts.dart'; // For Charts Feature
+import 'package:syncfusion_flutter_charts/charts.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import '../widgets/walker_notification_icon.dart';
-import '/services/firestore_service.dart';
+import '../../services/firestore_service.dart';
 
 class EarningsScreen extends StatefulWidget {
   const EarningsScreen({super.key});
@@ -34,152 +35,65 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double containerHeightForTop = 120;
-    final double containerWidthForTop = 120;
+    const double containerHeightForTop = 120;
+    const double containerWidthForTop = 120;
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final borderColor = isDarkMode ? Colors.white10 : Colors.black12;
 
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
           final userData = snapshot.data?.data() as Map<String, dynamic>? ?? {};
-          // Background check: This resets the numbers if the date has changed
           num today = userData['todayEarnings'] ?? 0.0;
           num week = userData['weeklyEarnings'] ?? 0.0;
           num month = userData['monthEarnings'] ?? 0.0;
           String name = userData['name'] ?? 'Guest';
+
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Earnings', style: TextStyle(color: Colors.white),),
+              title: Text(loc.earnings, style: const TextStyle(color: Colors.white),),
               backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
-              actions: [
+              actions: const [
                 WalkerNotificationIcon(),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
               ],
             ),
             drawer: WalkerDrawer(name: name),
             body: Padding(
-              padding: EdgeInsets.all(13.5),
+              padding: const EdgeInsets.all(13.5),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Today, Week and Month Earnings
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: containerWidthForTop,
-                          height: containerHeightForTop,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.black)
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Today',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                (today).toDouble() >= 1000
-                                    ? '\$${((today) / 1000).toStringAsFixed(1)}K'
-                                    : '\$${(today).toStringAsFixed(2).replaceAll('.00', '')}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 12,),
-                        Container(
-                          width: containerWidthForTop,
-                          height: containerHeightForTop,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.black)
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'This Week',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                (week).toDouble() >= 1000
-                                    ? '\$${((week) / 1000).toStringAsFixed(1)}K'
-                                    : '\$${(week).toStringAsFixed(2).replaceAll('.00', '')}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 12,),
-                        Container(
-                          width: containerWidthForTop,
-                          height: containerHeightForTop,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.black)
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'This Month',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 10),
-                              Text((month).toDouble() >= 1000
-                                  ? '\$${((month) / 1000).toStringAsFixed(1)}K'
-                                  : '\$${(month).toStringAsFixed(2).replaceAll('.00', '')}',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildEarningsCard(theme, borderColor, loc.today, today, containerWidthForTop, containerHeightForTop),
+                        const SizedBox(width: 12,),
+                        _buildEarningsCard(theme, borderColor, loc.thisWeek, week, containerWidthForTop, containerHeightForTop),
+                        const SizedBox(width: 12,),
+                        _buildEarningsCard(theme, borderColor, loc.thisMonth, month, containerWidthForTop, containerHeightForTop),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20,),
-                  // Weekly Overview
                   Container(
                     width: double.infinity,
                     height: 275,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.black)
+                        border: Border.all(color: borderColor)
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Weekly Overview', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text(loc.weeklyOverview, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 10,),
                         Expanded(
                           child: StreamBuilder<QuerySnapshot>(
@@ -191,7 +105,6 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                 .limit(7)
                                 .snapshots(),
                             builder: (context, earnSnapshot) {
-                              // Safe check for chart data
                               if (!earnSnapshot.hasData) {
                                 return const Center(child: CircularProgressIndicator());
                               }
@@ -201,29 +114,37 @@ class _EarningsScreenState extends State<EarningsScreen> {
                                     d['dayOfWeek'] ?? '',
                                     (d['amount'] ?? 0.0).toDouble()
                                 );
-                              }).toList().reversed.toList(); // Reverse to show Mon -> Sun
+                              }).toList().reversed.toList();
                               return SfCartesianChart(
-                                primaryXAxis: CategoryAxis(),
+                                plotAreaBorderWidth: 0,
+                                primaryXAxis: CategoryAxis(
+                                  labelStyle: TextStyle(color: theme.textTheme.bodySmall?.color),
+                                  majorGridLines: const MajorGridLines(width: 0),
+                                ),
+                                primaryYAxis: NumericAxis(
+                                  labelStyle: TextStyle(color: theme.textTheme.bodySmall?.color),
+                                  axisLine: const AxisLine(width: 0),
+                                  majorTickLines: const MajorTickLines(size: 0),
+                                ),
                                 tooltipBehavior: TooltipBehavior(
                                   enable: true,
-                                  header: 'Earnings',
-                                  canShowMarker: false,
-                                  format: 'point.x : \$point.y', // Shows "MON : $12"
+                                  header: loc.earnings,
+                                  format: 'point.x : \$point.y',
                                 ),
                                 series: <CartesianSeries<_ChartData, String>>[
                                   ColumnSeries<_ChartData, String>(
                                     dataSource: chartData,
                                     xValueMapper: (_ChartData data, _) => data.day,
                                     yValueMapper: (_ChartData data, _) => data.receivedAmount,
-                                    color: const Color.fromRGBO(8, 142, 255, 1),
+                                    color: const Color(0xFF2563EB),
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                                    borderWidth: 2,
-                                    borderColor: Colors.black,
-                                    dataLabelSettings: const DataLabelSettings(
+                                    borderWidth: 1,
+                                    borderColor: isDarkMode ? Colors.white30 : Colors.black12,
+                                    dataLabelSettings: DataLabelSettings(
                                       isVisible: true,
                                       labelAlignment: ChartDataLabelAlignment.outer,
                                       textStyle: TextStyle(
-                                          color: Colors.black,
+                                          color: theme.textTheme.bodyMedium?.color,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12
                                       ),
@@ -238,7 +159,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20,),
-                  Text('Recent Completed Walks', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+                  Text(loc.recentWalks, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
@@ -258,12 +179,12 @@ class _EarningsScreenState extends State<EarningsScreen> {
                             String date = DateFormat('MMMM d, yyyy').format(doc['date'].toDate());
                             num amt = doc['amount'] ?? 0;
                             return Card(
-                              elevation: 2,
+                              elevation: 1,
                               margin: const EdgeInsets.symmetric(vertical: 5),
                               child: ListTile(
                                 leading: const Icon(Icons.pets, color: Color(0xFF2563EB)),
-                                title: Text('$date, (${doc['dayOfWeek']})'),
-                                subtitle: Text('${doc['walkTitle']}'),
+                                title: Text('$date, (${doc['dayOfWeek']})', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                subtitle: Text('${doc['walkTitle']}', style: TextStyle(color: theme.hintColor)),
                                 trailing: Text(
                                   '+\$${amt.toStringAsFixed(2).replaceAll('.00', '')}',
                                   style: const TextStyle(
@@ -287,6 +208,40 @@ class _EarningsScreenState extends State<EarningsScreen> {
         }
     );
   }
+
+  Widget _buildEarningsCard(ThemeData theme, Color borderColor, String label, num amount, double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: borderColor)
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            amount.toDouble() >= 1000
+                ? '\$${(amount / 1000).toStringAsFixed(1)}K'
+                : '\$${amount.toStringAsFixed(2).replaceAll('.00', '')}',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2563EB),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ChartData {
@@ -294,5 +249,3 @@ class _ChartData {
   final String day;
   final double receivedAmount;
 }
-
-

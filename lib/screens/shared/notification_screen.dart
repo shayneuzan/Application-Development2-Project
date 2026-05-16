@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/notification_model.dart';
 import '../../services/firestore_service.dart';
 
@@ -24,13 +26,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: const Color(0xFF2563EB),
         elevation: 0,
-        title: const Text('Notifications', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20,),),
+        title: Text(loc!.notifications, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20,),),
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
@@ -42,8 +45,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
               if (value == 'clear') _firestoreService.clearAll(uid!);
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'read', child: Text('Mark all as read')),
-              const PopupMenuItem(value: 'clear', child: Text('Clear all', style: TextStyle(color: Colors.red)),),
+              PopupMenuItem(value: 'read', child: Text(loc.markAllAsRead)),
+              PopupMenuItem(value: 'clear', child: Text(loc.clearAll, style: const TextStyle(color: Colors.red)),),
             ],
           ),
         ],
@@ -56,18 +59,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
           }
           if (snapshot.hasError) {
             print("Notification Stream Error: ${snapshot.error}");
-            return const Center(child: Text("Error loading notifications."));
+            return Center(child: Text(loc.error));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_none, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                  const Icon(Icons.notifications_none, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
                   Text(
-                    "No notifications available at this time.",
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    loc.noNotificationsAvailable,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 ],
               ),
@@ -81,23 +84,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               if (categories['New']!.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: Text('New',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(loc.newNotifications,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13),
                   ),
                 ),
-                ...categories['New']!.map((n) => _buildNotificationCard(n)),
+                ...categories['New']!.map((n) => _buildNotificationCard(n, context)),
                 const SizedBox(height: 16),
               ],
               if (categories['Earlier']!.isNotEmpty) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(bottom: 10),
-                  child: Text('Earlier',
+                  child: Text(loc.earlierNotifications,
                     style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13),
                   ),
                 ),
-                ...categories['Earlier']!.map((n) => _buildNotificationCard(n)),
+                ...categories['Earlier']!.map((n) => _buildNotificationCard(n, context)),
               ],
             ],
           );
@@ -106,8 +109,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _buildNotificationCard(NotificationModel n) {
+  Widget _buildNotificationCard(NotificationModel n, BuildContext context) {
     final Color color = _getColorForType(n.type);
+    final loc = AppLocalizations.of(context);
 
     return Dismissible(
       key: Key(n.id),
@@ -123,7 +127,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
       onDismissed: (_) async {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Notification dismissed")),
+          SnackBar(content: Text(loc.notificationDeleted)),
         );
         await _firestoreService.deleteNotification(n.id);
       },
@@ -178,7 +182,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                     ),
                     const SizedBox(height: 8),
-                    Text(_timeAgo(n.timestamp),
+                    Text(_timeAgo(n.timestamp, loc!),
                       style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
@@ -191,13 +195,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  String _timeAgo(Timestamp timestamp) {
+  String _timeAgo(Timestamp timestamp, AppLocalizations l10n) {
     final diff = DateTime.now().difference(timestamp.toDate());
-    if (diff.inMinutes < 1)  return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} mins ago';
-    if (diff.inHours < 24)   return '${diff.inHours} hours ago';
-    if (diff.inDays == 1)    return 'Yesterday';
-    return '${diff.inDays} days ago';
+    if (diff.inMinutes < 1) return l10n.justNow;
+    if (diff.inMinutes < 60) return l10n.minsAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.hoursAgo(diff.inHours);
+    if (diff.inDays == 1) return l10n.yesterday;
+    return l10n.daysAgo(diff.inDays);
   }
 
   IconData _getIconForType(String type) {

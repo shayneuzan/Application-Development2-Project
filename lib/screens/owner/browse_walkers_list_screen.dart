@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../shared/notification_screen.dart';
+import '../widgets/owner_bottom_nav_bar.dart';
 import '../widgets/walker_notification_icon.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'owner_home_screen.dart';
@@ -83,16 +84,14 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const backgroundGray = Color(0xFFF8FAFC);
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: backgroundGray,
       appBar: AppBar(
         backgroundColor: primaryBlue,
         elevation: 0,
@@ -108,18 +107,9 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
             fontSize: 20,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          WalkerNotificationIcon(), // Custom notification icon
+        actions: const [
+          SizedBox(width: 8),
+          WalkerNotificationIcon(), 
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Walkers'),
@@ -178,11 +168,11 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                               width: double.infinity,
                               margin: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
+                                    color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.08),
                                     blurRadius: 20,
                                     offset: const Offset(0, 6),
                                   ),
@@ -199,7 +189,6 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                       ),
                                       onMapCreated: (controller) {
                                         _miniMapController = controller;
-                                        controller.setMapStyle(_mapStyle);
                                       },
                                       markers: _miniMapMarkers,
                                       myLocationEnabled: true,
@@ -211,14 +200,13 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                     ),
                                   ),
                                   
-                                  // Nearby Badge
                                   Positioned(
                                     bottom: 16,
                                     left: 16,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: theme.cardColor,
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -236,8 +224,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                             l10n.countWalkersNearby(walkers.length),
                                             style: const TextStyle(
                                               fontSize: 13, 
-                                              fontWeight: FontWeight.bold, 
-                                              color: textDark
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ],
@@ -245,14 +232,13 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                     ),
                                   ),
                                   
-                                  // Fullscreen Icon
                                   Positioned(
                                     top: 16,
                                     right: 16,
                                     child: Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: theme.cardColor.withOpacity(0.9),
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: [
                                           BoxShadow(
@@ -279,24 +265,15 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: textDark,
                                 ),
                               ),
-                              OutlinedButton(
-                                onPressed: () => setState(() => _isShowingFavorites = !_isShowingFavorites),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: _isShowingFavorites ? primaryBlue : Colors.white,
-                                  side: const BorderSide(color: primaryBlue),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                ),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() => _isShowingFavorites = !_isShowingFavorites);
+                                },
                                 child: Text(
                                   _isShowingFavorites ? l10n.showAll : l10n.showFavorites,
-                                  style: TextStyle(
-                                    color: _isShowingFavorites ? Colors.white : primaryBlue,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -306,20 +283,10 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                         if (walkers.isEmpty)
                           Center(
                             child: Padding(
-                              padding: const EdgeInsets.only(top: 60, bottom: 60),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    _isShowingFavorites ? Icons.favorite_border : Icons.search_off,
-                                    size: 64, 
-                                    color: Colors.grey.shade300
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    _isShowingFavorites ? l10n.noFavoritesYet : l10n.noWalkersAvailable,
-                                    style: const TextStyle(color: Colors.grey, fontSize: 16),
-                                  ),
-                                ],
+                              padding: const EdgeInsets.only(top: 40),
+                              child: Text(
+                                _isShowingFavorites ? l10n.noFavoritesYet : l10n.noWalkersAvailable,
+                                style: TextStyle(color: theme.textTheme.bodySmall?.color),
                               ),
                             ),
                           )
@@ -331,369 +298,153 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                             itemCount: walkers.length,
                             itemBuilder: (context, index) {
                               final walker = walkers[index];
-                              return _buildWalkerCard(
-                                context,
-                                walker: walker,
-                                isFavorite: favoriteIds.contains(walker.id),
-                                onFavoriteToggle: () => _toggleFavorite(walker.id, favoriteIds),
-                              );
+                              final isFavorite = favoriteIds.contains(walker.id);
+                              return _buildWalkerCard(context, walker, isFavorite, favoriteIds);
                             },
                           ),
                         const SizedBox(height: 20),
                       ],
                     ),
                   );
-                }
+                },
               );
             },
           ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 1,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          onTap: (index) {
-            if (index == 0) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
-            } else if (index == 2) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BookingHistoryScreen()));
-            } else if (index == 3) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
-            } else if (index == 4) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
-            }
-          },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
-            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
-            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
-            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
-            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const OwnerBottomNavBar(currentIndex: 1),
     );
   }
 
-  Widget _buildWalkerCard(
-    BuildContext context, {
-    required WalkerModel walker,
-    required bool isFavorite,
-    required VoidCallback onFavoriteToggle,
-  }) {
+  Widget _buildWalkerCard(BuildContext context, WalkerModel walker, bool isFavorite, List<String> currentFavorites) {
+    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => WalkerProfileScreen(
-              id: walker.id,
-              name: walker.name,
-              initials: walker.initials,
-              rating: walker.rating,
-              walksCount: walker.walksCount,
-              price: walker.price,
-              walker: walker,
-            ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WalkerProfileScreen(
+                id: walker.id,
+                name: walker.name,
+                initials: walker.name.isNotEmpty ? walker.name[0] : 'W',
+                rating: walker.rating,
+                walksCount: walker.walksCount,
+                price: walker.hourlyRate,
+                walker: walker,
+              ),
             ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: const Color(0xFFFFEDD5),
-                      child: Text(
-                        walker.initials,
-                        style: const TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    child: Text(
+                      walker.name.isNotEmpty ? walker.name[0] : 'W',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: theme.cardColor, width: 2),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                walker.name,
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star, color: Colors.orange, size: 18),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    walker.rating.toString(),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
-                                  ),
-                                ],
-                              ),
-                            ],
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          walker.name,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        GestureDetector(
+                          onTap: () => _toggleFavorite(walker.id, currentFavorites),
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite ? Colors.red : Colors.grey[400],
+                            size: 22,
                           ),
-                          Text(
-                            l10n.walksCompletedCount(walker.walksCount),
-                            style: const TextStyle(color: textLight, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.orange, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          walker.rating.toStringAsFixed(2),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.walksCompletedCount(walker.walksCount),
+                          style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '\$${walker.hourlyRate}/hr',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryBlue),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '\$ ${walker.price}/hr',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => WalkerProfileScreen(
-                                        id: walker.id,
-                                        name: walker.name,
-                                        initials: walker.initials,
-                                        rating: walker.rating,
-                                        walksCount: walker.walksCount,
-                                        price: walker.price,
-                                        walker: walker,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryBlue,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  elevation: 0,
-                                ),
-                                child: Text(l10n.bookNow, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              ),
-                            ],
+                          child: Text(
+                            l10n.bookNow,
+                            style: const TextStyle(color: primaryBlue, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              child: GestureDetector(
-                onTap: onFavoriteToggle,
-                child: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: Colors.red,
-                  size: 24,
-                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-
-  final String _mapStyle = '''
-[
-  {
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#bdbdbd"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#ffffff"
-      }
-    ]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dadada"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#c9c9c9"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  }
-]
-''';
 }

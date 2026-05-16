@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 
@@ -52,8 +53,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     String expiry = _expiryController.text.trim();
     
     if (name.isEmpty || number.length < 12 || expiry.isEmpty) {
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid card details')),
+        SnackBar(content: Text(loc.enterValidCardDetails)),
       );
       return;
     }
@@ -82,24 +84,26 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
-    if (_userId == null) return const Scaffold(body: Center(child: Text("Please log in")));
+    if (_userId == null) return Scaffold(body: Center(child: Text(loc.pleaseLogin)));
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Payment Methods',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.paymentMethods,
+          style: TextStyle(
+            color: theme.textTheme.titleLarge?.color,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: StreamBuilder<UserModel>(
@@ -118,13 +122,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               children: [
                 const Text(
                   'Your Cards',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 if (cards.isEmpty)
-                  const Center(child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Text("No cards saved yet", style: TextStyle(color: Colors.grey)),
+                  Center(child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Text(loc.noCards, style: const TextStyle(color: Colors.grey)),
                   ))
                 else
                   ...cards.asMap().entries.map((entry) => _buildCardItem(entry.key, entry.value, cards)),
@@ -135,22 +139,22 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: theme.dividerColor),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_circle_outline, color: primaryBlue),
-                        SizedBox(width: 8),
-                        Text('Add New Card', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.add_circle_outline, color: primaryBlue),
+                        const SizedBox(width: 8),
+                        const Text('Add New Card', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
-                const Text('Other Methods', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark)),
+                Text(loc.otherMethods, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 _buildOtherMethod(Icons.account_balance_wallet_outlined, 'Apple Pay'),
                 const SizedBox(height: 12),
@@ -164,6 +168,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   }
 
   Widget _buildCardItem(int index, Map<String, dynamic> card, List<Map<String, dynamic>> allCards) {
+    final theme = Theme.of(context);
     bool isDefault = card['isDefault'] == true;
     const primaryBlue = Color(0xFF2563EB);
 
@@ -171,7 +176,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
         border: Border.all(color: isDefault ? primaryBlue : Colors.transparent, width: 2),
@@ -180,8 +185,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-            child: Icon(card['type'] == 'Visa' ? Icons.credit_card : Icons.credit_card_outlined, color: const Color(0xFF64748B)),
+            decoration: BoxDecoration(
+              color: theme.brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF1F5F9), 
+              borderRadius: BorderRadius.circular(12)
+            ),
+            child: Icon(card['type'] == 'Visa' ? Icons.credit_card : Icons.credit_card_outlined, color: theme.brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -201,12 +209,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     ],
                   ],
                 ),
-                Text('Expires ${card['expiry']}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                Text('Expires ${card['expiry']}', style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13)),
               ],
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Color(0xFFCBD5E1), size: 20),
+            icon: Icon(Icons.more_vert, color: theme.iconTheme.color?.withOpacity(0.5), size: 20),
             onSelected: (value) {
               if (value == 'default') _setDefaultCard(allCards, index);
               if (value == 'remove') _removeCard(allCards, index);
@@ -222,25 +230,28 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   }
 
   Widget _buildOtherMethod(IconData icon, String title) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.dividerColor)),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF64748B)),
+          Icon(icon, color: theme.iconTheme.color?.withOpacity(0.7)),
           const SizedBox(width: 16),
           Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
           const Spacer(),
-          const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+          Icon(Icons.chevron_right, color: theme.iconTheme.color?.withOpacity(0.5)),
         ],
       ),
     );
   }
 
   void _showAddCardBottomSheet(BuildContext context, List<Map<String, dynamic>> currentCards) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 24, left: 24, right: 24),
@@ -271,6 +282,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
                 ),
                 child: const Text('Add Card', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -288,10 +300,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       obscureText: obscure,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: prefix != null ? Icon(prefix, size: 20, color: const Color(0xFF64748B)) : null,
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        prefixIcon: prefix != null ? Icon(prefix, size: 20) : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );

@@ -6,6 +6,7 @@ import 'package:pawwalk/screens/walker/request_screen.dart';
 import 'package:pawwalk/screens/walker/schedule_screen.dart';
 import 'package:pawwalk/screens/walker/walker_home_screen.dart';
 import 'package:pawwalk/screens/walker/walker_profile_edit_screen.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../chat/chat_list_screen.dart';
 
 import '../auth/login_screen.dart';
@@ -17,6 +18,7 @@ class WalkerDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Drawer(
       child: Column(
         children: [
@@ -30,14 +32,14 @@ class WalkerDrawer extends StatelessWidget {
                   currentAccountPicture: Image.network('https://static.vecteezy.com/system/resources/thumbnails/035/857/779/small/people-face-avatar-icon-cartoon-character-png.png'),
                   decoration: const BoxDecoration(color: Color(0xFF1E3A5F)),
                 ),
-                _buildMenuItem(context, Icons.house, 'Dashboard', WalkerHomeScreen()),
-                _buildMenuItem(context, Icons.date_range, 'Booking Requests', RequestScreen()),
-                _buildMenuItem(context, Icons.contacts, 'My Schedule', ScheduleScreen()),
-                _buildMenuItem(context, Icons.attach_money, 'Earnings', EarningsScreen()),
-                _buildMenuItem(context, Icons.person, 'Edit Profile', ProfileEditScreen()),
-                _buildMenuItem(context, Icons.notifications_none, 'View Notifications', NotificationScreen()),
-                _buildMenuItem(context, Icons.chat_bubble_outline, 'View Chat', ChatListScreen()),
-                _buildMenuItem(context, Icons.settings, 'Settings', SettingsScreen()),
+                _buildMenuItem(context, Icons.house, l10n.dashboard, const WalkerHomeScreen()),
+                _buildMenuItem(context, Icons.date_range, l10n.bookingRequests, const RequestScreen()),
+                _buildMenuItem(context, Icons.contacts, l10n.mySchedule, const ScheduleScreen()),
+                _buildMenuItem(context, Icons.attach_money, l10n.earnings, const EarningsScreen()),
+                _buildMenuItem(context, Icons.person, l10n.editProfile, const ProfileEditScreen()),
+                _buildMenuItem(context, Icons.notifications_none, l10n.viewNotifications, const NotificationScreen()),
+                _buildMenuItem(context, Icons.chat_bubble_outline, l10n.viewChat, ChatListScreen()),
+                _buildMenuItem(context, Icons.settings, l10n.settings, const SettingsScreen(), replace: false),
               ],
             ),
           ),

@@ -14,7 +14,7 @@ import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../models/pet_model.dart';
 import '../widgets/owner_drawer.dart';
-import '../../l10n/generated/app_localizations.dart';
+import 'package:pawwalk/l10n/generated/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,10 +31,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const backgroundGray = Color(0xFFF8FAFC);
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
 
     final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -44,7 +43,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: backgroundGray,
       appBar: AppBar(
         backgroundColor: primaryBlue,
         elevation: 0,
@@ -63,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       drawer: const OwnerDrawer(currentPage: 'Profile'),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_currentUser.uid),
+        stream: _firestoreService.getUserStream(_currentUser!.uid),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -71,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           
           final user = userSnapshot.data;
           if (user == null) {
-            return const Center(child: Text("Error loading profile"));
+            return Center(child: Text(l10n.errorLoadingProfile));
           }
 
           return SingleChildScrollView(
@@ -83,11 +81,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.04),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -99,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           CircleAvatar(
                             radius: 50,
-                            backgroundColor: const Color(0xFFF1F5F9),
+                            backgroundColor: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
                             backgroundImage: (user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty)
                               ? NetworkImage(user.profileImageUrl!) 
                               : null,
@@ -143,14 +141,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: textDark,
                         ),
                       ),
                       Text(
                         user.email,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: textLight,
+                          color: theme.textTheme.bodySmall?.color,
                         ),
                       ),
                       if (user.address != null && user.address!.isNotEmpty)
@@ -164,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Flexible(
                                 child: Text(
                                   user.address!,
-                                  style: const TextStyle(fontSize: 13, color: textLight),
+                                  style: TextStyle(fontSize: 13, color: theme.textTheme.bodySmall?.color),
                                   textAlign: TextAlign.center,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -188,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          side: BorderSide(color: theme.dividerColor),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -196,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: Text(
                           l10n.editProfile,
-                          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -255,11 +252,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Settings List
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.04),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -277,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      const Divider(height: 1, indent: 56),
+                      Divider(height: 1, indent: 56, color: theme.dividerColor),
                       _buildSettingItem(
                         Icons.notifications_none,
                         l10n.notifications,
@@ -288,9 +285,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      const Divider(height: 1, indent: 56),
+                      Divider(height: 1, indent: 56, color: theme.dividerColor),
                       _buildSettingItem(Icons.security, l10n.privacySecurity),
-                      const Divider(height: 1, indent: 56),
+                      Divider(height: 1, indent: 56, color: theme.dividerColor),
                       _buildSettingItem(Icons.support_agent, l10n.contactSupport),
                     ],
                   ),
@@ -344,13 +341,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: 4, // Profile tab active
+          currentIndex: 4, 
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white54,
-          backgroundColor: const Color(0xFF2563EB),
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
+          backgroundColor: primaryBlue,
           onTap: (index) {
             if (index == 0) {
               Navigator.pushReplacement(
@@ -387,17 +382,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatCard(String value, String label, Color blue, {VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -416,9 +413,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 4),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF64748B),
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
             ],
@@ -429,24 +426,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSettingItem(IconData icon, String title, {String? subtitle, VoidCallback? onTap}) {
+    final theme = Theme.of(context);
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: theme.brightness == Brightness.dark ? Colors.white10 : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: const Color(0xFF64748B), size: 20),
+        child: Icon(icon, color: theme.brightness == Brightness.dark ? Colors.white70 : const Color(0xFF64748B), size: 20),
       ),
       title: Text(
         title,
         style: const TextStyle(
           fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
         ),
       ),
       subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
-      trailing: const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+      trailing: Icon(Icons.chevron_right, color: theme.hintColor),
       onTap: onTap,
     );
   }

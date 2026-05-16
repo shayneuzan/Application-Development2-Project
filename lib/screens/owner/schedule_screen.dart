@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
-import 'owner_home_screen.dart';
 import '../../models/user_model.dart';
+import 'owner_home_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final String walkerId;
@@ -64,10 +65,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _confirmBooking() async {
+    final loc = AppLocalizations.of(context)!;
     if (_selectedDay == null || _selectedTimeSlot == null) return;
     if (_userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to book a walk')),
+        SnackBar(content: Text(loc.pleaseLoginToBookWalk)),
       );
       return;
     }
@@ -77,18 +79,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     try {
       final double totalPrice = (widget.hourlyRate / 60) * widget.selectedDuration;
       
-      // bookingData aligned with WalkerHomeScreen requirements
       final bookingData = {
         'ownerId': _userId,
         'ownerName': _ownerName ?? "Unknown Owner",
-        'petOwner': _ownerName ?? "Unknown Owner", // Used in Walker dashboard cards
-        'walkerID': widget.walkerId, // Walker dashboard uses uppercase 'ID'
+        'petOwner': _ownerName ?? "Unknown Owner",
+        'walkerID': widget.walkerId,
         'walkerName': widget.walkerName,
         'petName': widget.selectedPet,
         'duration': widget.selectedDuration,
         'date': DateFormat('yyyy-MM-dd').format(_selectedDay!),
         'time': _selectedTimeSlot,
-        'payment': totalPrice, // Matches 'payment' field in Walker UI
+        'payment': totalPrice,
         'totalPrice': totalPrice,
         'status': 'pending',
       };
@@ -101,7 +102,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating booking: $e')),
+          SnackBar(content: Text(loc.errorCreatingBooking(e.toString()))),
         );
       }
     } finally {
@@ -111,22 +112,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Select Date & Time',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.selectDateAndTime,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: _isLoading 
@@ -135,16 +136,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Calendar Section
                 Container(
                   margin: const EdgeInsets.all(20),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.03),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -161,38 +161,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         _focusedDay = focusedDay;
                       });
                     },
-                    calendarStyle: const CalendarStyle(
-                      selectedDecoration: BoxDecoration(
-                        color: primaryBlue,
-                        shape: BoxShape.circle,
-                      ),
-                      todayDecoration: BoxDecoration(
-                        color: Color(0xFFEFF6FF),
-                        shape: BoxShape.circle,
-                      ),
-                      todayTextStyle: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                    calendarStyle: CalendarStyle(
+                      selectedDecoration: const BoxDecoration(color: primaryBlue, shape: BoxShape.circle),
+                      todayDecoration: BoxDecoration(color: primaryBlue.withOpacity(0.1), shape: BoxShape.circle),
+                      todayTextStyle: const TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                      defaultTextStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                      weekendTextStyle: TextStyle(color: theme.textTheme.bodyLarge?.color),
                     ),
-                    headerStyle: const HeaderStyle(
+                    headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.textTheme.titleLarge?.color),
+                      leftChevronIcon: Icon(Icons.chevron_left, color: theme.iconTheme.color),
+                      rightChevronIcon: Icon(Icons.chevron_right, color: theme.iconTheme.color),
                     ),
                   ),
                 ),
 
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Text(
-                    'Available Time Slots',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
-                    ),
+                    loc.availableTimeSlots,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
 
-                // Time Slots Grid
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: GridView.builder(
@@ -212,11 +205,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         onTap: () => setState(() => _selectedTimeSlot = slot),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isSelected ? primaryBlue : Colors.white,
+                            color: isSelected ? primaryBlue : theme.cardColor,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
-                            ),
+                            border: Border.all(color: isSelected ? primaryBlue : theme.dividerColor),
                           ),
                           child: Center(
                             child: Text(
@@ -224,7 +215,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : textDark,
+                                color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
                               ),
                             ),
                           ),
@@ -236,25 +227,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
                 const SizedBox(height: 32),
 
-                // Booking Details Summary
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: isDarkMode ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        _buildSummaryItem(Icons.pets, 'Pet', widget.selectedPet),
+                        _buildSummaryItem(Icons.pets, loc.pet, widget.selectedPet),
                         const SizedBox(height: 8),
-                        _buildSummaryItem(Icons.timer, 'Duration', '${widget.selectedDuration} minutes'),
+                        _buildSummaryItem(Icons.timer, loc.duration, loc.durationMinutes(widget.selectedDuration)),
                         const SizedBox(height: 8),
                         _buildSummaryItem(
                           Icons.calendar_today, 
-                          'Date', 
-                          _selectedDay != null ? DateFormat('MMM dd, yyyy').format(_selectedDay!) : 'Not selected'
+                          loc.date, 
+                          _selectedDay != null ? DateFormat('MMM dd, yyyy').format(_selectedDay!) : loc.noRecentActivity
                         ),
                       ],
                     ),
@@ -268,34 +258,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
           ],
         ),
         child: SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_selectedDay == null || _selectedTimeSlot == null)
-                ? null
-                : _confirmBooking,
+            onPressed: (_selectedDay == null || _selectedTimeSlot == null) ? null : _confirmBooking,
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryBlue,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFE2E8F0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              disabledBackgroundColor: theme.disabledColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
-            child: const Text(
-              'Confirm Booking',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Text(
+              loc.confirmBooking,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -304,57 +286,55 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildSummaryItem(IconData icon, String label, String value) {
+    final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF64748B)),
+        Icon(icon, size: 18, color: theme.hintColor),
         const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(color: Color(0xFF64748B))),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text('$label: ', style: TextStyle(color: theme.hintColor)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
   }
 
   void _showSuccessDialog(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle, color: Colors.green, size: 80),
             const SizedBox(height: 20),
-            const Text(
-              'Booking Successful!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
+            Text(loc.bookingSuccessful, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
             Text(
-              'Your walk with ${widget.walkerName} has been requested.',
+              loc.walkRequested(widget.walkerName),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF64748B)),
+              style: TextStyle(color: theme.textTheme.bodySmall?.color),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Go back to Home
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const OwnerHomeScreen(),
-                    ),
-                        (route) => false,
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
+                    (route) => false,
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Back to Home'),
+                child: Text(loc.backToHome, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],

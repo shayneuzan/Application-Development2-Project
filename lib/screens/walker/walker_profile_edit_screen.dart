@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../auth/login_screen.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
@@ -22,7 +23,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final TextEditingController _hourlyRateController = TextEditingController();
   final TextEditingController _experienceController = TextEditingController();
 
-  // Implement dispose() to clean up memory
   @override
   void dispose() {
     _nameController.dispose();
@@ -34,6 +34,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
@@ -51,7 +55,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             hourlyRate = (data['hourlyRate'] ?? 0.0).toDouble();
             experience = (data['experienceYears'] ?? 0).toInt();
 
-            // Set initial text only if the user hasn't started typing yet
             if (_nameController.text.isEmpty) _nameController.text = name;
             if (_bioController.text.isEmpty) _bioController.text = bio;
             if (_hourlyRateController.text.isEmpty) _hourlyRateController.text = hourlyRate.toDouble().toStringAsFixed(2);
@@ -60,12 +63,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
+              title: Text(l10n.editProfile, style: const TextStyle(color: Colors.white)),
               backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
-              actions: [
+              actions: const [
                 WalkerNotificationIcon(),
-                const SizedBox(width: 8,),
+                SizedBox(width: 8,),
               ],
             ),
             drawer: WalkerDrawer(name: name),
@@ -77,7 +80,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      color: Colors.white,
                       child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -89,9 +91,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 child: Icon(Icons.person, size: 50, color: Colors.white,),
                               ),
                               const SizedBox(height: 15),
-                              Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),),
+                              Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),),
                               const SizedBox(height: 5),
-                              Text(email, style: TextStyle(fontSize: 16, color: Colors.grey.shade600),),
+                              Text(email, style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),),
                             ],
                           )
                       ),
@@ -103,20 +105,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      color: Colors.white,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Full Name:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
+                              Text(l10n.nameCardLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
                               const SizedBox(height: 12),
                               TextField(
                                 controller: _nameController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Enter your name',
-                                  prefixIcon: Icon(Icons.edit, size: 20),
-                                  border: OutlineInputBorder(),
+                                decoration: InputDecoration(
+                                  hintText: l10n.nameCardHint,
+                                  prefixIcon: const Icon(Icons.edit, size: 20),
+                                  border: const OutlineInputBorder(),
                                 ),
                               ),
                             ]
@@ -130,20 +131,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Card(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      color: Colors.white,
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Full Bio:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
+                            Text(l10n.bioCardLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
                             const SizedBox(height: 8),
                             TextField(
                               controller: _bioController,
                               maxLines: 4,
-                              decoration: const InputDecoration(
-                                hintText: 'Tell us about yourself',
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                hintText: l10n.bioCardHint,
+                                border: const OutlineInputBorder(),
                               ),
                             ),
                           ],
@@ -151,19 +151,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 12,),
+                  const SizedBox(height: 12,),
                   // Hourly Rate Card
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
-                      color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Hourly Rate:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
+                            Text(l10n.hourlyRateCardLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
                             const SizedBox(height: 12),
                             TextField(
                               controller: _hourlyRateController,
@@ -175,11 +174,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   RegExp(r'^\d*\.?\d{0,2}'),
                                 ),
                               ],
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.monetization_on_outlined),
+                              decoration: InputDecoration(
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.monetization_on_outlined),
                                 prefixText: "\$ ",
-                                suffixText: "/hour",
+                                suffixText: l10n.hourlyRateCardSuffix,
                                 hintText: "25.00",
                               ),
                             ),
@@ -188,19 +187,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 12,),
+                  const SizedBox(height: 12,),
                   // Experience Card
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Card(
-                      color: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('# of Years of Experience:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),),
+                            Text(l10n.yearsCardLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),),
                             const SizedBox(height: 12),
                             TextField(
                               controller: _experienceController,
@@ -208,10 +206,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.history),
-                                hintText: "Years of experience",
+                              decoration: InputDecoration(
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.history),
+                                hintText: l10n.yearsCardHint,
                               ),
                             ),
                           ]
@@ -228,11 +226,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_nameController.text.isEmpty || _bioController.text.isEmpty || _hourlyRateController.text.isEmpty || _experienceController.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all fields.")),);
-                            throw 'ERROR: One or more fields is empty. Fill them up!';
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.fillAllFields)),);
+                            return;
                           } else if (_hourlyRateController.text == '0') {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Hourly Rate must be greater than \$0.")),);
-                            throw 'ERROR: One or more fields is empty. Fill them up!';
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.hourlyRateZero)),);
+                            return;
                           }
                           String name = _nameController.text;
                           String bio = _bioController.text;
@@ -247,7 +245,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           });
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Profile Updated!")),
+                            SnackBar(content: Text(l10n.changesSaved)),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -256,7 +254,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text("SAVE CHANGES", style: TextStyle(fontWeight: FontWeight.bold),),
+                        child: Text(l10n.saveChanges, style: const TextStyle(fontWeight: FontWeight.bold),),
                       ),
                     ),
                   ),
@@ -287,15 +285,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         child: Row (
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.logout_outlined),
-                            SizedBox(width: 8),
-                            Text("LOG OUT", style: TextStyle(fontWeight: FontWeight.bold),),
+                            const Icon(Icons.logout_outlined),
+                            const SizedBox(width: 8),
+                            Text(l10n.logOut, style: const TextStyle(fontWeight: FontWeight.bold),),
                           ],
                         )
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30), // Extra space at bottom for scrolling
+                  const SizedBox(height: 30),
                 ],
               ),
             ),

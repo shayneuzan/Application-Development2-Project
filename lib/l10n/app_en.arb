@@ -223,5 +223,567 @@
   "system": "System",
   "maintenanceMode": "Maintenance Mode",
   "contactEmail": "Contact Email",
-  "saveEmail": "Save Email"
+  "saveEmail": "Save Email",
+  "walker": "Walker",
+  "owner": "Owner",
+  "earnings": "Earnings",
+  "today": "Today",
+  "thisWeek": "This Week",
+  "thisMonth": "This Month",
+  "weeklyOverview": "Weekly Overview",
+  "recentWalks": "Recent Completed Walks",
+  "bookingRequests": "Booking Requests",
+  "decline": "Decline",
+  "accept": "Accept",
+  "requestDeclined": "Request Declined",
+  "requestDeclinedMessage": "{walkerName} declined your walk request for {petName}.",
+  "@requestDeclinedMessage": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      },
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "requestDeclinedWalkerMessage": "You have declined the walk request for {petName} from {ownerName}.",
+  "@requestDeclinedWalkerMessage": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "ownerName": {
+        "type": "String"
+      }
+    }
+  },
+  "requestDeclinedSnackBar": "Request Declined! Pet: {petName}\nOwner: {ownerName}",
+  "@requestDeclinedSnackBar": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "ownerName": {
+        "type": "String"
+      }
+    }
+  },
+  "walkRequestAccepted": "Walk Request Accepted!",
+  "walkRequestAcceptedMessage": "{walkerName} is ready to walk {petName}! Go to \"Messages\" in your drawer to coordinate details.",
+  "@walkRequestAcceptedMessage": {
+    "placeholders": {
+      "walkerName": {
+        "type": "String"
+      },
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "walkRequestAcceptedWalkerMessage": "You have accepted the walk request for {petName}. Open \"View Chat\" to discuss location with {ownerName}.",
+  "@walkRequestAcceptedWalkerMessage": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "ownerName": {
+        "type": "String"
+      }
+    }
+  },
+  "requestAcceptedSnackBar": "Request Accepted! Pet: {petName}\nOwner: {ownerName}",
+  "@requestAcceptedSnackBar": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "ownerName": {
+        "type": "String"
+      }
+    }
+  },
+  "accountPendingApproval": "Your account is pending admin approval. You cannot accept bookings yet.",
+  "helloUser": "Hello, {userName}!",
+  "@helloUser": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
+  "activityOverview": "Here's your activity overview",
+  "todaysEarnings": "Today's Earnings",
+  "viewAllEarnings": "View All Earnings",
+  "upcomingWalks": "Upcoming Walks",
+  "ownerWithName": "Owner: {ownerName}",
+  "@ownerWithName": {
+    "placeholders": {
+      "ownerName": {
+        "type": "String"
+      }
+    }
+  },
+  "newRequests": "New Requests",
+  "noUpcomingRequests": "No Upcoming Requests",
+  "petDurationWalk": "{petName} - {duration} min walk",
+  "@petDurationWalk": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "int"
+      }
+    }
+  },
+  "yourSchedule": "Your Schedule",
+  "selectDateToSeeWalks": "Select a date to see walks",
+  "upcomingWalksForDate": "Your Upcoming Walks for {date}",
+  "@upcomingWalksForDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noWalksScheduledDay": "No walks scheduled for this day",
+  "noWalksScheduledDate": "No walks scheduled on {date}",
+  "@noWalksScheduledDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "fullName": "Full Name",
+  "enterNameHint": "Enter your name",
+  "fullBio": "Full Bio",
+  "bioHint": "Tell us about you",
+  "hourlyRate": "Hourly Rate",
+  "yearsExperience": "Years of Experience",
+  "yearsExperienceHint": "Years of Experience",
+  "saveChanges": "SAVE CHANGES",
+  "pleaseFillAllFields": "Please fill all fields.",
+  "hourlyRateError": "Hourly rate must be greater than 0 $.",
+  "profileUpdated": "Profile updated!",
+
+  "pleaseLogInToAddPet": "Please log in to add a pet",
+  "petAddedSuccessfully": "Pet added successfully!",
+  "errorAddingPet": "Error adding pet: {error}",
+  "@errorAddingPet": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "petName": "Pet Name",
+  "nameHint": "e.g. Max",
+  "enterPetName": "Please enter pet name",
+  "breed": "Breed",
+  "breedHint": "e.g. Golden Retriever",
+  "enterBreed": "Please enter breed",
+  "petAge": "Pet Age",
+  "ageHint": "e.g. 3",
+  "enterAge": "Please enter pet age",
+  "petSize": "Pet Size",
+  "small": "Small",
+  "medium": "Medium",
+  "large": "Large",
+  "enterSpecialInstructions": "e.g. Friendly with other dogs",
+  "savePet": "SAVE PET",
+
+  "noAddressesFound": "No addresses found",
+  "setAsDefaultSuccess": "{label} set as default address",
+  "@setAsDefaultSuccess": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyAddressError": "Could not verify address. Please check your entry.",
+  "defaultTag": "DEFAULT",
+  "addressFallback": "Address",
+  "setAsDefault": "Set as default",
+  "editAddress": "Edit address",
+  "remove": "Remove",
+  "yourLocation": "Your Location",
+  "noSavedAddresses": "No saved addresses",
+  "addNewAddress": "Add New Address",
+  "errorLoadingData": "Error loading data",
+  "searchAddressHint": "Search for an address...",
+  "addressLabel": "Address Label",
+  "addressExample": "e.g. Home, Work",
+  "manualEntryDetails": "Manual Entry Details",
+  "streetAddress": "Street Address",
+  "city": "City",
+  "postalCode": "Postal Code",
+  "verifyAndSaveAddress": "VERIFY AND SAVE ADDRESS",
+
+  "reviewsFor": "Reviews for {name}",
+  "@reviewsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "error": "Error",
+  "recent": "Recent",
+  "user": "User",
+
+  "nameCardLabel": "Full Name",
+  "nameCardHint": "Enter your name",
+  "bioCardLabel": "Full Bio",
+  "bioCardHint": "Tell us about you",
+  "hourlyRateCardLabel": "Hourly Rate",
+  "hourlyRateCardSuffix": "/ hr",
+  "yearsCardLabel": "Years of Experience",
+  "yearsCardHint": "e.g. 5",
+  "fillAllFields": "Please fill all fields.",
+  "hourlyRateZero": "Hourly rate must be greater than 0.",
+
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "noCards": "No cards saved",
+  "enterAddress": "Enter address",
+
+  "rescheduleBooking": "Reschedule Booking",
+
+  "pleaseEnterAllFields": "Please enter all fields",
+  "addressUpdatedSuccessfully": "Address updated successfully!",
+
+  "petUpdatedSuccessfully": "Pet updated successfully!",
+  "editPet": "Edit Pet",
+  "changePhoto": "Change Photo",
+  "ageYears": "Age (Years)",
+
+  "profileUpdatedSuccessfully": "Profile updated successfully!",
+  "enterFullName": "Enter your full name",
+  "emailAddress": "Email Address",
+  "enterEmail": "Enter your email",
+  "phoneNumber": "Phone Number",
+  "enterPhoneNumber": "Enter your phone number",
+  "address": "Address",
+
+  "appName": "PawWalk",
+
+  "enterValidCardDetails": "Please enter valid card details",
+  "otherMethods": "Other Methods",
+
+  "thankYouForReview": "Thank you for your review!",
+  "writeReview": "Write a Review",
+  "howWasWalk": "How was the walk with {walkerName}?",
+  "@howWasWalk": {
+    "placeholders": {
+      "walkerName": { "type": "String" }
+    }
+  },
+  "forYourDog": "for your dog, {dogName}",
+  "@forYourDog": {
+    "placeholders": {
+      "dogName": { "type": "String" }
+    }
+  },
+  "tellUsMoreAbout": "Tell us more about the walk",
+  "describeWalk": "Describe your experience (optional)",
+  "submitReview": "Submit Review",
+
+  "selectDateAndTime": "Select Date & Time",
+  "pleaseLoginToBookWalk": "Please log in to book a walk",
+  "years": "years",
+  "changesSaved": "Changes saved!",
+
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+
+  "markAllAsRead": "Mark all as read",
+  "clearAll": "Clear all",
+  "errorLoadingNotifications": "Error loading notifications.",
+  "noNotificationsAvailable": "No notifications available at this time.",
+  "newNotifications": "New",
+  "earlierNotifications": "Earlier",
+  "notificationDeleted": "Notification dismissed",
+  "justNow": "Just now",
+  "minsAgo": "{count} mins ago",
+  "@minsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count} hours ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yesterday": "Yesterday",
+  "daysAgo": "{count} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "errorLoadingProfile": "Error loading profile",
+
+  "petDeletedSuccessfully": "{name} deleted successfully",
+  "@petDeletedSuccessfully": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorDeletingPet": "Error deleting pet: {error}",
+  "@errorDeletingPet": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorWithValue": "Error: {error}",
+  "@errorWithValue": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "myChats": "My Chats",
+  "active": "Active","past": "Past",
+  "errorLoadingChats": "Error loading chats",
+  "noActiveChats": "No active chats yet.",
+  "noPastChats": "No past chats yet.",
+  "unknownUser": "Unknown User",
+  "petLabel": "Pet: {petName}",
+  "@petLabel": {
+    "placeholders": {
+      "petName": {
+        "type": "String"
+      }
+    }
+  },
+  "completeWalkSessionTitle": "Complete Walk Session?",
+  "emergencyCancelWalkTitle": "Emergency / Cancel Walk?",
+  "completeWalkSessionMessage": "Are you sure you want to finish this session? This will finalize the walk and close the chat room.",
+  "emergencyCancelWalkMessage": "Are you reporting an emergency or cancelling the walk? This will end coordination immediately and close the chat.",
+  "goBack": "Go Back",
+  "confirmAndEnd": "Confirm & End",
+  "sessionCompleted": "Session Completed",
+  "sessionEndedRefunded": "Session Ended & Refunded",
+  "sessionCancelled": "Session Cancelled",
+  "sessionClosed": "Session Closed",
+  "activeCoordination": "Active Coordination",
+  "errorLoadingMessages": "Error loading messages",
+
+  "chatEnded": "This chat has ended. You can no longer send messages.",
+  "completeWalk": "Complete Walk",
+  "endEarly": "End Early",
+  "cancelWalk": "Cancel Walk",
+  "typeAMessage": "Type a message...",
+
+  "refundProcessed": "Refund Processed",
+  "refundNotification": "The walker ended the session unexpectedly. Your payment of {amount} has been refunded.",
+  "@refundNotification": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+
+  "walkCompletedSuccessfully": "Walk completed successfully.",
+  "walkEndedEarly": "Walk ended early.",
+  "walkCompletedTitle": "Walk Completed!",
+  "walkEndedEarlyTitle": "Walk Ended Early",
+  "closingReasonComplete": "Finished: Walk marked complete by {role} ({name})",
+  "@closingReasonComplete": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "closingReasonCancelled": "Ended: {role} ({name}) requested to cancel/stop coordination",
+  "@closingReasonCancelled": {
+    "placeholders": {
+      "role": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+
+  "priceAmount": "${amount}",
+  "@priceAmount": {
+    "placeholders": {      "amount": {
+      "type": "String"
+    }
+    }
+  },
+
+  "chatStartedFor": "Chat started for {petName}",
+  "@chatStartedFor": {
+    "placeholders": {
+      "petName": { "type": "String" }
+    }
+  },
+  "walkerWelcomeMessage": "👋 {userName} has accepted the walk request for {petName}. You can now coordinate details here!",
+  "@walkerWelcomeMessage": {
+    "placeholders": {
+      "userName": { "type": "String" },
+      "petName": { "type": "String" }
+    }
+  },
+  "ownerWelcomeMessage": "👋 {userName} has started a chat regarding {petName}'s walk.",
+  "@ownerWelcomeMessage": {
+    "placeholders": {
+      "userName": { "type": "String" },
+      "petName": { "type": "String" }
+    }
+  },
+
+  "bookingManagement": "Booking Management",
+  "errorLoadingBookings": "Error loading bookings: {error}",
+  "@errorLoadingBookings": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "total": "Total",
+  "pending": "Pending",
+  "confirmed": "Confirmed",
+  "completed": "Completed",
+  "noBookingsYet": "No bookings yet.",
+  "viewDetails": "View Details",
+  "bookingDetails": "Booking Details",
+  "walkerWithName": "Walker: {walkerName}",
+  "@walkerWithName": {
+    "placeholders": {
+      "walkerName": { "type": "String" }
+    }
+  },
+  "time": "Time",
+  "disputeResolution": "Dispute Resolution",
+  "openDisputesCount": "{count} open disputes",
+  "@openDisputesCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "open": "Open",
+  "resolved": "Resolved",
+  "reportedAgainst": "{reportedBy} reported {against}",
+  "@reportedAgainst": {
+    "placeholders": {
+      "reportedBy": { "type": "String" },
+      "against": { "type": "String" }
+    }
+  },
+  "resolve": "Resolve",
+  "dismiss": "Dismiss",
+  "disputeResolved": "Dispute resolved.",
+  "disputeDismissed": "Dispute dismissed.",
+  "platformOverview": "Platform overview",
+  "platformStats": "Platform Stats",
+  "totalUsers": "Total Users",
+  "activeWalks": "Active Walks",
+  "totalBookings": "Total Bookings",
+  "pendingApprovals": "Pending Approvals",
+  "sendAnnouncementTitle": "Send Announcement",
+  "title": "Title",
+  "message": "Message",
+  "fillTitleAndMessage": "Please fill in both title and message.",
+  "currentBuild": "Current build",
+  "appLockedDescription": "App is currently locked for users",
+  "appLiveDescription": "App is live and accessible",
+  "supportEmailDescription": "Support address shown to users",
+  "totalUsersCount": "{count} total users",
+  "@totalUsersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchUsersHint": "Search by name or email...",
+  "userApproved": "{name} approved!",
+  "@userApproved": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "userSuspended": "{name} suspended.",
+  "@userSuspended": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "userRestored": "{name} restored.",
+  "@userRestored": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "errorLoadingUsers": "Error loading users: {error}",
+  "@errorLoadingUsers": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "errorLoadingReviews": "Error loading reviews: {error}",
+  "@errorLoadingReviews": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "errorLoadingPets": "Error loading pets: {error}",
+  "@errorLoadingPets": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingAddresses": "Error loading addresses: {error}",
+  "@errorLoadingAddresses": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "mySchedule": "My Schedule",
+  "viewNotifications": "View Notifications",
+  "viewChat": "View Chat",
+
+  "requests": "Requests",
+  "schedule": "Schedule",
+
+  "hourlyRateValue": "${rate}/hr",
+  "@hourlyRateValue": {
+    "placeholders": {
+      "rate": { "type": "String" }
+    }
+  },
+
+  "errorCreatingBooking": "Error creating booking: {error}",  "@errorCreatingBooking": {
+  "description": "Error message shown when a booking fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
+

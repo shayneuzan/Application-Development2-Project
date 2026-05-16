@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 
 class EditPetScreen extends StatefulWidget {
@@ -28,7 +29,6 @@ class _EditPetScreenState extends State<EditPetScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.pet['name']);
     _breedController = TextEditingController(text: widget.pet['breed']);
-    // Extract number from "3 years old" or similar
     String ageText = widget.pet['age']?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0';
     _ageController = TextEditingController(text: ageText);
     _instructionsController = TextEditingController(text: widget.pet['instructions']);
@@ -56,13 +56,13 @@ class _EditPetScreenState extends State<EditPetScreen> {
           'breed': _breedController.text.trim(),
           'age': int.parse(_ageController.text.trim()),
           'description': _instructionsController.text.trim(),
-          // 'size': _selectedSize, // Optional: add size to PetModel if needed
         });
 
         if (mounted) {
+          final loc = AppLocalizations.of(context)!;
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pet updated successfully!')),
+            SnackBar(content: Text(loc.petUpdatedSuccessfully)),
           );
         }
       } catch (e) {
@@ -79,22 +79,21 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     const primaryBlue = Color(0xFF2563EB);
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
 
     return Scaffold(
-      backgroundColor: backgroundGray,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Edit Pet',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          loc.editPet,
+          style: TextStyle(color: theme.textTheme.titleLarge?.color, fontWeight: FontWeight.bold),
         ),
       ),
       body: _isLoading 
@@ -106,28 +105,25 @@ class _EditPetScreenState extends State<EditPetScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image Picker Placeholder
                   Center(
                     child: GestureDetector(
-                      onTap: () {
-                        // Placeholder for image picker
-                      },
+                      onTap: () {},
                       child: Container(
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                          border: Border.all(color: theme.dividerColor, width: 2),
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt_outlined, color: primaryBlue, size: 32),
-                            SizedBox(height: 4),
+                            const Icon(Icons.camera_alt_outlined, color: primaryBlue, size: 32),
+                            const SizedBox(height: 4),
                             Text(
-                              'Change Photo',
-                              style: TextStyle(fontSize: 12, color: primaryBlue, fontWeight: FontWeight.bold),
+                              loc.changePhoto,
+                              style: const TextStyle(fontSize: 12, color: primaryBlue, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -137,53 +133,49 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Pet Name
-                  const Text(
-                    'Pet Name',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.petName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _nameController,
                     decoration: _inputStyle('e.g. Max'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter a name' : null,
+                    validator: (value) => value == null || value.isEmpty ? loc.enterPetName : null,
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Breed
-                  const Text(
-                    'Breed',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.breed,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _breedController,
                     decoration: _inputStyle('e.g. Golden Retriever'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter a breed' : null,
+                    validator: (value) => value == null || value.isEmpty ? loc.enterBreed : null,
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Age
-                  const Text(
-                    'Age (Years)',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.ageYears,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _ageController,
                     keyboardType: TextInputType.number,
                     decoration: _inputStyle('e.g. 3'),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter age' : null,
+                    validator: (value) => value == null || value.isEmpty ? loc.enterAge : null,
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Size Selector
-                  const Text(
-                    'Pet Size',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.petSize,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -193,10 +185,9 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Special Instructions
-                  const Text(
-                    'Special Instructions',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                  Text(
+                    loc.specialInstructions,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -207,7 +198,6 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
                   const SizedBox(height: 40),
 
-                  // Save Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -221,9 +211,9 @@ class _EditPetScreenState extends State<EditPetScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Save Changes',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      child: Text(
+                        loc.saveChanges,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -237,25 +227,12 @@ class _EditPetScreenState extends State<EditPetScreen> {
   InputDecoration _inputStyle(String hint) {
     return InputDecoration(
       hintText: hint,
-      filled: true,
-      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
-      ),
     );
   }
 
   Widget _buildSizeOption(String size) {
+    final theme = Theme.of(context);
     bool isSelected = _selectedSize == size;
     const primaryBlue = Color(0xFF2563EB);
 
@@ -265,10 +242,10 @@ class _EditPetScreenState extends State<EditPetScreen> {
         width: MediaQuery.of(context).size.width * 0.25,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? primaryBlue : Colors.white,
+          color: isSelected ? primaryBlue : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+            color: isSelected ? primaryBlue : theme.dividerColor,
           ),
         ),
         child: Center(
@@ -276,7 +253,7 @@ class _EditPetScreenState extends State<EditPetScreen> {
             size,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : const Color(0xFF1E293B),
+              color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
             ),
           ),
         ),

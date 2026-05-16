@@ -21,17 +21,20 @@ class OwnerDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final FirestoreService firestoreService = FirestoreService();
     final User? currentUser = FirebaseAuth.instance.currentUser;
 
     return Drawer(
+      backgroundColor: theme.scaffoldBackgroundColor,
       child: Column(
         children: [
           // Header
           currentUser == null
               ? Container(
                   padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-                  color: const Color(0xFF1E3A5F),
+                  color: isDarkMode ? theme.cardColor : const Color(0xFF1E3A5F),
                   child: Center(child: Text(l10n.notLoggedIn, style: const TextStyle(color: Colors.white))),
                 )
               : StreamBuilder<UserModel>(
@@ -44,7 +47,7 @@ class OwnerDrawer extends StatelessWidget {
 
                     return Container(
                       padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-                      color: const Color(0xFF1E3A5F),
+                      color: isDarkMode ? theme.cardColor : const Color(0xFF1E3A5F),
                       child: Row(
                         children: [
                           CircleAvatar(
@@ -119,13 +122,6 @@ class OwnerDrawer extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.location_on_outlined,
-                  title: l10n.trackWalk,
-                  isSelected: currentPage == 'Track',
-                  onTap: () {}, // TODO: Map screen
-                ),
-                _buildDrawerItem(
-                  context,
                   icon: Icons.pets_outlined,
                   title: l10n.myPets,
                   isSelected: currentPage == 'Pets',
@@ -136,13 +132,12 @@ class OwnerDrawer extends StatelessWidget {
                   icon: Icons.notifications_none,
                   title: l10n.notifications,
                   isSelected: currentPage == 'Notifications',
-                  onTap: () => _navigateTo(context, NotificationScreen()),
+                  onTap: () => _navigateTo(context, const NotificationScreen()),
                 ),
-                // This is for the Chat Group List
                 _buildDrawerItem(
                   context,
                   icon: Icons.chat_bubble_outline,
-                  title: 'Messages',
+                  title: l10n.message,
                   isSelected: currentPage == 'Messages',
                   onTap: () => _navigateTo(context, ChatListScreen()),
                 ),
@@ -201,23 +196,27 @@ class OwnerDrawer extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     const primaryBlue = Color(0xFF2563EB);
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
+        color: isSelected 
+            ? (isDarkMode ? primaryBlue.withOpacity(0.2) : const Color(0xFFEFF6FF))
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
         leading: Icon(
           icon,
-          color: isSelected ? primaryBlue : const Color(0xFF64748B),
+          color: isSelected ? primaryBlue : theme.iconTheme.color?.withOpacity(0.7),
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: isSelected ? primaryBlue : const Color(0xFF1E293B),
+            color: isSelected ? primaryBlue : theme.textTheme.bodyLarge?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pawwalk/screens/walker/earnings_screen.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/booking_model.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
@@ -188,6 +189,10 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
         builder: (context, snapshot) {
@@ -208,12 +213,12 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
           }
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Dashboard', style: TextStyle(color: Colors.white)),
+              title: Text(l10n.dashboard, style: const TextStyle(color: Colors.white)),
               backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
-              actions: [
-                const WalkerNotificationIcon(),
-                const SizedBox(width: 8,)
+              actions: const [
+                WalkerNotificationIcon(),
+                SizedBox(width: 8,)
               ],
             ),
             drawer: WalkerDrawer(name: name!),
@@ -235,23 +240,23 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.access_time, color: Color(0xFFD97706), size: 18),
-                              SizedBox(width: 8),
+                              const Icon(Icons.access_time, color: Color(0xFFD97706), size: 18),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Your account is pending admin approval. You cannot accept bookings yet.',
-                                  style: TextStyle(color: Color(0xFF92400E), fontSize: 13),
+                                  l10n.accountPendingApproval,
+                                  style: const TextStyle(color: Color(0xFF92400E), fontSize: 13),
                                 ),
                               ),
                             ],
                           ),
                         ),
 
-                      Text('Hello, $name!', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
+                      Text(l10n.helloUser(name), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),),
                       const SizedBox(height: 10,),
-                      const Text('Here\'s your activity overview'),
+                      Text(l10n.activityOverview),
                       const SizedBox(height: 10,),
                       // Earnings Card
                       Container(
@@ -272,7 +277,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Today\'s Earnings', style: TextStyle(color: Colors.white),),
+                                        Text(l10n.todaysEarnings, style: const TextStyle(color: Colors.white),),
                                         const SizedBox(height: 4,),
                                         Text('\$${todayEarnings.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
                                       ],
@@ -280,7 +285,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        const Text('This Week', style: TextStyle(color: Colors.white),),
+                                        Text(l10n.thisWeek, style: const TextStyle(color: Colors.white),),
                                         const SizedBox(height: 4,),
                                         Text('\$${weeklyEarnings.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),)
                                       ],
@@ -298,10 +303,10 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                       MaterialPageRoute(builder: (context) => const EarningsScreen()),
                                     );
                                   },
-                                  icon: const Icon(Icons.attach_money, color: Color(0xFF2563EB), size: 18),
-                                  label: const Text("View All Earnings", style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold),),
+                                  icon: Icon(Icons.attach_money, color: isDarkMode ? Colors.white : const Color(0xFF2563EB), size: 18),
+                                  label: Text(l10n.viewAllEarnings, style: TextStyle(color: isDarkMode ? Colors.white : const Color(0xFF2563EB), fontWeight: FontWeight.bold),),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: theme.cardColor,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),),
                                   ),
                                 ),
@@ -310,7 +315,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                         ),
                       ),
                       const SizedBox(height: 20,),
-                      const Text('Upcoming Walks', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
+                      Text(l10n.upcomingWalks, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
                       // Upcoming Walks
                       StreamBuilder<List<BookingModel>>(
@@ -318,9 +323,9 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20.0),
-                            child: Center(child: Text("No upcoming walks scheduled.", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20.0),
+                            child: Center(child: Text(l10n.noUpcomingWalks, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),),),
                           );
                         }
                         final requests = snapshot.data!;
@@ -350,7 +355,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(data.petName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                            Text("Owner: ${data.ownerName}", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                            Text(l10n.ownerWithName(data.ownerName), style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                           ],
                                         ),
                                       ),
@@ -368,7 +373,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                     children: [
                                       const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                       const SizedBox(width: 4),
-                                      Text("${data.duration} min", style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                      Text(l10n.durationMinutes(data.duration), style: const TextStyle(color: Colors.grey, fontSize: 14)),
                                       const Spacer(),
                                       Text("\$${data.totalPrice}", style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 16)),
                                     ],
@@ -381,14 +386,14 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                       }
                     ),
                       const SizedBox(height: 20,),
-                      const Text("New Requests", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
+                      Text(l10n.newRequests, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),),
                       const SizedBox(height: 10,),
                       // New Requests
                       StreamBuilder<List<BookingModel>>(
                         stream: _firestoreService.getThreePendingRequestsByWalkerID(uid!, _presentDay),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting && !_isTimedOut) return const Center(child: CircularProgressIndicator());
-                          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('No Upcoming Requests'));
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) return Center(child: Text(l10n.noUpcomingRequests));
                           final requests = snapshot.data!;
                           return ListView.separated(
                             shrinkWrap: true, 
@@ -415,7 +420,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                         Text("\$${data.totalPrice}", style: const TextStyle(color: Color(0xFF2563EB), fontSize: 18, fontWeight: FontWeight.bold)),
                                       ],
                                     ),
-                                    Text("${data.petName} - ${data.duration} min walk", style: const TextStyle(color: Colors.grey)),
+                                    Text(l10n.petDurationWalk(data.petName, data.duration), style: const TextStyle(color: Colors.grey)),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [
@@ -432,35 +437,36 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                             onPressed: () async {
                                               String ownerID = data.ownerId;
                                               String petName = data.petName;
+                                              String ownerName = data.ownerName;
 
                                               await _firestoreService.updateBookingStatus(data.id, 'declined');
                                               if (ownerID.isNotEmpty) {
                                                 // Notify Owner
                                                 _firestoreService.sendNotification(
                                                   receiverID: ownerID,
-                                                  title: 'Request Declined',
-                                                  message: '$name declined your walk request for $petName.',
+                                                  title: l10n.requestDeclined,
+                                                  message: l10n.requestDeclinedMessage(name!, petName),
                                                   type: 'request_declined',
                                                 );
                                                 // Notify Walker
                                                 _firestoreService.sendNotification(
                                                   receiverID: uid!,
-                                                  title: 'Request Declined',
-                                                  message: 'You have declined the walk request for $petName.',
+                                                  title: l10n.requestDeclined,
+                                                  message: l10n.requestDeclinedWalkerMessage(petName, ownerName),
                                                   type: 'request_declined',
                                                 );
                                               }
                                               if (!context.mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
-                                                  content: Text("Request Declined! Pet: $petName\nOwner: ${data.ownerName}"),
+                                                  content: Text(l10n.requestDeclinedSnackBar(petName, ownerName)),
                                                   backgroundColor: Colors.red,
                                                   duration: const Duration(seconds: 3),
                                                 ),
                                               );
                                             },
                                             style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                            child: const Text("Decline", style: TextStyle(color: Colors.black)),
+                                            child: Text(l10n.decline, style: const TextStyle(color: Colors.black)),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -475,34 +481,34 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
                                               _firestoreService.addEarnings(uid!, data.totalPrice);
                                               if (ownerID.isNotEmpty) {
                                                 // Create Chat Room
-                                                await _chatService.createChatRoom(ownerID, ownerName, petName, data.totalPrice, data.duration, data.id);
+                                                await _chatService.createChatRoom(ownerID, ownerName, petName, data.totalPrice, data.duration, data.id, l10n);
 
                                                 // Notify Owner
                                                 _firestoreService.sendNotification(
                                                   receiverID: ownerID,
-                                                  title: 'Walk Request Accepted!',
-                                                  message: '$name is ready to walk $petName! Go to "Messages" in your drawer to coordinate details.',
+                                                  title: l10n.walkRequestAccepted,
+                                                  message: l10n.walkRequestAcceptedMessage(name!, petName),
                                                   type: 'request_accepted',
                                                 );
                                                 // Notify Walker
                                                 _firestoreService.sendNotification(
                                                   receiverID: uid!,
-                                                  title: 'Walk Request Accepted!',
-                                                  message: 'You have accepted the walk request for $petName. Open "View Chat" to discuss location with $ownerName.',
+                                                  title: l10n.walkRequestAccepted,
+                                                  message: l10n.walkRequestAcceptedWalkerMessage(petName, ownerName),
                                                   type: 'request_accepted',
                                                 );
                                               }
                                               if (!context.mounted) return;
                                               ScaffoldMessenger.of(context).showSnackBar(
                                                 SnackBar(
-                                                  content: Text("Request Accepted! Pet: $petName\nOwner: $ownerName"),
+                                                  content: Text(l10n.requestAcceptedSnackBar(petName, ownerName)),
                                                   backgroundColor: Colors.green,
                                                   duration: const Duration(seconds: 3),
                                                 ),
                                               );
                                             },
                                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                            child: const Text("Accept", style: TextStyle(color: Colors.white)),
+                                            child: Text(l10n.accept, style: const TextStyle(color: Colors.white)),
                                           ),
                                         ),
                                       ],

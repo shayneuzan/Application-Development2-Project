@@ -48,14 +48,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return RadioListTile<String>(
       title: Text(languageLabel),
       value: localeCode,
+      // Logic for comparing current language from Firestore
       groupValue: (currentLanguage == 'French (FR)' || currentLanguage == 'fr') ? 'fr' : 'en',
-      activeColor: const Color(0xFF2563EB),
+      activeColor: Theme.of(context).primaryColor,
       onChanged: (value) async {
         if (value != null) {
-          //Update Locale Provider (App UI)
+          // Update I18N Bridge (Locale Provider)
           Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale(value));
 
-          //Update Firestore (Persistence)
+          // Persist to Firestore
           if (_userId != null) {
             await _firestoreService.updateUser(_userId!, {'language': value});
           }
@@ -69,6 +70,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateSetting(String key, bool value) async {
     if (_userId != null) {
       await _firestoreService.updateUser(_userId!, {key: value});
+
+      // Specifically for Dark Mode: Update the Provider so the app flips colors instantly
+      if (key == 'darkMode') {
+        if (!mounted) return;
+        Provider.of<LocaleProvider>(context, listen: false).toggleTheme(value);
+      }
     }
   }
 
@@ -97,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
+              (route) => false,
         );
       }
     }
@@ -125,16 +132,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirm == true && _userId != null) {
       try {
-        //Delete Firestore data
         await _firestoreService.deleteUser(_userId!);
-        
-        //Delete Auth user
         await FirebaseAuth.instance.currentUser?.delete();
-
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginScreen()),
-            (route) => false,
+                (route) => false,
           );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.accountDeleted)),
@@ -142,12 +145,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          String errorMessage = 'Failed to delete account.';
-          if (e is FirebaseAuthException && e.code == 'requires-recent-login') {
-            errorMessage = 'For security, please log out and log back in before deleting your account.';
-          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
+            SnackBar(content: Text(l10n.somethingWentWrong)),
           );
         }
       }
@@ -157,25 +156,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    const textDark = Color(0xFF1E293B);
-    const backgroundGray = Color(0xFFF8FAFC);
+    final theme = Theme.of(context);
 
     if (_userId == null) {
-      return const Scaffold(body: Center(child: Text("Please log in")));
+      return Scaffold(body: Center(child: Text(l10n.notLoggedIn)));
     }
 
     return Scaffold(
-      backgroundColor: backgroundGray,
+      // DARK MODE: Uses scaffoldBackgroundColor from theme
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textDark),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.settings,
-          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: theme.textTheme.titleLarge?.color,
+              fontWeight: FontWeight.bold
+          ),
         ),
       ),
       body: StreamBuilder<UserModel>(
@@ -185,35 +187,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("Error loading settings"));
+            return Center(child: Text(l10n.somethingWentWrong));
           }
 
           final user = snapshot.data!;
-          
-          // Find default payment method
-          String paymentSubtitle = 'Manage your cards';
+
+          // Localization for Subtitles
+          String paymentSubtitle = l10n.noCards;
           final defaultCard = user.paymentMethods.firstWhere(
-            (c) => c['isDefault'] == true, 
+                (c) => c['isDefault'] == true,
             orElse: () => {},
           );
           if (defaultCard.isNotEmpty) {
             paymentSubtitle = '${defaultCard['type']} •••• ${defaultCard['last4']}';
           }
 
-          // Find default address label
-          String addressSubtitle = user.address ?? 'Add your address';
+          String addressSubtitle = user.address ?? l10n.enterAddress;
           final defaultAddr = user.savedAddresses.firstWhere(
-            (a) => a['isDefault'] == true,
+                (a) => a['isDefault'] == true,
             orElse: () => {},
           );
           if (defaultAddr.isNotEmpty) {
             addressSubtitle = '${defaultAddr['label']}: ${user.address}';
           }
 
-          // Map the language code to a readable label
-          String displayLanguage = user.language;
-          if (user.language == 'en') displayLanguage = l10n.english;
-          if (user.language == 'fr') displayLanguage = l10n.french;
+          String displayLanguage = user.language == 'fr' ? l10n.french : l10n.english;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -226,24 +224,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Icons.credit_card,
                     l10n.paymentMethods,
                     subtitle: paymentSubtitle,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const PaymentMethodsScreen()),
-                      );
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentMethodsScreen())),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(
                     Icons.location_on_outlined,
                     l10n.savedAddresses,
                     subtitle: addressSubtitle,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AddressManagementScreen()),
-                      );
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddressManagementScreen())),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(
@@ -262,14 +250,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Icons.notifications_none,
                     l10n.pushNotifications,
                     user.pushNotifications,
-                    (val) => _updateSetting('pushNotifications', val),
+                        (val) => _updateSetting('pushNotifications', val),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildToggleItem(
                     Icons.email_outlined,
                     l10n.emailUpdates,
                     user.emailUpdates,
-                    (val) => _updateSetting('emailUpdates', val),
+                        (val) => _updateSetting('emailUpdates', val),
                   ),
                 ]),
 
@@ -281,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Icons.dark_mode_outlined,
                     l10n.darkMode,
                     user.darkMode,
-                    (val) => _updateSetting('darkMode', val),
+                        (val) => _updateSetting('darkMode', val),
                   ),
                 ]),
 
@@ -298,7 +286,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                // Danger Zone Section
                 _buildSectionHeader(l10n.dangerZone),
                 _buildSettingsCard([
                   _buildSettingItem(
@@ -334,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Center(
                   child: Text(
                     '${l10n.version} 1.0.0',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                    style: TextStyle(color: theme.hintColor, fontSize: 12),
                   ),
                 ),
               ],
@@ -350,10 +337,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF64748B),
+          color: Theme.of(context).hintColor,
         ),
       ),
     );
@@ -362,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSettingsCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor, // DARK MODE FIX
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -377,46 +364,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingItem(IconData icon, String title, {String? subtitle, Color? titleColor, VoidCallback? onTap}) {
+    final theme = Theme.of(context);
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: theme.dividerColor.withOpacity(0.05), // DARK MODE: subtle background
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: titleColor ?? const Color(0xFF64748B), size: 20),
+        child: Icon(icon, color: titleColor ?? theme.hintColor, size: 20),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: FontWeight.w500,
-          color: titleColor ?? const Color(0xFF1E293B),
+          color: titleColor ?? theme.textTheme.bodyLarge?.color,
         ),
       ),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
-      trailing: const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
+      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: theme.hintColor)) : null,
+      trailing: const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 18),
       onTap: onTap,
     );
   }
 
   Widget _buildToggleItem(IconData icon, String title, bool value, ValueChanged<bool> onChanged) {
+    final theme = Theme.of(context);
     return SwitchListTile(
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: theme.dividerColor.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: const Color(0xFF64748B), size: 20),
+        child: Icon(icon, color: theme.hintColor, size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w500,
-          color: Color(0xFF1E293B),
+          color: theme.textTheme.bodyLarge?.color,
         ),
       ),
-      activeColor: const Color(0xFF2563EB),
+      activeColor: theme.primaryColor,
       value: value,
       onChanged: onChanged,
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../shared/notification_screen.dart';
+import '../widgets/owner_bottom_nav_bar.dart';
 import '../widgets/walker_notification_icon.dart';
 import 'owner_home_screen.dart';
 import 'profile_screen.dart';
@@ -68,6 +69,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -98,7 +100,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               );
             }
           }
-
+          final loc = AppLocalizations.of(context)!;
+          final theme = Theme.of(context);
           return Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
@@ -110,12 +113,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Reschedule Booking',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                Text(
+                  loc.rescheduleBooking,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
                 ),
                 const SizedBox(height: 20),
-                // Date
                 GestureDetector(
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -132,7 +134,6 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Time
                 GestureDetector(
                   onTap: () async {
                     final picked = await showTimePicker(
@@ -144,11 +145,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                   child: _pickerRow(Icons.access_time, _formatTime(selectedTime)),
                 ),
                 const SizedBox(height: 12),
-                // Duration
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: theme.dividerColor),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -160,9 +160,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           child: DropdownButton<int>(
                             value: selectedDuration,
                             isExpanded: true,
+                            dropdownColor: theme.cardColor,
                             items: durations.map((d) => DropdownMenuItem(
                               value: d,
-                              child: Text('$d minutes', style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B))),
+                              child: Text('$d minutes', style: TextStyle(fontSize: 15, color: theme.textTheme.bodyLarge?.color)),
                             )).toList(),
                             onChanged: (v) { if (v != null) setSheetState(() => selectedDuration = v); },
                           ),
@@ -200,10 +201,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   }
 
   Widget _pickerRow(IconData icon, String label) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: theme.dividerColor),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -211,9 +213,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           Icon(icon, size: 18, color: const Color(0xFF2563EB)),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B))),
+            child: Text(label, style: TextStyle(fontSize: 15, color: theme.textTheme.bodyLarge?.color)),
           ),
-          const Icon(Icons.chevron_right, color: Color(0xFF94A3B8)),
+          Icon(Icons.chevron_right, color: theme.hintColor),
         ],
       ),
     );
@@ -280,13 +282,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     const primaryBlue = Color(0xFF2563EB);
-    const backgroundGray = Color(0xFFF8FAFC);
-    const textLight = Color(0xFF64748B);
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: backgroundGray,
       appBar: AppBar(
         backgroundColor: primaryBlue,
         elevation: 0,
@@ -302,18 +302,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             fontSize: 20,
           ),
         ),
-        actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
-          //     );
-          //   },
-          // ),
-          WalkerNotificationIcon(), // Custom notification icon
-          const SizedBox(width: 8),
+        actions: const [
+          WalkerNotificationIcon(),
+          SizedBox(width: 8),
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Bookings'),
@@ -336,13 +327,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
               return Column(
                 children: [
-                  // Toggle Tabs
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: theme.brightness == Brightness.dark ? Colors.black26 : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -352,7 +342,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                               onTap: () => setState(() => isUpcomingSelected = true),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isUpcomingSelected ? Colors.white : Colors.transparent,
+                                  color: isUpcomingSelected ? theme.cardColor : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: isUpcomingSelected
                                       ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
@@ -363,7 +353,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 child: Text(
                                   l10n.upcomingCount(upcomingBookings.length),
                                   style: TextStyle(
-                                    color: isUpcomingSelected ? primaryBlue : textLight,
+                                    color: isUpcomingSelected ? primaryBlue : theme.textTheme.bodySmall?.color,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -375,7 +365,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                               onTap: () => setState(() => isUpcomingSelected = false),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: !isUpcomingSelected ? Colors.white : Colors.transparent,
+                                  color: !isUpcomingSelected ? theme.cardColor : Colors.transparent,
                                   borderRadius: BorderRadius.circular(10),
                                   boxShadow: !isUpcomingSelected
                                       ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
@@ -386,7 +376,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                                 child: Text(
                                   l10n.pastCount(pastBookings.length),
                                   style: TextStyle(
-                                    color: !isUpcomingSelected ? primaryBlue : textLight,
+                                    color: !isUpcomingSelected ? primaryBlue : theme.textTheme.bodySmall?.color,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -397,8 +387,6 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                       ),
                     ),
                   ),
-
-                  // Bookings List
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -411,42 +399,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               );
             },
           ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: 2,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          backgroundColor: const Color(0xFF2563EB),
-          onTap: (index) {
-            if (index == 0) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
-            } else if (index == 1) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const BrowseWalkersListScreen()));
-            } else if (index == 3) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExploreMapScreen()));
-            } else if (index == 4) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
-            }
-          },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
-            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
-            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
-            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
-            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const OwnerBottomNavBar(currentIndex: 2),
     );
   }
 
@@ -493,7 +446,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -526,8 +479,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     required AppLocalizations l10n,
     double? rating,
   }) {
-    const textDark = Color(0xFF1E293B);
-    const textLight = Color(0xFF64748B);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     Color statusBg;
     Color statusText;
@@ -549,11 +502,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -567,10 +520,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: const Color(0xFFF1F5F9),
+                  backgroundColor: isDarkMode ? Colors.white10 : const Color(0xFFF1F5F9),
                   child: Text(
                     walkerName.isNotEmpty ? walkerName[0] : 'W',
-                    style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -580,11 +533,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                     children: [
                       Text(
                         walkerName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       Text(
                         l10n.withPet(dogs),
-                        style: const TextStyle(color: textLight, fontSize: 13),
+                        style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 13),
                       ),
                       if (!isUpcoming && rating != null)
                         Row(
@@ -613,22 +566,22 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, color: theme.dividerColor),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 16, color: textLight),
+                Icon(Icons.calendar_today_outlined, size: 16, color: theme.textTheme.bodySmall?.color),
                 const SizedBox(width: 4),
-                Text(date, style: const TextStyle(color: textLight, fontSize: 12)),
+                Text(date, style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
                 const SizedBox(width: 12),
-                const Icon(Icons.access_time, size: 16, color: textLight),
+                Icon(Icons.access_time, size: 16, color: theme.textTheme.bodySmall?.color),
                 const SizedBox(width: 4),
-                Text('$time ($duration)', style: const TextStyle(color: textLight, fontSize: 12)),
+                Text('$time ($duration)', style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, color: theme.dividerColor),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -636,7 +589,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               children: [
                 Text(
                   price,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textDark),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 if (isUpcoming)
                   Row(
@@ -682,10 +635,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
                           );
                         },
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          side: BorderSide(color: theme.dividerColor),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: Text(l10n.review, style: const TextStyle(color: textLight, fontSize: 12)),
+                        child: Text(l10n.review, style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 12)),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(

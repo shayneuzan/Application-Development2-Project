@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pawwalk/models/booking_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
@@ -23,6 +24,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime? _selectedDay;
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
@@ -32,18 +34,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Your Schedule', style: TextStyle(color: Colors.white)),
+            title: Text(l10n.yourSchedule, style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
-              WalkerNotificationIcon(),
+              const WalkerNotificationIcon(),
               const SizedBox(width: 8,),
             ],
           ),
           drawer: WalkerDrawer(name: name),
           body: SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -81,11 +83,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _selectedDay == null ? const Text("Select a date to see walks", style: TextStyle(fontSize: 18),) :
+                  _selectedDay == null ? Text(l10n.selectDateToSeeWalks, style: const TextStyle(fontSize: 18),) :
                   Column(
                     children: [
                       Text(
-                        "Your Upcoming Walks for ${DateFormat('MMMM dd, yyyy').format(_selectedDay!)}",
+                        l10n.upcomingWalksForDate(DateFormat('MMMM dd, yyyy').format(_selectedDay!)),
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -107,9 +109,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       size: 60,
                                       color: Colors.grey.shade400),
                                     const SizedBox(height: 10),
-                                    const Text(
-                                      "No walks scheduled for this day",
-                                      style: TextStyle(color: Colors.grey),
+                                    Text(
+                                      l10n.noWalksScheduledDay,
+                                      style: const TextStyle(color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -170,7 +172,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       children: [
                                         const Icon(Icons.access_time, size: 16, color: Colors.grey),
                                         const SizedBox(width: 4),
-                                        Text("${booking.time}    ${booking.duration} min", style: const TextStyle(color: Colors.grey, fontSize: 15),),
+                                        Text("${booking.time}    ${l10n.durationMinutes(booking.duration)}", style: const TextStyle(color: Colors.grey, fontSize: 15),),
                                       ],
                                     ),
                                   ],
@@ -186,7 +188,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
           ),
-          bottomNavigationBar: WalkerBottomNavBar(currentIndex: 2),
+          bottomNavigationBar: const WalkerBottomNavBar(currentIndex: 2),
         );
       }
     );

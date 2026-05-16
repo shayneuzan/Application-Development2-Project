@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'owner_home_screen.dart';
 import 'browse_walkers_list_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
-import '../../models/walker_model.dart';
 import '../../services/firestore_service.dart';
+import '../widgets/owner_bottom_nav_bar.dart';
 
 class ExploreMapScreen extends StatefulWidget {
   const ExploreMapScreen({super.key});
@@ -25,11 +24,6 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   LatLng _currentMapPosition = _defaultPosition;
   final Set<Marker> _markers = {};
 
-  // Application Colors
-  static const primaryBlue = Color(0xFF2563EB);
-  static const textDark = Color(0xFF1E293B);
-  static const textLight = Color(0xFF64748B);
-
   @override
   void initState() {
     super.initState();
@@ -37,13 +31,10 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   }
 
   Future<void> _checkPermissionsAndGetLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
@@ -56,8 +47,13 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    mapController.setMapStyle(_mapStyle);
+    _updateMapStyle();
     _loadWalkerMarkers();
+  }
+
+  void _updateMapStyle() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    mapController.setMapStyle(isDarkMode ? _darkMapStyle : _lightMapStyle);
   }
 
   Future<void> _goToCurrentLocation() async {
@@ -106,11 +102,13 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    const primaryBlue = Color(0xFF2563EB);
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Custom Styled Google Map
           GoogleMap(
             onMapCreated: _onMapCreated,
             initialCameraPosition: CameraPosition(
@@ -125,18 +123,18 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             compassEnabled: false,
           ),
 
-          // 2. Floating Search Bar
+          // Search Bar
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Container(
                 height: 54,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.06),
                       blurRadius: 15,
                       offset: const Offset(0, 4),
                     ),
@@ -145,9 +143,10 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: l10n.searchHint,
-                    hintStyle: const TextStyle(color: textLight, fontSize: 15),
                     prefixIcon: const Icon(Icons.search, color: primaryBlue),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -155,31 +154,31 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             ),
           ),
 
-          // 3. Current Location Button
+          // Location Button
           Positioned(
             right: 16,
             top: MediaQuery.of(context).size.height * 0.14,
             child: FloatingActionButton(
               mini: true,
-              backgroundColor: Colors.white,
+              backgroundColor: theme.cardColor,
               elevation: 4,
               onPressed: _goToCurrentLocation,
               child: const Icon(Icons.my_location, color: primaryBlue),
             ),
           ),
 
-          // 4. Bottom Info Card
+          // Bottom Info Card
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, -4),
                   ),
@@ -197,16 +196,12 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
                           children: [
                             Text(
                               l10n.walkersNearby,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: textDark,
-                              ),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               l10n.discoverWalkers,
-                              style: const TextStyle(color: textLight, fontSize: 14),
+                              style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14),
                             ),
                           ],
                         ),
@@ -250,6 +245,8 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
   }
 
   Widget _buildBottomNavIcon(IconData icon, String label, int index, {bool isActive = false}) {
+    final theme = Theme.of(context);
+    const primaryBlue = Color(0xFF2563EB);
     return GestureDetector(
       onTap: () => _navigateTo(context, index),
       child: Column(
@@ -263,7 +260,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             ),
             child: Icon(
               icon,
-              color: isActive ? primaryBlue : textLight.withOpacity(0.7),
+              color: isActive ? primaryBlue : theme.textTheme.bodySmall?.color?.withOpacity(0.7),
               size: 26,
             ),
           ),
@@ -273,7 +270,7 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
             style: TextStyle(
               fontSize: 10,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-              color: isActive ? primaryBlue : textLight,
+              color: isActive ? primaryBlue : theme.textTheme.bodySmall?.color,
             ),
           ),
         ],
@@ -294,166 +291,14 @@ class _ExploreMapScreenState extends State<ExploreMapScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => screen));
   }
 
-  final String _mapStyle = '''
-[
-  {
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.icon",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#f5f5f5"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#bdbdbd"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#ffffff"
-      }
-    ]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#dadada"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.line",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#e5e5e5"
-      }
-    ]
-  },
-  {
-    "featureType": "transit.station",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#eeeeee"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#c9c9c9"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
-      }
-    ]
-  }
-]
-''';
+  final String _lightMapStyle = '''[]''';
+  final String _darkMapStyle = '''[
+    {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
+    {"elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
+    {"elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
+    {"elementType": "labels.text.stroke", "stylers": [{"color": "#212121"}]},
+    {"featureType": "administrative", "elementType": "geometry", "stylers": [{"color": "#757575"}]},
+    {"featureType": "road", "elementType": "geometry.fill", "stylers": [{"color": "#2c2c2c"}]},
+    {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#000000"}]}
+  ]''';
 }

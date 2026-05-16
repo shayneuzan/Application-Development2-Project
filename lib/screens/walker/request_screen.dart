@@ -7,6 +7,7 @@ import '../widgets/walker_bottom_nav_bar.dart';
 import '../widgets/walker_drawer.dart';
 import 'package:intl/intl.dart';
 import '../chat/chat_service.dart';
+import 'package:pawwalk/l10n/generated/app_localizations.dart';
 
 import '../widgets/walker_notification_icon.dart';
 
@@ -24,6 +25,9 @@ class _RequestScreenState extends State<RequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
       builder: (context, snapshot) {
@@ -33,7 +37,7 @@ class _RequestScreenState extends State<RequestScreen> {
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Booking Requests', style: TextStyle(color: Colors.white)),
+            title: Text(l10n.bookingRequests, style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
@@ -49,9 +53,9 @@ class _RequestScreenState extends State<RequestScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text("No upcoming walks scheduled.",
-                    style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                return Center(
+                  child: Text(l10n.noUpcomingWalks,
+                    style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                   ),
                 );
               }
@@ -71,7 +75,7 @@ class _RequestScreenState extends State<RequestScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -133,7 +137,7 @@ class _RequestScreenState extends State<RequestScreen> {
                                                   children: [
                                                     const Icon(Icons.timer_outlined, size: 20, color: Color(0xFF2563EB)),
                                                     const SizedBox(width: 10),
-                                                    Text("${booking.time} (${booking.duration} minutes)", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,)),
+                                                    Text("${booking.time} (${l10n.durationMinutes(booking.duration)})", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 13,)),
                                                   ]
                                                 ),
                                               ],
@@ -161,15 +165,15 @@ class _RequestScreenState extends State<RequestScreen> {
                                     if (booking.ownerId.isNotEmpty) {
                                       _firestoreService.sendNotification(
                                         receiverID: booking.ownerId,
-                                        title: 'Request Declined',
-                                        message: '$walkerName declined your walk request for ${booking.petName}.',
+                                        title: l10n.requestDeclined,
+                                        message: l10n.requestDeclinedMessage(walkerName!, booking.petName),
                                         type: 'request_declined',
                                       );
 
                                       _firestoreService.sendNotification(
                                         receiverID: uid!,
-                                        title: 'Request Declined',
-                                        message: 'You have declined the walk request for ${booking.petName} from ${booking.ownerName}.',
+                                        title: l10n.requestDeclined,
+                                        message: l10n.requestDeclinedWalkerMessage(booking.petName, booking.ownerName),
                                         type: 'request_declined',
                                       );
                                     }
@@ -177,14 +181,14 @@ class _RequestScreenState extends State<RequestScreen> {
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Declined! Pet: ${booking.petName}\nOwner: ${booking.ownerName}"),
+                                        content: Text(l10n.requestDeclinedSnackBar(booking.petName, booking.ownerName)),
                                         backgroundColor: Colors.red,
                                         duration: const Duration(seconds: 3),
                                       ),
                                     );
                                   },
                                   icon: const Icon(Icons.close, size: 18, color: Colors.black),
-                                  label: const Text("Decline", style: TextStyle(color: Colors.black)),
+                                  label: Text(l10n.decline, style: const TextStyle(color: Colors.black)),
                                   style: OutlinedButton.styleFrom(
                                     backgroundColor: const Color(0xFFF1F5F9),
                                     side: BorderSide.none,
@@ -198,35 +202,36 @@ class _RequestScreenState extends State<RequestScreen> {
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
                                     _firestoreService.updateBookingStatus(booking.id, 'accepted');
-                                    _firestoreService.addEarnings(uid!, booking.totalPrice);                                    if (booking.ownerId.isNotEmpty) {
+                                    _firestoreService.addEarnings(uid!, booking.totalPrice);
+                                    if (booking.ownerId.isNotEmpty) {
                                       // Create a chat room between the walker and the owner
-                                      await _chatService.createChatRoom(booking.ownerId, booking.ownerName, booking.petName, booking.totalPrice, booking.duration, booking.id);
+                                      await _chatService.createChatRoom(booking.ownerId, booking.ownerName, booking.petName, booking.totalPrice, booking.duration, booking.id, l10n);
 
                                       _firestoreService.sendNotification(
                                         receiverID: booking.ownerId,
-                                        title: 'Walk Request Accepted!',
-                                        message: '${booking.walkerName} is ready to walk ${booking.petName}! Go to "Messages" in your drawer to coordinate details.',
+                                        title: l10n.walkRequestAccepted,
+                                        message: l10n.walkRequestAcceptedMessage(walkerName!, booking.petName),
                                         type: 'request_accepted',
                                       );
 
                                       _firestoreService.sendNotification(
                                         receiverID: uid!,
-                                        title: 'Walk Request Accepted!',
-                                        message: 'You have accepted the walk request for ${booking.petName}. Open "View Chat" to discuss location with ${booking.ownerName}.',
+                                        title: l10n.walkRequestAccepted,
+                                        message: l10n.walkRequestAcceptedWalkerMessage(booking.petName, booking.ownerName),
                                         type: 'request_accepted',
                                       );
                                     }
                                     if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text("Request Accepted! Pet: ${booking.petName}\nOwner: ${booking.ownerName}"),
+                                        content: Text(l10n.requestAcceptedSnackBar(booking.petName, booking.ownerName)),
                                         backgroundColor: Colors.green,
                                         duration: const Duration(seconds: 3),
                                       ),
                                     );
                                   },
                                   icon: const Icon(Icons.check, size: 18, color: Colors.white),
-                                  label: const Text("Accept", style: TextStyle(color: Colors.white)),
+                                  label: Text(l10n.accept, style: const TextStyle(color: Colors.white)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF2563EB),
                                     elevation: 0,

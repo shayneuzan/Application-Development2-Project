@@ -47,12 +47,10 @@ class LocaleProvider extends ChangeNotifier {
     setThemeMode(isOn ? ThemeMode.dark : ThemeMode.light);
   }
 
-  // Reset to light mode and English on logout
+  // Reset to light mode on logout, but keep the current language
   void resetSettings() {
     _themeMode = ThemeMode.light;
-    _locale = const Locale('en');
     _saveTheme(ThemeMode.light.index);
-    _saveLocale('en');
     notifyListeners();
   }
 

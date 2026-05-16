@@ -95,11 +95,21 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => {'id': doc.id, ...doc.data()})
+            .where((doc) => doc['status'] != 'cancelled')
             .toList());
   }
 
   Future<void> updateBookingStatus(String bookingId, String status) {
     return _db.collection('requests').doc(bookingId).update({'status': status});
+  }
+
+  Future<void> rescheduleBooking(String bookingId, String date, String time, int duration) {
+    return _db.collection('requests').doc(bookingId).update({
+      'date': date,
+      'time': time,
+      'duration': duration,
+      'status': 'pending',
+    });
   }
 
   Future<void> markBookingAsReviewed(String bookingId) {

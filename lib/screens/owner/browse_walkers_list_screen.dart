@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../shared/notification_screen.dart';
 import '../widgets/walker_notification_icon.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'owner_home_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
@@ -29,7 +30,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   late bool _isShowingFavorites;
   final FirestoreService _firestoreService = FirestoreService();
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
-
+  
   static const LatLng _defaultPosition = LatLng(45.485, -73.625);
   LatLng _currentPosition = _defaultPosition;
   GoogleMapController? _miniMapController;
@@ -76,11 +77,12 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
   void _toggleFavorite(String walkerId, List<String> currentFavorites) {
     if (_userId == null) return;
     bool isCurrentlyFavorite = currentFavorites.contains(walkerId);
-    _firestoreService.toggleFavorite(_userId, walkerId, !isCurrentlyFavorite);
+    _firestoreService.toggleFavorite(_userId!, walkerId, !isCurrentlyFavorite);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const backgroundGray = Color(0xFFF8FAFC);
     const textDark = Color(0xFF1E293B);
@@ -99,7 +101,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
           onPressed: () => scaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(
-          _isShowingFavorites ? 'Favorite Walkers' : 'Find Walkers',
+          _isShowingFavorites ? l10n.favoriteWalkers : l10n.findWalkers,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -107,25 +109,24 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
           ),
         ),
         actions: [
-          // IconButton(
-          //   icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => const NotificationScreen()),
-          //     );
-          //   },
-          // ),
-          // const SizedBox(width: 8),
-          WalkerNotificationIcon(), // Custom notification icon
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+              );
+            },
+          ),
           const SizedBox(width: 8),
+          WalkerNotificationIcon(), // Custom notification icon
         ],
       ),
       drawer: const OwnerDrawer(currentPage: 'Walkers'),
-      body: _userId == null 
-        ? const Center(child: Text("Please log in"))
+      body: _userId == null
+        ? Center(child: Text(l10n.pleaseLogin))
         : StreamBuilder<UserModel>(
-            stream: _firestoreService.getUserStream(_userId),
+            stream: _firestoreService.getUserStream(_userId!),
             builder: (context, userSnapshot) {
               final favoriteIds = userSnapshot.data?.favoriteWalkers ?? [];
 
@@ -209,7 +210,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                       liteModeEnabled: false,
                                     ),
                                   ),
-
+                                  
                                   // Nearby Badge
                                   Positioned(
                                     bottom: 16,
@@ -232,10 +233,10 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                           const Icon(Icons.location_on, color: primaryBlue, size: 16),
                                           const SizedBox(width: 6),
                                           Text(
-                                            '${walkers.length} walkers nearby',
+                                            l10n.countWalkersNearby(walkers.length),
                                             style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13, 
+                                              fontWeight: FontWeight.bold, 
                                               color: textDark
                                             ),
                                           ),
@@ -243,7 +244,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                       ),
                                     ),
                                   ),
-
+                                  
                                   // Fullscreen Icon
                                   Positioned(
                                     top: 16,
@@ -273,9 +274,9 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Available Walkers',
-                                style: TextStyle(
+                              Text(
+                                l10n.availableWalkers,
+                                style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   color: textDark,
@@ -290,7 +291,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 16),
                                 ),
                                 child: Text(
-                                  _isShowingFavorites ? 'Show All' : 'Show Favorites',
+                                  _isShowingFavorites ? l10n.showAll : l10n.showFavorites,
                                   style: TextStyle(
                                     color: _isShowingFavorites ? Colors.white : primaryBlue,
                                     fontSize: 13,
@@ -315,7 +316,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    _isShowingFavorites ? 'No favorites yet!' : 'No walkers available.',
+                                    _isShowingFavorites ? l10n.noFavoritesYet : l10n.noWalkersAvailable,
                                     style: const TextStyle(color: Colors.grey, fontSize: 16),
                                   ),
                                 ],
@@ -373,12 +374,12 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
             }
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Walkers'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-            BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          items: [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), label: l10n.home),
+            BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.walkers),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_month_outlined), label: l10n.bookings),
+            BottomNavigationBarItem(icon: const Icon(Icons.map_outlined), label: l10n.map),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l10n.profile),
           ],
         ),
       ),
@@ -391,6 +392,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
     required bool isFavorite,
     required VoidCallback onFavoriteToggle,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryBlue = Color(0xFF2563EB);
     const textDark = Color(0xFF1E293B);
     const textLight = Color(0xFF64748B);
@@ -406,7 +408,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
               initials: walker.initials,
               rating: walker.rating,
               walksCount: walker.walksCount,
-              hourlyRate: walker.hourlyRate,
+              price: walker.price,
               walker: walker,
             ),
           ),
@@ -448,27 +450,36 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(walker.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),),
+                              Text(
+                                walker.name,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+                              ),
                               Row(
                                 children: [
                                   const Icon(Icons.star, color: Colors.orange, size: 18),
                                   const SizedBox(width: 4),
-                                  Text(walker.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),),
+                                  Text(
+                                    walker.rating.toString(),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: textDark),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
-                          Text('${walker.walksCount} walks completed', style: const TextStyle(color: textLight, fontSize: 14),),
+                          Text(
+                            l10n.walksCompletedCount(walker.walksCount),
+                            style: const TextStyle(color: textLight, fontSize: 14),
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '\$ ${walker.hourlyRate % 1 == 0 ? walker.hourlyRate.toInt() : walker.hourlyRate.toStringAsFixed(2)}/hr',
+                                '\$ ${walker.price}/hr',
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2563EB),
+                                  color: Colors.orange,
                                 ),
                               ),
                               ElevatedButton(
@@ -482,7 +493,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                         initials: walker.initials,
                                         rating: walker.rating,
                                         walksCount: walker.walksCount,
-                                        hourlyRate: walker.hourlyRate,
+                                        price: walker.price,
                                         walker: walker,
                                       ),
                                     ),
@@ -494,7 +505,7 @@ class _BrowseWalkersListScreenState extends State<BrowseWalkersListScreen> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   elevation: 0,
                                 ),
-                                child: const Text('Book Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: Text(l10n.bookNow, style: const TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),

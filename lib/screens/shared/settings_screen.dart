@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../owner/payment_methods_screen.dart';
 import '../owner/address_management_screen.dart';
+import 'package:provider/provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
+import '../../services/locale_provider.dart';
 import '../../models/user_model.dart';
 import '../auth/login_screen.dart';
 
@@ -18,37 +21,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
 
   void _showLanguageDialog(String currentLanguage) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Language'),
+        title: Text(l10n.selectLanguage),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildLanguageOption('English (US)', currentLanguage),
-            _buildLanguageOption('French (FR)', currentLanguage),
+            _buildLanguageOption(l10n.english, 'en', currentLanguage),
+            _buildLanguageOption(l10n.french, 'fr', currentLanguage),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLanguageOption(String language, String currentLanguage) {
+  Widget _buildLanguageOption(String languageLabel, String localeCode, String currentLanguage) {
     return RadioListTile<String>(
-      title: Text(language),
-      value: language,
-      groupValue: currentLanguage,
+      title: Text(languageLabel),
+      value: localeCode,
+      groupValue: (currentLanguage == 'French (FR)' || currentLanguage == 'fr') ? 'fr' : 'en',
       activeColor: const Color(0xFF2563EB),
       onChanged: (value) async {
-        if (value != null && _userId != null) {
-          await _firestoreService.updateUser(_userId, {'language': value});
+        if (value != null) {
+          //Update Locale Provider (App UI)
+          Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale(value));
+
+          //Update Firestore (Persistence)
+          if (_userId != null) {
+            await _firestoreService.updateUser(_userId!, {'language': value});
+          }
+
           if (mounted) Navigator.pop(context);
         }
       },
@@ -57,24 +68,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateSetting(String key, bool value) async {
     if (_userId != null) {
-      await _firestoreService.updateUser(_userId, {key: value});
+      await _firestoreService.updateUser(_userId!, {key: value});
     }
   }
 
   Future<void> _handleLogout() async {
+    final l10n = AppLocalizations.of(context)!;
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(l10n.logOut),
+        content: Text(l10n.confirmLogOut),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Log Out', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.logOut, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -92,21 +104,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleDeleteAccount() async {
+    final l10n = AppLocalizations.of(context)!;
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-        content: const Text(
-          'This action is permanent and cannot be undone. All your data, including saved addresses and payment methods, will be deleted.',
-        ),
+        title: Text(l10n.deleteAccount, style: const TextStyle(color: Colors.red)),
+        content: Text(l10n.deleteAccountConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -114,10 +125,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirm == true && _userId != null) {
       try {
-        // 1. Delete Firestore data
-        await _firestoreService.deleteUser(_userId);
+        //Delete Firestore data
+        await _firestoreService.deleteUser(_userId!);
         
-        // 2. Delete Auth user
+        //Delete Auth user
         await FirebaseAuth.instance.currentUser?.delete();
 
         if (mounted) {
@@ -126,7 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             (route) => false,
           );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account successfully deleted')),
+            SnackBar(content: Text(l10n.accountDeleted)),
           );
         }
       } catch (e) {
@@ -145,6 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const textDark = Color(0xFF1E293B);
     const backgroundGray = Color(0xFFF8FAFC);
 
@@ -161,13 +173,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back, color: textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.settings,
+          style: const TextStyle(color: textDark, fontWeight: FontWeight.bold),
         ),
       ),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_userId),
+        stream: _firestoreService.getUserStream(_userId!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -198,16 +210,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             addressSubtitle = '${defaultAddr['label']}: ${user.address}';
           }
 
+          // Map the language code to a readable label
+          String displayLanguage = user.language;
+          if (user.language == 'en') displayLanguage = l10n.english;
+          if (user.language == 'fr') displayLanguage = l10n.french;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionHeader('Account'),
+                _buildSectionHeader(l10n.account),
                 _buildSettingsCard([
                   _buildSettingItem(
                     Icons.credit_card,
-                    'Payment Methods',
+                    l10n.paymentMethods,
                     subtitle: paymentSubtitle,
                     onTap: () {
                       Navigator.push(
@@ -219,7 +236,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(
                     Icons.location_on_outlined,
-                    'Saved Addresses',
+                    l10n.savedAddresses,
                     subtitle: addressSubtitle,
                     onTap: () {
                       Navigator.push(
@@ -231,26 +248,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(height: 1, indent: 56),
                   _buildSettingItem(
                     Icons.language,
-                    'Language',
-                    subtitle: user.language,
+                    l10n.language,
+                    subtitle: displayLanguage,
                     onTap: () => _showLanguageDialog(user.language),
                   ),
                 ]),
 
                 const SizedBox(height: 32),
 
-                _buildSectionHeader('Notifications'),
+                _buildSectionHeader(l10n.notifications),
                 _buildSettingsCard([
                   _buildToggleItem(
                     Icons.notifications_none,
-                    'Push Notifications',
+                    l10n.pushNotifications,
                     user.pushNotifications,
                     (val) => _updateSetting('pushNotifications', val),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildToggleItem(
                     Icons.email_outlined,
-                    'Email Updates',
+                    l10n.emailUpdates,
                     user.emailUpdates,
                     (val) => _updateSetting('emailUpdates', val),
                   ),
@@ -258,11 +275,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                _buildSectionHeader('Appearance'),
+                _buildSectionHeader(l10n.appearance),
                 _buildSettingsCard([
                   _buildToggleItem(
                     Icons.dark_mode_outlined,
-                    'Dark Mode',
+                    l10n.darkMode,
                     user.darkMode,
                     (val) => _updateSetting('darkMode', val),
                   ),
@@ -270,23 +287,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                _buildSectionHeader('Support'),
+                _buildSectionHeader(l10n.support),
                 _buildSettingsCard([
-                  _buildSettingItem(Icons.help_outline, 'Help Center'),
+                  _buildSettingItem(Icons.help_outline, l10n.helpCenter),
                   const Divider(height: 1, indent: 56),
-                  _buildSettingItem(Icons.policy_outlined, 'Privacy Policy'),
+                  _buildSettingItem(Icons.policy_outlined, l10n.privacyPolicy),
                   const Divider(height: 1, indent: 56),
-                  _buildSettingItem(Icons.info_outline, 'About PawWalk'),
+                  _buildSettingItem(Icons.info_outline, l10n.aboutPawWalk),
                 ]),
 
                 const SizedBox(height: 32),
 
                 // Danger Zone Section
-                _buildSectionHeader('Danger Zone'),
+                _buildSectionHeader(l10n.dangerZone),
                 _buildSettingsCard([
                   _buildSettingItem(
                     Icons.delete_forever_outlined,
-                    'Delete Account',
+                    l10n.deleteAccount,
                     titleColor: Colors.red,
                     onTap: _handleDeleteAccount,
                   ),
@@ -302,12 +319,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       foregroundColor: Colors.red,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout),
-                        SizedBox(width: 8),
-                        Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Icon(Icons.logout),
+                        const SizedBox(width: 8),
+                        Text(l10n.logOut, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     ),
                   ),
@@ -316,7 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
-                    'Version 1.0.0',
+                    '${l10n.version} 1.0.0',
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                   ),
                 ),

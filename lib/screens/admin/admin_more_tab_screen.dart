@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_settings_screen.dart';
-import '../../i18n/app_localizations.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
 
 // ─────────────────────────────────────────────────────────

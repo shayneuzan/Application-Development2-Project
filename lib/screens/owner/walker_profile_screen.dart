@@ -12,7 +12,7 @@ class WalkerProfileScreen extends StatefulWidget {
   final String initials;
   final double rating;
   final int walksCount;
-  final double hourlyRate;
+  final double price;
   final WalkerModel? walker; // Optional full model
 
   const WalkerProfileScreen({
@@ -22,7 +22,7 @@ class WalkerProfileScreen extends StatefulWidget {
     required this.initials,
     required this.rating,
     required this.walksCount,
-    required this.hourlyRate,
+    required this.price,
     this.walker,
   });
 
@@ -132,7 +132,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                             ],
                           ),
                           Text(
-                            '\$ ${widget.hourlyRate % 1 == 0 ? widget.hourlyRate.toInt() : widget.hourlyRate.toStringAsFixed(2)}/hr',
+                            '\$ ${widget.price % 1 == 0 ? widget.price.toInt() : widget.price.toStringAsFixed(2)}/hr',
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -254,7 +254,7 @@ class _WalkerProfileScreenState extends State<WalkerProfileScreen> {
                   builder: (context) => BookingScreen(
                     walkerId: widget.id,
                     walkerName: widget.name,
-                    hourlyRate: widget.hourlyRate,
+                    hourlyRate: widget.price,
                   ),
                 ),
               );

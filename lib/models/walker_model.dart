@@ -40,6 +40,8 @@ class WalkerModel {
     required this.status,
   });
 
+  double get price => hourlyRate;
+
   factory WalkerModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return WalkerModel(

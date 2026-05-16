@@ -7,7 +7,7 @@ import 'admin_users_tab_screen.dart';
 import 'admin_bookings_tab_screen.dart';
 import 'admin_disputes_tabs_screen.dart';
 import 'admin_more_tab_screen.dart';
-import '../../i18n/app_localizations.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN DASHBOARD SCREEN

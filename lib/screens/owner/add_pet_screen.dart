@@ -49,7 +49,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       try {
         final newPet = PetModel(
           id: '', 
-          ownerId: _userId!,
+          ownerId: _userId,
           name: _nameController.text.trim(),
           breed: _breedController.text.trim(),
           age: int.parse(_ageController.text.trim()),

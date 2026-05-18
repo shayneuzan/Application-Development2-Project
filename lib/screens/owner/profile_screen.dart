@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       drawer: const OwnerDrawer(currentPage: 'Profile'),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_currentUser!.uid),
+        stream: _firestoreService.getUserStream(_currentUser.uid),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -20,7 +20,7 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
   @override
   Widget build(BuildContext context) {
-
+    final loc = AppLocalizations.of(context)!;
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
     Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
     Color cardColor   = Theme.of(context).cardColor;
@@ -51,55 +51,55 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
 
               // Header
               Padding(
-                padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
-                child: Text(AppLocalizations.of(context)!.userManagement, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
+                child: Text(loc.userManagement, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Text('${allUsers.length} total users', style: TextStyle(fontSize: 13, color: textMuted)),
               ),
 
               // Search bar
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
                   style: TextStyle(color: textPrimary),
                   decoration: InputDecoration(
-                    hintText: 'Search by name or email...',
+                    hintText: loc.searchByNameOrEmail,
                     hintStyle: TextStyle(color: textMuted, fontSize: 14),
                     prefixIcon: Icon(Icons.search, color: textMuted, size: 20),
                     filled: true,
                     fillColor: cardColor,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Color(0xFF2563EB), width: 1.5)),
                   ),
                 ),
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Show spinner while waiting for Firestore to respond
               if (snapshot.connectionState == ConnectionState.waiting)
-                Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))))
+                const Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))))
 
               // Show message if no users match the search
               else if (filtered.isEmpty)
-                Expanded(child: Center(child: Text('No users found.', style: TextStyle(color: textMuted))))
+                Expanded(child: Center(child: Text(loc.noUsersFound, style: TextStyle(color: textMuted))))
 
               // User list
               else
                 Expanded(
                   child: ListView.separated(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: filtered.length,
-                    separatorBuilder: (context, index) => SizedBox(height: 10),
+                    separatorBuilder: (context, index) => const SizedBox(height: 10),
                     itemBuilder: (context, index) => _UserCard(user: filtered[index]),
                   ),
                 ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             ],
           );
         },
@@ -116,7 +116,7 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final loc = AppLocalizations.of(context)!;
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
     Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
     Color cardColor   = Theme.of(context).cardColor;
@@ -124,14 +124,14 @@ class _UserCard extends StatelessWidget {
     //Pick status badge color
     Color statusColor;
     switch (user['status'] ?? 'active') {
-      case 'active':    statusColor = Color(0xFF10B981); break;
-      case 'pending':   statusColor = Color(0xFFF59E0B); break;
-      case 'suspended': statusColor = Color(0xFFEF4444); break;
-      default:          statusColor = Color(0xFF64748B);
+      case 'active':    statusColor = const Color(0xFF10B981); break;
+      case 'pending':   statusColor = const Color(0xFFF59E0B); break;
+      case 'suspended': statusColor = const Color(0xFFEF4444); break;
+      default:          statusColor = const Color(0xFF64748B);
     }
 
     return Container(
-      padding: EdgeInsets.all(14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(14),
@@ -143,16 +143,16 @@ class _UserCard extends StatelessWidget {
           //Initials avatar
           Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(color: Color(0xFF2563EB).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: const Color(0xFF2563EB).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
             child: Center(
               child: Text(
                 (user['name'] ?? 'No name').toString().split(' ').map((n) => n[0]).take(2).join(),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF2563EB)),
               ),
             ),
           ),
 
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
 
           //Name, email, badges
           Expanded(
@@ -160,16 +160,16 @@ class _UserCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(user['name'] ?? 'No name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary)),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(user['email'] ?? 'No email', style: TextStyle(fontSize: 11, color: textMuted)),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     _Badge(
-                      label: (user['role'] ?? 'owner') == 'walker' ? 'Walker' : 'Owner',
-                      color: (user['role'] ?? 'owner') == 'walker' ? Color(0xFF3B82F6) : Color(0xFF10B981),
+                      label: (user['role'] ?? 'owner') == 'walker' ? loc.walker : loc.owner,
+                      color: (user['role'] ?? 'owner') == 'walker' ? const Color(0xFF3B82F6) : const Color(0xFF10B981),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     _Badge(
                       label: (user['status'] ?? 'active').toString()[0].toUpperCase() + (user['status'] ?? 'active').toString().substring(1),
                       color: statusColor,
@@ -197,7 +197,7 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
     );
@@ -227,11 +227,11 @@ class _ActionButton extends StatelessWidget {
           await _ref.update({'isApproved': true, 'status': 'active'});
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF10B981), foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0,
         ),
-        child: Text(AppLocalizations.of(context)!.approve, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.approve, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 
@@ -245,11 +245,11 @@ class _ActionButton extends StatelessWidget {
           await _ref.update({'status': 'suspended'});
         },
         style: OutlinedButton.styleFrom(
-          foregroundColor: Color(0xFFEF4444), side: BorderSide(color: Color(0xFFEF4444)),
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          foregroundColor: const Color(0xFFEF4444), side: const BorderSide(color: Color(0xFFEF4444)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text(AppLocalizations.of(context)!.suspend, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.suspend, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 
@@ -263,11 +263,11 @@ class _ActionButton extends StatelessWidget {
           await _ref.update({'status': 'active'});
         },
         style: OutlinedButton.styleFrom(
-          foregroundColor: Color(0xFF10B981), side: BorderSide(color: Color(0xFF10B981)),
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          foregroundColor: const Color(0xFF10B981), side: const BorderSide(color: Color(0xFF10B981)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text(AppLocalizations.of(context)!.restore, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        child: Text(AppLocalizations.of(context)!.restore, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
       );
     }
 

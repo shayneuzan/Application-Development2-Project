@@ -513,5 +513,23 @@
   "errorLoadingUsers": "Erreur lors du chargement des utilisateurs : {error}",
   "errorLoadingReviews": "Erreur lors du chargement des avis : {error}",
   "errorLoadingPets": "Erreur lors du chargement des animaux : {error}",
-  "errorLoadingAddresses": "Erreur lors du chargement des adresses : {error}"
+  "errorLoadingAddresses": "Erreur lors du chargement des adresses : {error}",
+
+  "newWalkerRegistered": "Nouveau promeneur inscrit",
+  "bookingCompleted": "Réservation terminée",
+  "disputeReportedBy": "Litige signalé par",
+  "walkerApproved": "Promeneur approuvé",
+  "newOwnerRegistered": "Nouveau propriétaire inscrit",
+  "searchByNameOrEmail": "Rechercher par nom ou e-mail...",
+  "noUsersFound": "Aucun utilisateur trouvé pour votre recherche.",
+  "reported": "a signalé",
+  "resolveDispute": "Résoudre le litige",
+  "@openDisputesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookingsManagement": "Gestion des Réservations"
 }

@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../shared/notification_screen.dart';
 
-class WalkerNotificationIcon extends StatelessWidget {
-  const WalkerNotificationIcon({super.key});
+class NotificationIcon extends StatelessWidget {
+  const NotificationIcon({super.key});
 
   @override
   Widget build(BuildContext context) {

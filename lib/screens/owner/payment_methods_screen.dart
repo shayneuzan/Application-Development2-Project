@@ -143,12 +143,12 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: theme.dividerColor),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_circle_outline, color: primaryBlue),
-                        const SizedBox(width: 8),
-                        const Text('Add New Card', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+                        Icon(Icons.add_circle_outline, color: primaryBlue),
+                        SizedBox(width: 8),
+                        Text('Add New Card', style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),

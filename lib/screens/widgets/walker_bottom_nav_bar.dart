@@ -66,11 +66,11 @@ class WalkerBottomNavBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: (index) => _onItemTapped(context, index),
       items: <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: l10n.home),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: l10n.requests),
-        BottomNavigationBarItem(icon: Icon(Icons.schedule), label: l10n.schedule),
-        BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: l10n.earnings),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: l10n.profile),
+        BottomNavigationBarItem(icon: const Icon(Icons.home), label: l10n.home),
+        BottomNavigationBarItem(icon: const Icon(Icons.calendar_month), label: l10n.requests),
+        BottomNavigationBarItem(icon: const Icon(Icons.schedule), label: l10n.schedule),
+        BottomNavigationBarItem(icon: const Icon(Icons.attach_money), label: l10n.earnings),
+        BottomNavigationBarItem(icon: const Icon(Icons.person), label: l10n.profile),
       ],
       iconSize: 30, // Reduced size slightly for better fit with labels
       elevation: 5,

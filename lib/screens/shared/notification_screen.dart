@@ -95,9 +95,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ],
               if (categories['Earlier']!.isNotEmpty) ...[
                 Padding(
-                  padding: EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: Text(loc.earlierNotifications,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontSize: 13),
                   ),
                 ),
                 ...categories['Earlier']!.map((n) => _buildNotificationCard(n, context)),

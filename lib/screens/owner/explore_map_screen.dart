@@ -7,7 +7,6 @@ import 'browse_walkers_list_screen.dart';
 import 'booking_history_screen.dart';
 import 'profile_screen.dart';
 import '../../services/firestore_service.dart';
-import '../widgets/owner_bottom_nav_bar.dart';
 
 class ExploreMapScreen extends StatefulWidget {
   const ExploreMapScreen({super.key});

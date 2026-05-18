@@ -1230,4 +1230,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String errorCreatingBooking(String error) {
     return 'Error creating booking: $error';
   }
+
+  @override
+  String get newWalkerRegistered => 'New walker registered';
+
+  @override
+  String get bookingCompleted => 'Booking completed';
+
+  @override
+  String get disputeReportedBy => 'Dispute reported by';
+
+  @override
+  String get walkerApproved => 'Walker approved';
+
+  @override
+  String get newOwnerRegistered => 'New owner registered';
+
+  @override
+  String get searchByNameOrEmail => 'Search by name or email...';
+
+  @override
+  String get noUsersFound => 'No users found matching your search.';
+
+  @override
+  String get reported => 'reported';
+
+  @override
+  String get resolveDispute => 'Resolve Dispute';
+
+  @override
+  String get bookingsManagement => 'Bookings Management';
 }

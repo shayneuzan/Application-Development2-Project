@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../shared/notification_screen.dart';
 import '../widgets/owner_bottom_nav_bar.dart';
 import '../widgets/walker_notification_icon.dart';
-import 'owner_home_screen.dart';
-import 'profile_screen.dart';
 import 'browse_walkers_list_screen.dart';
 
-import 'schedule_screen.dart';
 import 'review_screen.dart';
 import 'booking_screen.dart';
-import 'explore_map_screen.dart';
 import '../../services/firestore_service.dart';
 import '../widgets/owner_drawer.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -303,7 +298,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
           ),
         ),
         actions: const [
-          WalkerNotificationIcon(),
+          NotificationIcon(),
           SizedBox(width: 8),
         ],
       ),

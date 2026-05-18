@@ -56,7 +56,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
             FirebaseAuth.instance.signOut();
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => LoginScreen()),
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
             );
           }
       });
@@ -217,7 +217,7 @@ class _WalkerHomeScreenState extends State<WalkerHomeScreen> with SingleTickerPr
               backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
               actions: const [
-                WalkerNotificationIcon(),
+                NotificationIcon(),
                 SizedBox(width: 8,)
               ],
             ),

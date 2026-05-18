@@ -1241,4 +1241,34 @@ class AppLocalizationsFr extends AppLocalizations {
   String errorCreatingBooking(String error) {
     return 'Erreur lors de la création de la réservation : $error';
   }
+
+  @override
+  String get newWalkerRegistered => 'Nouveau promeneur inscrit';
+
+  @override
+  String get bookingCompleted => 'Réservation terminée';
+
+  @override
+  String get disputeReportedBy => 'Litige signalé par';
+
+  @override
+  String get walkerApproved => 'Promeneur approuvé';
+
+  @override
+  String get newOwnerRegistered => 'Nouveau propriétaire inscrit';
+
+  @override
+  String get searchByNameOrEmail => 'Rechercher par nom ou e-mail...';
+
+  @override
+  String get noUsersFound => 'Aucun utilisateur trouvé pour votre recherche.';
+
+  @override
+  String get reported => 'a signalé';
+
+  @override
+  String get resolveDispute => 'Résoudre le litige';
+
+  @override
+  String get bookingsManagement => 'Gestion des Réservations';
 }

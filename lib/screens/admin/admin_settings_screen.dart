@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/locale_provider.dart';
 
 // ─────────────────────────────────────────────────────────
 // ADMIN PLATFORM SETTINGS SCREEN
@@ -11,30 +12,16 @@ import '../../l10n/generated/app_localizations.dart';
 // ─────────────────────────────────────────────────────────
 
 class AdminSettingsScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final Locale locale;
-  final void Function(bool) onThemeChanged;
-  final void Function(Locale) onLocaleChanged;
-
-  const AdminSettingsScreen({
-    super.key,
-    required this.isDarkMode,
-    required this.locale,
-    required this.onThemeChanged,
-    required this.onLocaleChanged,
-  });
+  const AdminSettingsScreen({super.key});
 
   @override
   State<AdminSettingsScreen> createState() => _AdminSettingsScreenState();
 }
 
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
-
   final DocumentReference _settingsDoc =
-      FirebaseFirestore.instance.collection('settings').doc('platform');
+  FirebaseFirestore.instance.collection('settings').doc('platform');
 
-  late String _language;
-  late bool _isDarkMode;
   bool _maintenanceMode = false;
   String _supportEmail = '';
   bool _loading = true;
@@ -44,8 +31,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _language = widget.locale.languageCode == 'fr' ? 'French' : 'English';
-    _isDarkMode = widget.isDarkMode;
     _loadSettings();
   }
 
@@ -61,7 +46,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (doc.exists) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         setState(() {
-          _language = data['language'] ?? _language;
           _maintenanceMode = data['maintenanceMode'] ?? false;
           _supportEmail = data['supportEmail'] ?? '';
           _emailController.text = _supportEmail;
@@ -95,47 +79,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
   }
 
-  static ThemeData _makeTheme(bool dark) => dark
-      ? ThemeData(
-          brightness: Brightness.dark,
-          primaryColor: const Color(0xFF2563EB),
-          scaffoldBackgroundColor: const Color(0xFF1E293B),
-          colorScheme: const ColorScheme.dark(primary: Color(0xFF2563EB), surface: Color(0xFF334155), onSurface: Color(0xFFF1F5F9)),
-          cardColor: const Color(0xFF334155),
-          dividerColor: const Color(0xFF475569),
-        )
-      : ThemeData(
-          brightness: Brightness.light,
-          primaryColor: const Color(0xFF2563EB),
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-          colorScheme: const ColorScheme.light(primary: Color(0xFF2563EB), surface: Colors.white, onSurface: Color(0xFF1E293B)),
-          cardColor: Colors.white,
-          dividerColor: const Color(0xFFE2E8F0),
-        );
-
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: _makeTheme(_isDarkMode),
-      child: Localizations.override(
-        context: context,
-        locale: widget.locale,
-        delegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        child: Builder(builder: (ctx) => _buildContent(ctx)),
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    final AppLocalizations loc = AppLocalizations.of(context)!;
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
@@ -148,259 +99,138 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  // ── GENERAL ─────────────────────────────────────────
-                  _sectionLabel(loc.general),
-                  const SizedBox(height: 10),
-
-                  _settingsCard(
-                    children: [
-
-                      _settingRow(
-                        icon: Icons.language_outlined,
-                        iconColor: const Color(0xFF2563EB),
-                        title: loc.language,
-                        subtitle: widget.locale.languageCode == 'fr' ? loc.french : loc.english,
-                        trailing: DropdownButton<String>(
-                          value: _language,
-                          underline: const SizedBox(),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          dropdownColor: Theme.of(context).cardColor,
-                          items: ['English', 'French'].map((lang) {
-                            return DropdownMenuItem(value: lang, child: Text(lang));
-                          }).toList(),
-                          onChanged: (value) async {
-                            if (value == null) return;
-                            setState(() => _language = value);
-                            final newLocale = value == 'French' ? const Locale('fr') : const Locale('en');
-                            widget.onLocaleChanged(newLocale);
-                            await _saveSetting('language', value);
-                          },
-                        ),
-                      ),
-
-                      Divider(height: 1, color: Theme.of(context).dividerColor),
-
-                      _settingRow(
-                        icon: Icons.info_outline,
-                        iconColor: const Color(0xFF64748B),
-                        title: loc.appVersion,
-                        subtitle: 'Current build',
-                        trailing: const Text(
-                          'Version 1.0.0',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionLabel(loc.general),
+            const SizedBox(height: 10),
+            _settingsCard(
+              children: [
+                _settingRow(
+                  icon: Icons.language_outlined,
+                  iconColor: const Color(0xFF2563EB),
+                  title: loc.language,
+                  subtitle: localeProvider.locale?.languageCode == 'fr' ? loc.french : loc.english,
+                  trailing: DropdownButton<String>(
+                    value: localeProvider.locale?.languageCode == 'fr' ? 'French' : 'English',
+                    underline: const SizedBox(),
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600, fontSize: 14),
+                    dropdownColor: theme.cardColor,
+                    items: ['English', 'French'].map((lang) => DropdownMenuItem(value: lang, child: Text(lang))).toList(),
+                    onChanged: (value) async {
+                      if (value == null) return;
+                      // Update Provider (instantly changes UI)
+                      final newLocale = value == 'French' ? const Locale('fr') : const Locale('en');
+                      localeProvider.setLocale(newLocale);
+                      // Persist to Admin Platform settings
+                      await _saveSetting('language', value);
+                    },
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // ── APPEARANCE ───────────────────────────────────────
-                  _sectionLabel(loc.appearance),
-                  const SizedBox(height: 10),
-
-                  _settingsCard(
-                    children: [
-                      _settingRow(
-                        icon: Icons.dark_mode_outlined,
-                        iconColor: const Color(0xFF8B5CF6),
-                        title: loc.darkMode,
-                        subtitle: _isDarkMode ? 'On' : 'Off',
-                        trailing: Switch(
-                          value: _isDarkMode,
-                          activeColor: const Color(0xFF2563EB),
-                          onChanged: (value) async {
-                            setState(() => _isDarkMode = value);
-                            widget.onThemeChanged(value);
-                            try {
-                              await _settingsDoc.set({'darkMode': value}, SetOptions(merge: true));
-                            } catch (e) {
-                              _showError('Failed to save: $e');
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── SYSTEM ───────────────────────────────────────────
-                  _sectionLabel(loc.system),
-                  const SizedBox(height: 10),
-
-                  _settingsCard(
-                    children: [
-                      _settingRow(
-                        icon: Icons.construction_outlined,
-                        iconColor: Colors.orange,
-                        title: loc.maintenanceMode,
-                        subtitle: _maintenanceMode
-                            ? 'App is currently locked for users'
-                            : 'App is live and accessible',
-                        trailing: Switch(
-                          value: _maintenanceMode,
-                          activeColor: const Color(0xFF2563EB),
-                          onChanged: (value) async {
-                            setState(() => _maintenanceMode = value);
-                            await _saveSetting('maintenanceMode', value);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ── SUPPORT ──────────────────────────────────────────
-                  _sectionLabel(loc.support),
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2)),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(Icons.email_outlined, color: Color(0xFF10B981), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  loc.contactEmail,
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
-                                ),
-                                const Text(
-                                  'Support address shown to users',
-                                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-                          decoration: InputDecoration(
-                            hintText: 'support@pawwalk.com',
-                            hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                            filled: true,
-                            fillColor: Theme.of(context).scaffoldBackgroundColor,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF2563EB))),
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await _saveSetting('supportEmail', _emailController.text.trim());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            child: Text(loc.saveEmail, style: const TextStyle(fontWeight: FontWeight.w700)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
+                ),
+                Divider(height: 1, color: theme.dividerColor),
+                _settingRow(
+                  icon: Icons.info_outline,
+                  iconColor: const Color(0xFF64748B),
+                  title: loc.appVersion,
+                  subtitle: 'Version 1.0.0',
+                ),
+              ],
             ),
+            const SizedBox(height: 24),
+            _sectionLabel(loc.appearance),
+            const SizedBox(height: 10),
+            _settingsCard(
+              children: [
+                _settingRow(
+                  icon: Icons.dark_mode_outlined,
+                  iconColor: const Color(0xFF8B5CF6),
+                  title: loc.darkMode,
+                  subtitle: localeProvider.isDarkMode ? 'On' : 'Off',
+                  trailing: Switch(
+                    value: localeProvider.isDarkMode,
+                    activeColor: const Color(0xFF2563EB),
+                    onChanged: (value) async {
+                      // Update Provider (instantly changes colors)
+                      localeProvider.toggleTheme(value);
+                      // Persist to Admin Platform settings
+                      await _saveSetting('darkMode', value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _sectionLabel(loc.system),
+            const SizedBox(height: 10),
+            _settingsCard(
+              children: [
+                _settingRow(
+                  icon: Icons.construction_outlined,
+                  iconColor: Colors.orange,
+                  title: loc.maintenanceMode,
+                  subtitle: _maintenanceMode ? 'Locked' : 'Live',
+                  trailing: Switch(
+                    value: _maintenanceMode,
+                    activeColor: const Color(0xFF2563EB),
+                    onChanged: (value) async {
+                      setState(() => _maintenanceMode = value);
+                      await _saveSetting('maintenanceMode', value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _sectionLabel(loc.support),
+            const SizedBox(height: 10),
+            _buildEmailCard(theme, loc),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _sectionLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF64748B), letterSpacing: 0.5),
-    );
+    return Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey));
   }
 
   Widget _settingsCard({required List<Widget> children}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2)),
-        ],
-      ),
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Column(children: children),
     );
   }
 
-  Widget _settingRow({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required Widget trailing,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+  Widget _settingRow({required IconData icon, Color? iconColor, required String title, String? subtitle, Widget? trailing}) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: trailing,
+    );
+  }
+
+  Widget _buildEmailCard(ThemeData theme, AppLocalizations loc) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              ],
+          _settingRow(icon: Icons.email_outlined, title: loc.contactEmail, subtitle: "Support address"),
+          TextField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              hintText: 'support@pawwalk.com',
+              filled: true,
+              fillColor: theme.scaffoldBackgroundColor,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
+            onSubmitted: (val) => _saveSetting('supportEmail', val),
           ),
-          trailing,
         ],
       ),
     );

@@ -57,7 +57,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
               backgroundColor: const Color(0xFF2563EB),
               iconTheme: const IconThemeData(color: Colors.white),
               actions: const [
-                WalkerNotificationIcon(),
+                NotificationIcon(),
                 SizedBox(width: 8),
               ],
             ),

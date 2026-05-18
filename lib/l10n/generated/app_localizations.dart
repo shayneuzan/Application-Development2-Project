@@ -2299,6 +2299,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error creating booking: {error}'**
   String errorCreatingBooking(String error);
+
+  /// No description provided for @newWalkerRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'New walker registered'**
+  String get newWalkerRegistered;
+
+  /// No description provided for @bookingCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking completed'**
+  String get bookingCompleted;
+
+  /// No description provided for @disputeReportedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dispute reported by'**
+  String get disputeReportedBy;
+
+  /// No description provided for @walkerApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Walker approved'**
+  String get walkerApproved;
+
+  /// No description provided for @newOwnerRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'New owner registered'**
+  String get newOwnerRegistered;
+
+  /// No description provided for @searchByNameOrEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or email...'**
+  String get searchByNameOrEmail;
+
+  /// No description provided for @noUsersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found matching your search.'**
+  String get noUsersFound;
+
+  /// No description provided for @reported.
+  ///
+  /// In en, this message translates to:
+  /// **'reported'**
+  String get reported;
+
+  /// No description provided for @resolveDispute.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve Dispute'**
+  String get resolveDispute;
+
+  /// No description provided for @bookingsManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings Management'**
+  String get bookingsManagement;
 }
 
 class _AppLocalizationsDelegate

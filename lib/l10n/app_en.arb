@@ -784,6 +784,18 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "newWalkerRegistered": "New walker registered",
+  "bookingCompleted": "Booking completed",
+  "disputeReportedBy": "Dispute reported by",
+  "walkerApproved": "Walker approved",
+  "newOwnerRegistered": "New owner registered",
+  "searchByNameOrEmail": "Search by name or email...",
+  "noUsersFound": "No users found matching your search.",
+  "reported": "reported",
+  "resolveDispute": "Resolve Dispute",
+  "bookingsManagement": "Bookings Management"
+
 }
 

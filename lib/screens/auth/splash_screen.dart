@@ -29,14 +29,14 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     // Fade the content IN after 300ms
-    Timer(Duration(milliseconds: 300), () {
+    Timer(const Duration(milliseconds: 300), () {
       setState(() {
         _opacity = 1.0;
       });
     });
 
     // Wait 3 seconds then go to Login
-    Timer(Duration(seconds: 3), () {
+    Timer(const Duration(seconds: 3), () {
       checkUserAndNavigate();
     });
   }
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     //if user is not logged in go to login screen
     if (user == null) {
-      _goTo(LoginScreen());
+      _goTo(const LoginScreen());
       return;
     }
 
@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
       case 'walker':
         // If email is not verified send them back to login so they can verify first
         if (!user.emailVerified) {
-          _goTo(LoginScreen());
+          _goTo(const LoginScreen());
         } else {
           _goTo(const WalkerHomeScreen());
         }
@@ -90,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen> {
         // Pet owner
         // If email is not verified send them back to login so they can verify first
         if (!user.emailVerified) {
-          _goTo(LoginScreen());
+          _goTo(const LoginScreen());
         } else {
           _goTo(const OwnerHomeScreen());
         }
@@ -100,14 +100,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E3A5F),
+      backgroundColor: const Color(0xFF1E3A5F),
 
       body: Center(
         //AnimatedOpacity fades the content IN when the screen opens
         //duration controls how long the fade in takes
         child: AnimatedOpacity(
           opacity: _opacity,
-          duration: Duration(milliseconds: 800),
+          duration: const Duration(milliseconds: 800),
 
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -117,22 +117,22 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Color(0xFF2563EB),
+                  color: const Color(0xFF2563EB),
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF2563EB).withOpacity(0.3),
+                      color: const Color(0xFF2563EB).withOpacity(0.3),
                       blurRadius: 20,
                     ),
                   ],
                 ),
-                child: Icon(Icons.pets, size: 65, color: Colors.white),
+                child: const Icon(Icons.pets, size: 65, color: Colors.white),
               ),
 
-              SizedBox(height: 28),
+              const SizedBox(height: 28),
 
               //App name
-              Text(
+              const Text(
                 'PawWalk',
                 style: TextStyle(
                   fontSize: 42,
@@ -142,18 +142,18 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
               //Tagline
-              Text(
+              const Text(
                 'Trusted Dog Walking — Anytime',
                 style: TextStyle(fontSize: 14, color: Color(0xFFBFDBFE)),
               ),
 
-              SizedBox(height: 60),
+              const SizedBox(height: 60),
 
               //Loading spinner
-              CircularProgressIndicator(
+              const CircularProgressIndicator(
                 color: Color(0xFF2563EB),
                 strokeWidth: 2.5,
               ),

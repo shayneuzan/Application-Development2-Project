@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/booking_model.dart';
 
 // ─────────────────────────────────────────────────────────
@@ -22,7 +23,7 @@ class _AdminBookingsTabState extends State<AdminBookingsTab> {
   @override
   Widget build(BuildContext context) {
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
-
+    final loc = AppLocalizations.of(context)!;
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +32,7 @@ class _AdminBookingsTabState extends State<AdminBookingsTab> {
           //Header
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
-            child: Text('Booking Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
+            child: Text(loc.bookingsManagement, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
           ),
 
           Expanded(
@@ -71,13 +72,13 @@ class _AdminBookingsTabState extends State<AdminBookingsTab> {
                       //Status summary cards
                       Row(
                         children: [
-                          _StatCard(label: 'Total',     value: total.toString(),     color: Theme.of(context).colorScheme.onSurface),
+                          _StatCard(label: loc.total,     value: total.toString(),     color: Theme.of(context).colorScheme.onSurface),
                           const SizedBox(width: 10),
-                          _StatCard(label: 'Pending',   value: pending.toString(),   color: const Color(0xFFF59E0B)),
+                          _StatCard(label: loc.pending,   value: pending.toString(),   color: const Color(0xFFF59E0B)),
                           const SizedBox(width: 10),
-                          _StatCard(label: 'Confirmed', value: confirmed.toString(), color: const Color(0xFF2563EB)),
+                          _StatCard(label: loc.confirmed, value: confirmed.toString(), color: const Color(0xFF2563EB)),
                           const SizedBox(width: 10),
-                          _StatCard(label: 'Completed', value: completed.toString(), color: const Color(0xFF10B981)),
+                          _StatCard(label: loc.completed, value: completed.toString(), color: const Color(0xFF10B981)),
                         ],
                       ),
 
@@ -88,7 +89,7 @@ class _AdminBookingsTabState extends State<AdminBookingsTab> {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 40),
                             child: Text(
-                              'No bookings yet.',
+                              loc.noBookingsYet,
                               style: TextStyle(color: Theme.of(context).textTheme.bodySmall!.color, fontStyle: FontStyle.italic),
                             ),
                           ),
@@ -152,6 +153,7 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
     Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
     Color cardColor   = Theme.of(context).cardColor;
@@ -212,7 +214,7 @@ class _BookingCard extends StatelessWidget {
             children: [
               Icon(Icons.person_outline, size: 16, color: textMuted),
               const SizedBox(width: 6),
-              Text('Owner: ${booking.ownerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
+              Text('${loc.owner}: ${booking.ownerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
@@ -223,7 +225,7 @@ class _BookingCard extends StatelessWidget {
             children: [
               Icon(Icons.directions_walk, size: 16, color: textMuted),
               const SizedBox(width: 6),
-              Text('Walker: ${booking.walkerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
+              Text('${loc.walker}: ${booking.walkerName}', style: TextStyle(fontSize: 13, color: textPrimary)),
             ],
           ),
 
@@ -252,7 +254,7 @@ class _BookingCard extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () => _showDetails(context),
               icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-              label: const Text('View Details', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              label: Text(loc.viewDetails, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF2563EB),
                 side: BorderSide(color: Theme.of(context).dividerColor),
@@ -268,6 +270,7 @@ class _BookingCard extends StatelessWidget {
   }
 
   void _showDetails(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final Color scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
     final Color cardBg     = Theme.of(context).cardColor;
     final Color textPrimary = Theme.of(context).colorScheme.onSurface;
@@ -314,7 +317,7 @@ class _BookingCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Booking Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textPrimary)),
+                Text('${loc.bookingDetails}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textPrimary)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(

@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../services/firestore_service.dart';
-import '../../models/user_model.dart';
 import 'owner_home_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {

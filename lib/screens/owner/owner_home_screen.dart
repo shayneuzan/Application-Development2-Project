@@ -277,7 +277,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
 
             // Upcoming Walk Card
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                   final booking = snapshot.data!.first;
@@ -426,7 +426,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with SingleTickerProv
             ),
             
             StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _user != null ? _firestoreService.getBookingsByOwner(_user!.uid) : const Stream.empty(),
+              stream: _user != null ? _firestoreService.getBookingsByOwner(_user.uid) : const Stream.empty(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));

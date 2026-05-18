@@ -58,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Persist to Firestore
           if (_userId != null) {
-            await _firestoreService.updateUser(_userId!, {'language': value});
+            await _firestoreService.updateUser(_userId, {'language': value});
           }
 
           if (mounted) Navigator.pop(context);
@@ -69,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateSetting(String key, bool value) async {
     if (_userId != null) {
-      await _firestoreService.updateUser(_userId!, {key: value});
+      await _firestoreService.updateUser(_userId, {key: value});
 
       // Specifically for Dark Mode: Update the Provider so the app flips colors instantly
       if (key == 'darkMode') {
@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirm == true && _userId != null) {
       try {
-        await _firestoreService.deleteUser(_userId!);
+        await _firestoreService.deleteUser(_userId);
         await FirebaseAuth.instance.currentUser?.delete();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -181,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       body: StreamBuilder<UserModel>(
-        stream: _firestoreService.getUserStream(_userId!),
+        stream: _firestoreService.getUserStream(_userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -405,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: theme.textTheme.bodyLarge?.color,
         ),
       ),
-      activeColor: theme.primaryColor,
+      activeThumbColor: theme.primaryColor,
       value: value,
       onChanged: onChanged,
     );

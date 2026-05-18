@@ -40,9 +40,9 @@ class _RequestScreenState extends State<RequestScreen> {
             title: Text(l10n.bookingRequests, style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color(0xFF2563EB),
             iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              const WalkerNotificationIcon(),
-              const SizedBox(width: 8),
+            actions: const [
+              NotificationIcon(),
+              SizedBox(width: 8),
             ],
           ),
           drawer: WalkerDrawer(name: walkerName!),

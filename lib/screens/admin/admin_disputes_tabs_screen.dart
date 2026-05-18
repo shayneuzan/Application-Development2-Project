@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
+
 // ─────────────────────────────────────────────────────────
 // ADMIN DISPUTES TAB
 // Open and resolved disputes with resolve/dismiss actions
@@ -18,7 +20,7 @@ class AdminDisputesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final loc = AppLocalizations.of(context)!;
     Color textPrimary = Theme.of(context).colorScheme.onSurface;
     Color textMuted   = Theme.of(context).textTheme.bodySmall!.color!;
 
@@ -27,41 +29,41 @@ class AdminDisputesTab extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Header
-            Text('Dispute Resolution', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
-            Text('${open.length} open disputes', style: TextStyle(fontSize: 13, color: textMuted)),
+            Text(loc.disputeResolution, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textPrimary)),
+            Text(loc.openDisputesCount(open.length), style: TextStyle(fontSize: 13, color: textMuted)),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             //Open disputes section
             if (open.isNotEmpty) ...[
-              Text('Open', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
-              SizedBox(height: 10),
+              Text(loc.open, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
+              const SizedBox(height: 10),
               ...open.map((d) => Padding(
-                padding: EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: _DisputeCard(dispute: d),
               )),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
             ],
 
             // Resolved disputes section
             if (resolved.isNotEmpty) ...[
-              Text('Resolved', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
-              SizedBox(height: 10),
+              Text(loc.resolved, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+              const SizedBox(height: 10),
               ...resolved.map((d) => Padding(
-                padding: EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: _DisputeCard(dispute: d),
               )),
             ],
 
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -76,6 +78,7 @@ class _DisputeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
 
     Color textPrimary  = Theme.of(context).colorScheme.onSurface;
     Color textMuted    = Theme.of(context).textTheme.bodySmall!.color!;
@@ -86,12 +89,12 @@ class _DisputeCard extends StatelessWidget {
     final isOpen = dispute['status'] == 'open';
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: isOpen ? Border.all(color: Color(0xFFEF4444).withOpacity(0.3)) : null,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: Offset(0, 2))],
+        border: isOpen ? Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,9 +109,9 @@ class _DisputeCard extends StatelessWidget {
                   text: TextSpan(
                     style: TextStyle(fontSize: 13, color: textPrimary),
                     children: [
-                      TextSpan(text: dispute['reportedBy'], style: TextStyle(fontWeight: FontWeight.w700)),
-                      TextSpan(text: ' reported '),
-                      TextSpan(text: dispute['against'], style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+                      TextSpan(text: dispute['reportedBy'], style: const TextStyle(fontWeight: FontWeight.w700)),
+                      TextSpan(text: ' ${loc.reported} '),
+                      TextSpan(text: dispute['against'], style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
                     ],
                   ),
                 ),
@@ -117,12 +120,12 @@ class _DisputeCard extends StatelessWidget {
             ],
           ),
 
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
 
           //Reason text in a tinted box
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: reasonBg, borderRadius: BorderRadius.circular(8)),
             child: Text(
               dispute['reason'],
@@ -132,7 +135,7 @@ class _DisputeCard extends StatelessWidget {
 
           //Action buttons only on open disputes
           if (isOpen) ...[
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -141,14 +144,14 @@ class _DisputeCard extends StatelessWidget {
                       // TODO: FirebaseFirestore.instance.collection('disputes')
                       //   .doc(dispute['id']).update({'status': 'resolved'})
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Dispute resolved.'), backgroundColor: Color(0xFF10B981)),
+                        SnackBar(content: Text(loc.disputeResolved), backgroundColor: const Color(0xFF10B981)),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF10B981), foregroundColor: Colors.white,
+                      backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white,
                       elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text('Resolve', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text(loc.resolveDispute, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ),
                 SizedBox(width: 10),
@@ -158,7 +161,7 @@ class _DisputeCard extends StatelessWidget {
                       // TODO: FirebaseFirestore.instance.collection('disputes')
                       //   .doc(dispute['id']).update({'status': 'dismissed'})
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Dispute dismissed.'), backgroundColor: Color(0xFF64748B)),
+                        SnackBar(content: Text(loc.disputeDismissed), backgroundColor: const Color(0xFF64748B)),
                       );
                     },
                     style: OutlinedButton.styleFrom(
@@ -166,7 +169,7 @@ class _DisputeCard extends StatelessWidget {
                       side: BorderSide(color: Theme.of(context).dividerColor),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text('Dismiss', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: Text(loc.dismiss, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
